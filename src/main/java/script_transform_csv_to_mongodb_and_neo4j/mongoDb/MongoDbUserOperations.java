@@ -1,4 +1,4 @@
-package script_transform_csv_to_mongodb_and_neo4j;
+package script_transform_csv_to_mongodb_and_neo4j.mongoDb;
 
 import com.mongodb.client.*;
 import com.mongodb.client.model.Filters;
@@ -12,6 +12,7 @@ public class MongoDbUserOperations {
     public MongoClient mongoClient;
     public MongoDatabase mongoOriginalDatabase;
     public static String newUserCollectionName="members";
+    public static List<String> metaMembersIds;
 
     public MongoCollection getNewUserCollection(){
         mongoOriginalDatabase.createCollection(newUserCollectionName);
@@ -122,39 +123,43 @@ public class MongoDbUserOperations {
         MongoCollection rsvpsCollection = CsvToMongoImporter.csvDocuments.getCollection("rsvps.csv");
         List<String> eventIdsFromRsvps = new ArrayList<>();
         MongoCursor cursor = rsvpsCollection.find(Filters.eq("member_id", memberId)).cursor();
-        List<Document> eventDocumentsToEmbeddToUser = new ArrayList<>();
-
+        List<Document> upcomingEvents=new ArrayList<>();
         if (cursor != null) {
             while (cursor.hasNext()) {
                 eventIdsFromRsvps.add(((Document) cursor.next()).get("event_id", String.class));
             }
 
-            MongoCollection eventCollection = mongoOriginalDatabase.getCollection("event");
+            MongoCollection eventCollection = mongoOriginalDatabase.getCollection("events");
+
+            MongoCursor eventCursor = eventCollection.find
+                    (
+                            Filters.and(
+                            Filters.in("event_id",eventIdsFromRsvps)
+                            ,Filters.gt("event_time",new Date()
+                            )
+                            )
+            ).cursor();
 
 
-            List<Document> aggregationList = Arrays.asList(
-                    new Document("$match", Filters.in("event_id", eventIdsFromRsvps)));
-
-
-
-            MongoCursor eventCursor = eventCollection.find(Filters.and(Filters.in("event_id",eventIdsFromRsvps),Filters.gt("event_time",new Date()))).cursor();
-
-            List<Document> upcomingEvents=new ArrayList<>();
 
             if (eventCursor != null) {
                 while (eventCursor.hasNext()) {
                     Document documentToEmbed = new Document();
                     Document eventDocument = (Document) eventCursor.next();
+                    Date event_time = eventDocument.getDate("event_time");
 
-                    documentToEmbed.append("event_id",eventDocument.getString("event_id"));
-                    documentToEmbed.append("event_name",eventDocument.getString("event_name"));
-                    documentToEmbed.append("event_time",eventDocument.getDate("event_time"));
+//                    if (event_time.after(new Date())) {
 
-                    upcomingEvents.add(documentToEmbed);
+                        documentToEmbed.append("event_id", eventDocument.getString("event_id"));
+                        documentToEmbed.append("event_name", eventDocument.getString("event_name"));
+                        documentToEmbed.append("event_time", event_time);
+
+                        upcomingEvents.add(documentToEmbed);
+//                    }
                 }
             }
         }
-        return eventDocumentsToEmbeddToUser;
+        return upcomingEvents;
 
     }
 
@@ -207,11 +212,16 @@ public class MongoDbUserOperations {
         return document;
     }
 
-    public void createMemberCollection() {
+    public void createMemberCollection(boolean includeOnlyMembersWithModifiedId) {
+
+        List<String> memberIds = metaMembersIds!=null? metaMembersIds : retrieveIdsFromMetaMembers();
+        boolean includeFilter = includeOnlyMembersWithModifiedId && !memberIds.isEmpty();
+
         MongoCollection oldMemberCollection = CsvToMongoImporter.csvDocuments.getCollection("members.csv");
         MongoCollection newMemberCollection = getNewUserCollection();
         Document finalDocument = new Document();
-        MongoCursor mongoCursor = oldMemberCollection.find().cursor();
+
+        MongoCursor mongoCursor = includeFilter ? oldMemberCollection.find(Filters.in("member_id",memberIds)).cursor() : oldMemberCollection.find().cursor() ;
         List<Document> membersWithId = new ArrayList<>();
         Set<String> membersAlreadyEvaluated = new HashSet<>();
         String memberId;
@@ -275,42 +285,48 @@ public class MongoDbUserOperations {
         }
         return IdsFromMetaMembersColl;
     }
-    public static List updateRandomIdsForMembers(){
-        MongoCollection metaMembersCollection= CsvToMongoImporter.csvDocuments.getCollection("members.csv");
-
+    public static List updateIdsForMembers(){
+        MongoCollection membersCollection= CsvToMongoImporter.csvDocuments.getCollection("members.csv");
+        MongoCollection memberTopicsCollection= CsvToMongoImporter.csvDocuments.getCollection("members_topics.csv");
 
        List<String> IdsFromMetaMembersColl = retrieveIdsFromMetaMembers();
-       int totalMetaMembers=IdsFromMetaMembersColl.size();
-       List<String> membersId = retrieveIdsFromMembers(-1);
-       int totalMembers = membersId.size();
+       int totalMetaMembers=    IdsFromMetaMembersColl.size();
+//       List<String> membersId = retrieveIdsFromMembers(-1);
+
 
        int membersChosen=0;
 
+       MongoCursor mongoCursor = membersCollection.find().cursor();
 
-        Set<Integer> randomNumbers = new HashSet<>();
         Set<String> chosenMembers = new HashSet<>();
+        for (String metaMemberId:IdsFromMetaMembersColl){
+            chosenMembers.add(metaMemberId);
+        }
 
-        Random random = new Random();
         int value = -1;
         String chosenMember;
+
           while (membersChosen<=totalMetaMembers){
-            do{
-                chosenMember = membersId.get(random.nextInt(totalMembers));
-            }
-             while (chosenMembers.contains(chosenMember));
+              String memberIdToUpdate;
+              do {
+                  memberIdToUpdate = ((Document) mongoCursor.next()).getString("member_id");
+              } while (chosenMembers.contains(memberIdToUpdate));
 
+              chosenMembers.add(memberIdToUpdate);
 
-              chosenMembers.add(chosenMember);
-
-              metaMembersCollection.updateMany(
-                      Filters.eq("member_id", chosenMember),
+              membersCollection.updateMany(
+                      Filters.eq("member_id", memberIdToUpdate),
                       new Document("$set",
                               new Document("member_id", IdsFromMetaMembersColl.get(membersChosen))
                       )
               );
+              memberTopicsCollection.updateMany(Filters.eq("member_id", memberIdToUpdate),  new Document("$set",
+                      new Document("member_id", IdsFromMetaMembersColl.get(membersChosen))
+              ));
 
              membersChosen++;
           }
+          metaMembersIds = IdsFromMetaMembersColl;
 return IdsFromMetaMembersColl;
     }
 

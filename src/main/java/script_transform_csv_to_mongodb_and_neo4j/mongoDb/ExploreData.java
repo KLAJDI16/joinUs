@@ -1,10 +1,9 @@
-package script_transform_csv_to_mongodb_and_neo4j;
+package script_transform_csv_to_mongodb_and_neo4j.mongoDb;
 
 import com.mongodb.client.*;
 import org.bson.Document;
-import java.util.Arrays;
+
 import java.util.List;
-import java.util.Random;
 
 public class ExploreData {
     public static List<String> colors= List.of(

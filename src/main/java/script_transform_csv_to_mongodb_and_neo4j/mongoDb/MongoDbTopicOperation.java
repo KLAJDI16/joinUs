@@ -1,4 +1,4 @@
-package script_transform_csv_to_mongodb_and_neo4j;
+package script_transform_csv_to_mongodb_and_neo4j.mongoDb;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -38,9 +38,10 @@ public class MongoDbTopicOperation {
         List<String> keysToIncludeDirectly=List.of("topic_id", "description",
                 "link","topic_name","urlkey");
         for (String key:oldDocument.keySet()){
-            documentToReturn.append(key,oldDocument.getString(key));
+            if (keysToIncludeDirectly.contains(key))
+             documentToReturn.append(key,oldDocument.getString(key));
         }
-        long member_count=Long.parseLong("members");
+        long member_count=Long.parseLong(oldDocument.getString("members"));
         documentToReturn.append("member_count",member_count);
 
 

@@ -1,4 +1,4 @@
-package script_transform_csv_to_mongodb_and_neo4j;
+package script_transform_csv_to_mongodb_and_neo4j.mongoDb;
 
 import com.mongodb.client.*;
 import com.mongodb.client.model.Filters;
@@ -10,9 +10,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.ParseException;
 import java.util.*;
 
 public class CsvToMongoImporter {
+
     public static MongoClient client = MongoClients.create("mongodb://localhost:27017");
     public static final String firstDatasetFolder = "C:\\Users\\Public\\JoinUs_Dataset\\Meetup\\";//LOCAL PATH OF THE DATASET FOUND BY MOIN
     public static final String secondDatasetFolder = "C:\\Users\\Public\\JoinUs_Dataset\\dataset2_joinUs\\";//LOCAL PATH OF THE DATASET FOUND BY FLORIAN
@@ -26,23 +28,50 @@ public class CsvToMongoImporter {
 
 // Step-1 , import all the csv data to MongoDB as it is (replace '.' with '___' in the fields that contain '.' due to issues with MongoDB)
         importCsvToMongoDB(firstDatasetFolder);
-        importCsvToMongoDB(firstDatasetFolder);
+        importCsvToMongoDB(secondDatasetFolder);
 
 //Step-2 , Get Ids from the second dataset and assign them
 // throughout collections of the first dataset in order to save the state of rsvps.csv for the GraphDB
-        updateIdsForCollection("meta-events.csv", "event_id",
-                "events.csv", "event_id");
-        updateIdsForCollection("meta-groups.csv", "group_id",
-                "groups.csv", "group_id");
-        updateIdsForCollection("meta-members.csv", "member_id",
-                "members.csv", "member_id");
+       Thread thread1 = new Thread(() -> MongoDbUserOperations.updateIdsForMembers());
+        Thread thread2 = new Thread( () ->  updateIdsForCollection("meta-events.csv", "event_id",
+                "events.csv", "event_id"));
+        Thread thread3 = new Thread( () ->    updateIdsForCollection("meta-groups.csv", "group_id",
+                "groups.csv", "group_id"));
+//
+        thread1.start();
+        thread2.start();
+        thread3.start();
+        thread1.join();
+        thread2.join();
+        thread3.join();
 
 //Step-3 ,Create the new Collection we will use for our project , in the new database 'JoinUs'
         new MongoDbEventOperations(client,newMongoDatabase).createEventCollection();
-        new MongoDbUserOperations(client,newMongoDatabase).createMemberCollection();
-        new MongoDbGroupOperations(client,newMongoDatabase).createGroupCollection();
-        new MongoDbTopicOperation(client,newMongoDatabase).createTopicCollection();
-        new MongoDbCityOperation(client,newMongoDatabase).createCityCollection();
+
+    Thread thread4 =  new Thread(() ->   new MongoDbUserOperations(client,newMongoDatabase)
+            .createMemberCollection(true));
+        Thread thread5 =     new Thread(() -> {
+            try {
+                new MongoDbGroupOperations(client,newMongoDatabase).createGroupCollection();
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        Thread thread6 =     new Thread(() ->    new MongoDbTopicOperation(client,newMongoDatabase).createTopicCollection());
+        Thread thread7 =     new Thread(() ->    new MongoDbCityOperation(client,newMongoDatabase).createCityCollection());
+
+        thread4.start();
+        thread5.start();
+        thread6.start();
+        thread7.start();
+
+        thread4.join();
+        thread5.join();
+        thread6.join();
+        thread7.join();
+
+
+
 
         long endingTime = System.currentTimeMillis();
 
@@ -115,6 +144,8 @@ For now ,it is supposed to assign random Ids from the collections of the second 
  */
     public static List<String> updateIdsForCollection(String sourceCollection, String sourceKey, String destinationCollection, String destinationKey){
         MongoCollection sourceColl= CsvToMongoImporter.csvDocuments.getCollection(sourceCollection);
+        MongoCollection destColl= CsvToMongoImporter.csvDocuments.getCollection(destinationCollection);
+
         List<String> IdsFromSourceColl = retrieveIds(sourceCollection,sourceKey);
 
         int totalSourceRecords=IdsFromSourceColl.size();
@@ -122,7 +153,6 @@ For now ,it is supposed to assign random Ids from the collections of the second 
         int totalDesinationRecords = destinationIds.size();
 
 
-        Set<Integer> randomNumbers = new HashSet<>();
         Set<String> chosenRecords = new HashSet<>();
 
         Random random = new Random();
@@ -139,8 +169,8 @@ For now ,it is supposed to assign random Ids from the collections of the second 
 
             chosenRecords.add(chosenRecord);
 
-            sourceColl.updateMany(
-                    Filters.eq(sourceKey, chosenRecord),
+            destColl.updateMany(
+                    Filters.eq(destinationKey, chosenRecord),
                     new Document("$set",
                             new Document(destinationKey, IdsFromSourceColl.get(idsChosen))
                     )

@@ -1,4 +1,4 @@
-package script_transform_csv_to_mongodb_and_neo4j;
+package script_transform_csv_to_mongodb_and_neo4j.mongoDb;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -215,6 +215,7 @@ public class MongoDbEventOperations {
         Document newEvent ;
         while (mongoCursor.hasNext()) {
             Document oldDocument = (Document) mongoCursor.next();
+
             newEvent = extractEventDocument(oldDocument);
 
             newEvent.append("creator_group",extractCreatorGroupForEvent(oldDocument));

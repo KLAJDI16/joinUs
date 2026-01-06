@@ -1,4 +1,4 @@
-package script_transform_csv_to_mongodb_and_neo4j;
+package script_transform_csv_to_mongodb_and_neo4j.mongoDb;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -50,10 +50,11 @@ public class MongoDbCityOperation {
         List<String> keysToIncludeDirectly=List.of("city","country",
                 "localized_country_name","city_id","zip","state");
         for (String key:oldDocument.keySet()){
+            if (keysToIncludeDirectly.contains(key))
             documentToReturn.append(key,oldDocument.getString(key));
         }
         double ranking = Double.parseDouble(oldDocument.getString("ranking"));
-        long member_count=Long.parseLong("member_count");
+        long member_count=Long.parseLong(oldDocument.getString("member_count"));
         double distance = Double.parseDouble(oldDocument.getString("distance"));
         double latitude = Double.parseDouble(oldDocument.getString("latitude"));
         double longitude = Double.parseDouble(oldDocument.getString("longitude"));
@@ -69,7 +70,7 @@ public class MongoDbCityOperation {
 
     public void createCityCollection(){
         MongoCollection newCollection = getCityCollection();
-        MongoCollection oldCollection=CsvToMongoImporter.csvDocuments.getCollection("city.csv");
+        MongoCollection oldCollection=CsvToMongoImporter.csvDocuments.getCollection("cities.csv");
         MongoCursor mongoCursor = oldCollection.find().cursor();
         Document newDocument;
         Document oldDocument;

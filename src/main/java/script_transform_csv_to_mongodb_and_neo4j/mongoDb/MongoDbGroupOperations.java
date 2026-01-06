@@ -1,4 +1,4 @@
-package script_transform_csv_to_mongodb_and_neo4j;
+package script_transform_csv_to_mongodb_and_neo4j.mongoDb;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -97,39 +97,40 @@ public class MongoDbGroupOperations {
         MongoCollection rsvpsCollection = CsvToMongoImporter.csvDocuments.getCollection("rsvps.csv");
         List<String> eventIdsFromRsvps = new ArrayList<>();
         MongoCursor cursor = rsvpsCollection.find(Filters.eq("group_id", group_id)).cursor();
-        List<Document> eventDocumentsToEmbeddToGroup = new ArrayList<>();
+        List<Document> upcomingEvents=new ArrayList<>();
 
-        if (cursor != null) {
             while (cursor.hasNext()) {
-                eventIdsFromRsvps.add(((Document) cursor.next()).get("event_id", String.class));
+                eventIdsFromRsvps.add(((Document) cursor.next()).getString("event_id"));
             }
 
-            MongoCollection eventCollection = mongoOriginalDatabase.getCollection("event");
-
-
-            List<Document> aggregationList = Arrays.asList(
-                    new Document("$match", Filters.in("event_id", eventIdsFromRsvps)));
+            MongoCollection<Document> eventCollection = mongoOriginalDatabase.getCollection("events");
 
 
 
-            MongoCursor eventCursor = eventCollection.find(Filters.and(Filters.in("event_id",eventIdsFromRsvps),Filters.gt("event_time",new Date()))).cursor();
 
-            List<Document> upcomingEvents=new ArrayList<>();
+            MongoCursor<Document> eventCursor = eventCollection.find(
+                    Filters.and(
+                            Filters.in("event_id",eventIdsFromRsvps)
+                    ,Filters.gt("event_time",new Date())
+                    )
+            ).cursor();
 
-            if (eventCursor != null) {
-                while (eventCursor.hasNext()) {
-                    Document documentToEmbed = new Document();
-                    Document eventDocument = (Document) eventCursor.next();
 
-                    documentToEmbed.append("event_id",eventDocument.getString("event_id"));
-                    documentToEmbed.append("event_name",eventDocument.getString("event_name"));
-                    documentToEmbed.append("event_time",eventDocument.getDate("event_time"));
 
-                    upcomingEvents.add(documentToEmbed);
-                }
-            }
+        while (eventCursor.hasNext()) {
+            Document documentToEmbed = new Document();
+            Document eventDocument = eventCursor.next();
+            Date event_time = eventDocument.getDate("event_time");
+
+//            if (event_time.after(new Date())) {
+                documentToEmbed.append("event_id", eventDocument.getString("event_id"));
+                documentToEmbed.append("event_name", eventDocument.getString("event_name"));
+                documentToEmbed.append("event_time", event_time);
+                upcomingEvents.add(documentToEmbed);
+//            }
         }
-        return eventDocumentsToEmbeddToGroup;
+
+        return upcomingEvents;
 
     }
 
