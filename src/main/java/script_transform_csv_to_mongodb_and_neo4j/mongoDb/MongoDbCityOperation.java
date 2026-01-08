@@ -31,28 +31,31 @@ public class MongoDbCityOperation {
         mongoOriginalDatabase = mongoClient.getDatabase("joinUs");
     }
 
-    public static Document extractCityToEmbedFromId(String cityId){
-        MongoCollection cityCollection = CsvToMongoImporter.csvDocuments.getCollection("cities.csv");
+    protected static Document extractCityToEmbedFromId(String cityId){
+        MongoCollection cityCollection = CsvToMongoTransformer.csvDocuments.getCollection("cities.csv");
 
         return (Document) cityCollection.find(Filters.eq("city_id", cityId))
                 .projection(new Document("_id", 0).append("member_count", 0).append("ranking", 0)).first();
     }
-    public static Document extractCityToEmbedFromCityName(String cityName){
-        MongoCollection cityCollection = CsvToMongoImporter.csvDocuments.getCollection("cities.csv");
+    protected static Document extractCityToEmbedFromCityName(String cityName){
+        MongoCollection cityCollection = CsvToMongoTransformer.csvDocuments.getCollection("cities.csv");
 
         return (Document) cityCollection.find(Filters.eq("city", cityName))
                 .projection(new Document("_id", 0).append("member_count", 0).append("ranking", 0)).first();
     }
 
-    public Document extractCityDocument(Document oldDocument){
+    private Document extractCityDocument(Document oldDocument){
         if (oldDocument==null || oldDocument.isEmpty()) return new Document();
         Document documentToReturn = new Document();
-        List<String> keysToIncludeDirectly=List.of("city","country",
-                "localized_country_name","city_id","zip","state");
+        List<String> keysToIncludeDirectly=List.of("country",
+                "localized_country_name","zip","state");
         for (String key:oldDocument.keySet()){
             if (keysToIncludeDirectly.contains(key))
             documentToReturn.append(key,oldDocument.getString(key));
         }
+        documentToReturn.append("name",oldDocument.get("city"));
+        documentToReturn.append("id",oldDocument.get("city_id"));
+
         double ranking = Double.parseDouble(oldDocument.getString("ranking"));
         long member_count=Long.parseLong(oldDocument.getString("member_count"));
         double distance = Double.parseDouble(oldDocument.getString("distance"));
@@ -70,7 +73,7 @@ public class MongoDbCityOperation {
 
     public void createCityCollection(){
         MongoCollection newCollection = getCityCollection();
-        MongoCollection oldCollection=CsvToMongoImporter.csvDocuments.getCollection("cities.csv");
+        MongoCollection oldCollection= CsvToMongoTransformer.csvDocuments.getCollection("cities.csv");
         MongoCursor mongoCursor = oldCollection.find().cursor();
         Document newDocument;
         Document oldDocument;

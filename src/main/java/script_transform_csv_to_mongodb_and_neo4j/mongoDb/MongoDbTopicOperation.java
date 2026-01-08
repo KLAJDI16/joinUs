@@ -50,7 +50,7 @@ public class MongoDbTopicOperation {
 
     public void createTopicCollection(){
         MongoCollection newCollection = getNewTopiCollection();
-        MongoCollection oldCollection=CsvToMongoImporter.csvDocuments.getCollection("topics.csv");
+        MongoCollection oldCollection= CsvToMongoTransformer.csvDocuments.getCollection("topics.csv");
         MongoCursor mongoCursor = oldCollection.find().cursor();
         Document newDocument;
         Document oldDocument;

@@ -5,78 +5,28 @@ import com.mongodb.client.model.Filters;
 import com.opencsv.CSVReader;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import tools.jackson.databind.ObjectMapper;
 
+import javax.print.Doc;
 import java.io.File;
 import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class CsvToMongoImporter {
+public class CsvToMongoTransformer {
 
+    public static final String defaultDatabase="joinUs";
     public static MongoClient client = MongoClients.create("mongodb://localhost:27017");
     public static final String firstDatasetFolder = "C:\\Users\\Public\\JoinUs_Dataset\\Meetup\\";//LOCAL PATH OF THE DATASET FOUND BY MOIN
     public static final String secondDatasetFolder = "C:\\Users\\Public\\JoinUs_Dataset\\dataset2_joinUs\\";//LOCAL PATH OF THE DATASET FOUND BY FLORIAN
     public static final MongoDatabase csvDocuments = client.getDatabase("CSV_Documents");
-    public static final MongoDatabase newMongoDatabase=client.getDatabase("joinUs");
+    public static final MongoDatabase newMongoDatabase=client.getDatabase(defaultDatabase);
     private static final int BATCH_SIZE = 1000;
 
-    public static void main(String[] args) throws Exception {
 
-        long startingTime = System.currentTimeMillis();
-
-// Step-1 , import all the csv data to MongoDB as it is (replace '.' with '___' in the fields that contain '.' due to issues with MongoDB)
-        importCsvToMongoDB(firstDatasetFolder);
-        importCsvToMongoDB(secondDatasetFolder);
-
-//Step-2 , Get Ids from the second dataset and assign them
-// throughout collections of the first dataset in order to save the state of rsvps.csv for the GraphDB
-       Thread thread1 = new Thread(() -> MongoDbUserOperations.updateIdsForMembers());
-        Thread thread2 = new Thread( () ->  updateIdsForCollection("meta-events.csv", "event_id",
-                "events.csv", "event_id"));
-        Thread thread3 = new Thread( () ->    updateIdsForCollection("meta-groups.csv", "group_id",
-                "groups.csv", "group_id"));
-//
-        thread1.start();
-        thread2.start();
-        thread3.start();
-        thread1.join();
-        thread2.join();
-        thread3.join();
-
-//Step-3 ,Create the new Collection we will use for our project , in the new database 'JoinUs'
-        new MongoDbEventOperations(client,newMongoDatabase).createEventCollection();
-
-    Thread thread4 =  new Thread(() ->   new MongoDbUserOperations(client,newMongoDatabase)
-            .createMemberCollection(true));
-        Thread thread5 =     new Thread(() -> {
-            try {
-                new MongoDbGroupOperations(client,newMongoDatabase).createGroupCollection();
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        Thread thread6 =     new Thread(() ->    new MongoDbTopicOperation(client,newMongoDatabase).createTopicCollection());
-        Thread thread7 =     new Thread(() ->    new MongoDbCityOperation(client,newMongoDatabase).createCityCollection());
-
-        thread4.start();
-        thread5.start();
-        thread6.start();
-        thread7.start();
-
-        thread4.join();
-        thread5.join();
-        thread6.join();
-        thread7.join();
-
-
-
-
-        long endingTime = System.currentTimeMillis();
-
-        System.out.println("THE  PROCESS TOOK "+(endingTime-startingTime)/1000 +" seconds ");
-    }
 
 
     /**
@@ -135,7 +85,98 @@ public class CsvToMongoImporter {
         }
     }
 
-/**
+
+    public void tranformCsvDataToMongoDB() throws Exception {
+                long startingTime = System.currentTimeMillis();
+
+// Step-1 , import all the csv data to MongoDB as it is (replace '.' with '___' in the fields that contain '.' due to issues with MongoDB)
+        importCsvToMongoDB(firstDatasetFolder);
+        importCsvToMongoDB(secondDatasetFolder);
+
+//Step-2 , Get Ids from the second dataset and assign them
+// throughout collections of the first dataset in order to save the state of rsvps.csv for the GraphDB
+       Thread thread1 = new Thread(() -> MongoDbUserOperations.updateIdsForMembers());
+        Thread thread2 = new Thread( () ->  updateIdsForCollection("meta-events.csv", "event_id",
+                "events.csv", "event_id"));
+        Thread thread3 = new Thread( () ->    updateIdsForCollection("meta-groups.csv", "group_id",
+                "groups.csv", "group_id"));
+//
+        thread1.start();
+        thread2.start();
+        thread3.start();
+        thread1.join();
+        thread2.join();
+        thread3.join();
+
+//Step-3 ,Create the new Collection we will use for our project , in the new database 'JoinUs'
+        new MongoDbEventOperations(client,newMongoDatabase).createEventCollection();
+
+    Thread thread4 =  new Thread(() ->   new MongoDbUserOperations(client,newMongoDatabase)
+            .createMemberCollection(true));
+        Thread thread5 =     new Thread(() -> {
+            try {
+                new MongoDbGroupOperations(client,newMongoDatabase).createGroupCollection();
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        Thread thread6 =     new Thread(() ->    new MongoDbTopicOperation(client,newMongoDatabase).createTopicCollection());
+        Thread thread7 =     new Thread(() ->    new MongoDbCityOperation(client,newMongoDatabase).createCityCollection());
+
+        thread4.start();
+        thread5.start();
+        thread6.start();
+        thread7.start();
+
+        thread4.join();
+        thread5.join();
+        thread6.join();
+        thread7.join();
+
+
+
+
+        long endingTime = System.currentTimeMillis();
+
+        System.out.println("THE  PROCESS TOOK "+(endingTime-startingTime)/1000 +" seconds ");
+
+    }
+
+
+    public static Map<String, Object> flattenDocument(
+            Object value,
+            String parentKey,
+            String delimiter
+    ) {
+        Map<String, Object> flattenedMap = new HashMap<>();
+
+        if (value instanceof Document) {
+            Document document = (Document) value;
+
+            for (Map.Entry<String, Object> entry : document.entrySet()) {
+                String newKey = parentKey.isEmpty()
+                        ? entry.getKey()
+                        : parentKey + delimiter + entry.getKey();
+
+                flattenedMap.putAll(
+                        flattenDocument(entry.getValue(), newKey, delimiter)
+                );
+            }
+
+        } else if (value instanceof List<?>) {
+            // Same behavior as JsonNode array → store as string
+            flattenedMap.put(parentKey, value.toString());
+
+        } else {
+            // Primitive or other BSON type
+            flattenedMap.put(parentKey, value);
+        }
+
+        return flattenedMap;
+    }
+
+
+    /**
 Get all Ids/Otherkeys from the collection of the sourceCollection
 and assign them randomly to the records of the destinationCollection
 
@@ -143,8 +184,8 @@ For now ,it is supposed to assign random Ids from the collections of the second 
  to the collections of the first dataset , in order to not change the GraphDB edges (rsvps.csv)
  */
     public static List<String> updateIdsForCollection(String sourceCollection, String sourceKey, String destinationCollection, String destinationKey){
-        MongoCollection sourceColl= CsvToMongoImporter.csvDocuments.getCollection(sourceCollection);
-        MongoCollection destColl= CsvToMongoImporter.csvDocuments.getCollection(destinationCollection);
+        MongoCollection sourceColl= CsvToMongoTransformer.csvDocuments.getCollection(sourceCollection);
+        MongoCollection destColl= CsvToMongoTransformer.csvDocuments.getCollection(destinationCollection);
 
         List<String> IdsFromSourceColl = retrieveIds(sourceCollection,sourceKey);
 
@@ -182,7 +223,7 @@ For now ,it is supposed to assign random Ids from the collections of the second 
     }
 
     public static List<String> retrieveIds(String collection,String key){
-        MongoCollection sourceColl= CsvToMongoImporter.csvDocuments.getCollection(collection);
+        MongoCollection sourceColl= CsvToMongoTransformer.csvDocuments.getCollection(collection);
         List<String> IdsFromSourceColl = new ArrayList<>();
 
         MongoCursor mongoCursor = sourceColl.find()
@@ -195,7 +236,7 @@ For now ,it is supposed to assign random Ids from the collections of the second 
         return  IdsFromSourceColl;
     }
     public static List<String> retrieveIds(String collection, String key, Bson bson){
-        MongoCollection sourceColl= CsvToMongoImporter.csvDocuments.getCollection(collection);
+        MongoCollection sourceColl= CsvToMongoTransformer.csvDocuments.getCollection(collection);
         List<String> IdsFromSourceColl = new ArrayList<>();
 
         MongoCursor mongoCursor = sourceColl.find(bson)
@@ -213,4 +254,51 @@ For now ,it is supposed to assign random Ids from the collections of the second 
             document.append(key,value);
         }
     }
+
+    //To be used for the creation of Neo4J database ,for easier than working with CSV
+    public static void verifyMongoDatabaseAndCollections() throws Exception{
+        AtomicBoolean databaseExists= new AtomicBoolean(false);
+        client.listDatabaseNames().forEach(e -> {
+            if (e.equalsIgnoreCase(defaultDatabase)){
+                databaseExists.set(true);
+            }
+        });
+        if (!databaseExists.get()) throw new Exception("Database"+CsvToMongoTransformer.newMongoDatabase.getName()+" not created in MongoDb."
+                );
+
+        AtomicBoolean allCollectionsCreated = new AtomicBoolean(false);
+        List<String> collectionsToVerify=List.of("events","members","topics","groups");
+
+        for (String coll : collectionsToVerify) {
+            allCollectionsCreated.set(false);
+            client.getDatabase(defaultDatabase).listCollectionNames().forEach(e -> {
+                if (e.equalsIgnoreCase(coll)) {
+                    allCollectionsCreated.set(true);
+                }
+            });
+            if (!allCollectionsCreated.get()) throw new Exception("Collection "+coll+" has  not been " +
+                    "created in MongoDb.");
+
+        }
+
+    }
+
+    public static Document flattenDocument(Document document){
+        Map<String, Object> flat =
+                flattenDocument(document, "", "_");
+
+           return new Document(flat);
+    }
+    public static Document cloneDocument(Document document){
+        if (document==null) return null;
+        Document document1 = new Document();
+        for (String key:document.keySet()){
+            document1.append(key,document.get(key));
+        }
+        return document1;
+    }
+
+
+
+
 }

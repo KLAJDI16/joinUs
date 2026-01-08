@@ -69,7 +69,7 @@ public class MongoDbGroupOperations {
         String group_id=oldGroupDocument.getString("group_id");
         int membersFromRsvps = 0;
         //rsvps.csv
-        MongoCollection rsvpsCollection = CsvToMongoImporter.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
 
         List<Document> aggregationList = Arrays.asList(new Document("$match",
                         new Document("group_id", group_id)),
@@ -94,7 +94,7 @@ public class MongoDbGroupOperations {
         String group_id=oldGroupDocument.getString("group_id");
 
         //rsvps.csv
-        MongoCollection rsvpsCollection = CsvToMongoImporter.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
         List<String> eventIdsFromRsvps = new ArrayList<>();
         MongoCursor cursor = rsvpsCollection.find(Filters.eq("group_id", group_id)).cursor();
         List<Document> upcomingEvents=new ArrayList<>();
@@ -140,7 +140,7 @@ public class MongoDbGroupOperations {
 
 
         String group_id=oldGroupDocument.getString("group_id");
-        MongoCollection topicCollection = CsvToMongoImporter.csvDocuments.getCollection("groups_topics.csv");
+        MongoCollection topicCollection = CsvToMongoTransformer.csvDocuments.getCollection("groups_topics.csv");
 
         List<Document> groupTopics = new ArrayList<>();
         MongoCursor cursor = topicCollection
@@ -162,7 +162,7 @@ public class MongoDbGroupOperations {
 
     public int extractEventCount(Document oldGroupDocument){
         String group_id=oldGroupDocument.getString("group_id");
-        MongoCollection rsvpsCollection = CsvToMongoImporter.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
 
         List<Document> aggregationList = Arrays.asList(new Document("$match",
                         new Document("group_id", group_id)),
@@ -203,7 +203,7 @@ public class MongoDbGroupOperations {
                 newGroupDocument.append(key,oldGroupDocument.getString(key));
             }
         }
-        CsvToMongoImporter.assignIfFound(newGroupDocument,"description",oldGroupDocument.getString("description"));
+        CsvToMongoTransformer.assignIfFound(newGroupDocument,"description",oldGroupDocument.getString("description"));
 
         SimpleDateFormat simpleDateFormat =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date created = simpleDateFormat.parse(oldGroupDocument.getString("created"));
@@ -223,7 +223,7 @@ public class MongoDbGroupOperations {
         for (String key : oldGroupDocument.keySet()){
             if (key.startsWith("group_photo___")){
                 String newKey=key.substring("group_photo___".length());
-                CsvToMongoImporter.assignIfFound(photo,newKey,oldGroupDocument.getString(key));
+                CsvToMongoTransformer.assignIfFound(photo,newKey,oldGroupDocument.getString(key));
             }
         }
         return photo;
@@ -233,7 +233,7 @@ public class MongoDbGroupOperations {
 
         MongoCollection groupCollection = getNewGroupsCollection();
         Document newGroupDocument ;
-        MongoCursor mongoCursor = CsvToMongoImporter.csvDocuments.getCollection("groups.csv").find().cursor();
+        MongoCursor mongoCursor = CsvToMongoTransformer.csvDocuments.getCollection("groups.csv").find().cursor();
         while (mongoCursor.hasNext()){
             Document oldGroupDocument = (Document) mongoCursor.next();
             newGroupDocument=extractGroupDocument(oldGroupDocument);

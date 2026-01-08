@@ -71,7 +71,7 @@ public class MongoDbEventOperations {
     public Document extractCreatorGroupForEvent(Document oldEvent){
         Document groupDocument = new Document();
 
-        MongoCollection groupCollection = CsvToMongoImporter.csvDocuments.getCollection("groups.csv");
+        MongoCollection groupCollection = CsvToMongoTransformer.csvDocuments.getCollection("groups.csv");
 
         String groupName= oldEvent.getString("group___name");
 
@@ -96,8 +96,8 @@ public class MongoDbEventOperations {
         String cityName= oldEvent.getString("venue___city");
         Document city = MongoDbCityOperation.extractCityToEmbedFromCityName(cityName);
         venue.append("city",city);
-        CsvToMongoImporter.assignIfFound(venue,"address_1",oldEvent.getString("venue___address_1"));
-        CsvToMongoImporter.assignIfFound(venue,"address_2",oldEvent.getString("venue___address_2"));
+        CsvToMongoTransformer.assignIfFound(venue,"address_1",oldEvent.getString("venue___address_1"));
+        CsvToMongoTransformer.assignIfFound(venue,"address_2",oldEvent.getString("venue___address_2"));
         String phoneNumber = oldEvent.getString("venue___phone");
         if (!phoneNumber.equalsIgnoreCase("-1")) {
             venue.append("phone_number",oldEvent.getString("venue___phone"));
@@ -181,7 +181,7 @@ public class MongoDbEventOperations {
     public List<Document> extractCategoryForEvent(Document oldEvent){
         Document eventDocument = new Document();
 
-        MongoCollection groupCollection = CsvToMongoImporter.csvDocuments.getCollection("groups.csv");
+        MongoCollection groupCollection = CsvToMongoTransformer.csvDocuments.getCollection("groups.csv");
 
         Document group = (Document) groupCollection.find(Filters.eq("group_name",oldEvent.getString("group___name"))).first();
 
@@ -189,7 +189,7 @@ public class MongoDbEventOperations {
         return new MongoDbGroupOperations(this.mongoClient).extractCategoriesFromGroup(group);
     }
     public long extractMemberCountForEvent(Document oldEvent){
-        MongoCollection rsvpsCollection = CsvToMongoImporter.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
         String event_id = oldEvent.getString("event_id");
         List<Document> aggregationList =Arrays.asList(
                 new Document("$match",
@@ -210,7 +210,7 @@ public class MongoDbEventOperations {
 
         MongoCollection newEventCollection = getNewEventCollection();
 
-        MongoCollection oldEventCollection = CsvToMongoImporter.csvDocuments.getCollection("events.csv");
+        MongoCollection oldEventCollection = CsvToMongoTransformer.csvDocuments.getCollection("events.csv");
         MongoCursor mongoCursor = oldEventCollection.find().cursor();
         Document newEvent ;
         while (mongoCursor.hasNext()) {

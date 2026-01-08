@@ -6,7 +6,6 @@ import org.bson.Document;
 
 import java.util.*;
 
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
 
 public class MongoDbUserOperations {
     public MongoClient mongoClient;
@@ -42,7 +41,7 @@ public class MongoDbUserOperations {
      */
     public List<Document> extractTopicPerMember(String memberId) {
 
-        MongoCollection topicCollection = CsvToMongoImporter.csvDocuments.getCollection("members_topics.csv");
+        MongoCollection topicCollection = CsvToMongoTransformer.csvDocuments.getCollection("members_topics.csv");
 
         List<Document> userTopics = new ArrayList<>();
         MongoCursor cursor = topicCollection
@@ -65,7 +64,7 @@ public class MongoDbUserOperations {
      */
     public long extractGroupCountPerMember(String memberId, List<Document> members) {
         //rsvps.csv
-        MongoCollection rsvpsCollection = CsvToMongoImporter.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
 
         List<Document> aggregationList = Arrays.asList(new Document("$match",
                         new Document("member_id", memberId)),
@@ -83,7 +82,7 @@ public class MongoDbUserOperations {
         if (members != null) {
             groupCountFromMembers = members.size();
         } else {
-            MongoCollection membersCollection = CsvToMongoImporter.csvDocuments.getCollection("members.csv");
+            MongoCollection membersCollection = CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
             groupCountFromMembers = membersCollection.countDocuments(new Document("member_id", memberId));
         }
         return groupCountFromMembers + groupCountFromRsvps;
@@ -91,7 +90,7 @@ public class MongoDbUserOperations {
 
     public int extractEventCountPerMember(String memberId) {
         //rsvps.csv
-        MongoCollection rsvpsCollection = CsvToMongoImporter.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
 
         List<Document> aggregationList = Arrays.asList(new Document("$match",
                         new Document("member_id", memberId)),
@@ -120,7 +119,7 @@ public class MongoDbUserOperations {
      */
     public List<Document> extractFutureEventsPerMember(String memberId) {
         //rsvps.csv
-        MongoCollection rsvpsCollection = CsvToMongoImporter.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
         List<String> eventIdsFromRsvps = new ArrayList<>();
         MongoCursor cursor = rsvpsCollection.find(Filters.eq("member_id", memberId)).cursor();
         List<Document> upcomingEvents=new ArrayList<>();
@@ -171,7 +170,7 @@ public class MongoDbUserOperations {
             Document member = members.get(0);
             cityName = member.getString("city");
         } else {
-            MongoCollection memberCollection = CsvToMongoImporter.csvDocuments.getCollection("members.csv");
+            MongoCollection memberCollection = CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
             cityName = ((Document) memberCollection.find(Filters.eq("member_id", memberId))
                     .first()).getString("city");
         }
@@ -194,20 +193,16 @@ public class MongoDbUserOperations {
             document.append("member_id", member.getString("member_id"));
             document.append("member_name", member.getString("member_name"));
             document.append("member_status", member.getString("member_status"));
-            document.append("hometown", member.getString("hometown"));
+            CsvToMongoTransformer.assignIfFound(document,"hometown",member.getString("hometown"));
             document.append("link", member.getString("link"));
-            document.append("bio", member.getString("bio"));
-        } else {
+            CsvToMongoTransformer.assignIfFound(document,"bio",member.getString("bio"));
 
-            MongoCollection memberCollection = CsvToMongoImporter.csvDocuments.getCollection("members.csv");
+        } else {
+            MongoCollection memberCollection = CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
             document = ((Document) memberCollection.find(Filters.eq("member_id", memberId))
                     .projection(new Document("member_id", 1).append("member_name", 1)
                             .append("member_status", 1).append("_id", 0).append("bio", 1).append("hometown", 1).append("link", 1))
                     .first());
-        }
-
-        if (!document.isEmpty() && document.getString("bio").equalsIgnoreCase("not_found")) {
-            document.remove("bio");
         }
         return document;
     }
@@ -217,7 +212,7 @@ public class MongoDbUserOperations {
         List<String> memberIds = metaMembersIds!=null? metaMembersIds : retrieveIdsFromMetaMembers();
         boolean includeFilter = includeOnlyMembersWithModifiedId && !memberIds.isEmpty();
 
-        MongoCollection oldMemberCollection = CsvToMongoImporter.csvDocuments.getCollection("members.csv");
+        MongoCollection oldMemberCollection = CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
         MongoCollection newMemberCollection = getNewUserCollection();
         Document finalDocument = new Document();
 
@@ -246,7 +241,7 @@ public class MongoDbUserOperations {
 
     public List<Document> getMembersWithMemberId(String member_id) {
         List<Document> documentList = new ArrayList<>();
-        MongoCollection oldMemberCollection = CsvToMongoImporter.csvDocuments.getCollection("members.csv");
+        MongoCollection oldMemberCollection = CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
         MongoCursor mongoCursor = oldMemberCollection.find(Filters.eq("member_id", member_id)).cursor();
         while (mongoCursor.hasNext()) {
             Document document = (Document) mongoCursor.next();
@@ -257,7 +252,7 @@ public class MongoDbUserOperations {
 
 
     public static List retrieveIdsFromMetaMembers(){
-        MongoCollection metaMembersCollection= CsvToMongoImporter.csvDocuments.getCollection("meta-members.csv");
+        MongoCollection metaMembersCollection= CsvToMongoTransformer.csvDocuments.getCollection("meta-members.csv");
         List<String> IdsFromMetaMembersColl = new ArrayList<>();
 
                  MongoCursor mongoCursor = metaMembersCollection.find()
@@ -270,7 +265,7 @@ public class MongoDbUserOperations {
                  return IdsFromMetaMembersColl;
     }
     public static List retrieveIdsFromMembers(int limit){
-        MongoCollection metaMembersCollection= CsvToMongoImporter.csvDocuments.getCollection("members.csv");
+        MongoCollection metaMembersCollection= CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
         List<String> IdsFromMetaMembersColl = new ArrayList<>();
 
         MongoCursor mongoCursor = metaMembersCollection.find()
@@ -286,8 +281,8 @@ public class MongoDbUserOperations {
         return IdsFromMetaMembersColl;
     }
     public static List updateIdsForMembers(){
-        MongoCollection membersCollection= CsvToMongoImporter.csvDocuments.getCollection("members.csv");
-        MongoCollection memberTopicsCollection= CsvToMongoImporter.csvDocuments.getCollection("members_topics.csv");
+        MongoCollection membersCollection= CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
+        MongoCollection memberTopicsCollection= CsvToMongoTransformer.csvDocuments.getCollection("members_topics.csv");
 
        List<String> IdsFromMetaMembersColl = retrieveIdsFromMetaMembers();
        int totalMetaMembers=    IdsFromMetaMembersColl.size();
