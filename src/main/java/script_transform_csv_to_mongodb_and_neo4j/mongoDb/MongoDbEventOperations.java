@@ -11,6 +11,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -77,7 +78,7 @@ public class MongoDbEventOperations {
 
         Document document = (Document) groupCollection.find(Filters.eq("group_name",groupName)).first();
 
-        if ( document ==null) return new Document();
+        if ( document ==null) return null;
 
         groupDocument.append("id",document.getString("group_id"));
         groupDocument.append("name",document.getString(
@@ -218,7 +219,7 @@ public class MongoDbEventOperations {
 
             newEvent = extractEventDocument(oldDocument);
 
-            newEvent.append("creator_group",extractCreatorGroupForEvent(oldDocument));
+            CsvToMongoTransformer.assignIfFound(newEvent,"creator_group",extractCreatorGroupForEvent(oldDocument));
             newEvent.append("categories",extractCategoryForEvent(oldDocument));
             newEvent.append("fee",extractFeeFromEvent(oldDocument));
             newEvent.append("venue",extractVenueForEvent(oldDocument));
@@ -227,8 +228,34 @@ public class MongoDbEventOperations {
         }
     }
 
+    public List<Document> extractUpcomingEventsToEmbed(List<String> event_ids){
+        List<Document> upcomingEvents = new ArrayList<>();
+        MongoCollection<Document> eventCollection = mongoOriginalDatabase.getCollection("events");
 
 
+        try (MongoCursor<Document> eventCursor = eventCollection.find(
+                Filters.and(
+                        Filters.in("event_id", event_ids)
+                        , Filters.gt("event_time", new Date())
+                )
+        ).cursor()) {
+
+
+            while (eventCursor.hasNext()) {
+                Document documentToEmbed = new Document();
+                Document eventDocument = eventCursor.next();
+                Date event_time = eventDocument.getDate("event_time");
+
+    //            if (event_time.after(new Date())) {
+                documentToEmbed.append("event_id", eventDocument.getString("event_id"));
+                documentToEmbed.append("event_name", eventDocument.getString("event_name"));
+                documentToEmbed.append("event_time", event_time);
+                upcomingEvents.add(documentToEmbed);
+    //            }
+            }
+        }
+        return upcomingEvents;
+    }
 
 
 

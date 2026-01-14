@@ -86,52 +86,43 @@ public class MongoDbGroupOperations {
         return membersFromRsvps+directMemberCount;
 
     }
-    public List<Document> extractUpcomingEvents(Document oldGroupDocument){
 
-        if (oldGroupDocument == null || oldGroupDocument.isEmpty()) return new ArrayList<>();
+    public List<Document> extractUpcomingEventsFromEvents_csv(String group_id){
+        MongoCollection eventsCollection = CsvToMongoTransformer.csvDocuments.getCollection("events.csv");
+        List<String> eventIdsFromEvents = new ArrayList<>();
+        MongoCursor cursor = eventsCollection.find(Filters.eq("group_id", group_id)).cursor();
+        List<Document> upcomingEvents=new ArrayList<>();
+        while (cursor.hasNext()) {
+            eventIdsFromEvents.add(((Document) cursor.next()).getString("event_id"));
+        }
 
+        return new MongoDbEventOperations(mongoClient).extractUpcomingEventsToEmbed(eventIdsFromEvents);
 
-        String group_id=oldGroupDocument.getString("group_id");
+    }
 
+    public List<Document> extractUpcomingEventsFromRSVPS_csv(String group_id){
         //rsvps.csv
         MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
         List<String> eventIdsFromRsvps = new ArrayList<>();
         MongoCursor cursor = rsvpsCollection.find(Filters.eq("group_id", group_id)).cursor();
-        List<Document> upcomingEvents=new ArrayList<>();
-
-            while (cursor.hasNext()) {
-                eventIdsFromRsvps.add(((Document) cursor.next()).getString("event_id"));
-            }
-
-            MongoCollection<Document> eventCollection = mongoOriginalDatabase.getCollection("events");
 
 
-
-
-            MongoCursor<Document> eventCursor = eventCollection.find(
-                    Filters.and(
-                            Filters.in("event_id",eventIdsFromRsvps)
-                    ,Filters.gt("event_time",new Date())
-                    )
-            ).cursor();
-
-
-
-        while (eventCursor.hasNext()) {
-            Document documentToEmbed = new Document();
-            Document eventDocument = eventCursor.next();
-            Date event_time = eventDocument.getDate("event_time");
-
-//            if (event_time.after(new Date())) {
-                documentToEmbed.append("event_id", eventDocument.getString("event_id"));
-                documentToEmbed.append("event_name", eventDocument.getString("event_name"));
-                documentToEmbed.append("event_time", event_time);
-                upcomingEvents.add(documentToEmbed);
-//            }
+        while (cursor.hasNext()) {
+            eventIdsFromRsvps.add(((Document) cursor.next()).getString("event_id"));
         }
 
-        return upcomingEvents;
+        return new MongoDbEventOperations(mongoClient).extractUpcomingEventsToEmbed(eventIdsFromRsvps);
+    }
+    public List<Document> extractUpcomingEvents(Document oldGroupDocument){
 
+        if (oldGroupDocument == null || oldGroupDocument.isEmpty()) return new ArrayList<>();
+
+        String group_id=oldGroupDocument.getString("group_id");
+
+        List<Document> upcomingEvents = new ArrayList<>();
+        upcomingEvents.addAll(extractUpcomingEventsFromRSVPS_csv(group_id));
+        upcomingEvents.addAll(extractUpcomingEventsFromEvents_csv(group_id));
+        return upcomingEvents;
     }
 
     //We can use this method if we want to do the same as for the user (although we have categories for the aggregations)
@@ -162,6 +153,15 @@ public class MongoDbGroupOperations {
 
     public int extractEventCount(Document oldGroupDocument){
         String group_id=oldGroupDocument.getString("group_id");
+    int event_count=0;
+        int eventCountFromRsvps=extractEventCountFromRsvps_csv(group_id);
+        int eventCountFromEventCsv=extractEventCountFromEvents_csv(group_id);
+
+        event_count=eventCountFromEventCsv+eventCountFromRsvps;
+
+        return eventCountFromRsvps;
+    }
+    public   int extractEventCountFromRsvps_csv(String group_id){
         MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
 
         List<Document> aggregationList = Arrays.asList(new Document("$match",
@@ -171,7 +171,6 @@ public class MongoDbGroupOperations {
                                 new Document("group_id", "$event_id"))),
                 new Document("$count", "eventCount"));
 
-
         int eventCountFromRsvps=0;
 
         MongoCursor mongoCursor = rsvpsCollection.aggregate(aggregationList).cursor();
@@ -179,7 +178,25 @@ public class MongoDbGroupOperations {
         if (mongoCursor.hasNext()) {
             eventCountFromRsvps=((Document) mongoCursor.next()).getInteger("eventCount");
         }
+
         return eventCountFromRsvps;
+    }
+    public  int extractEventCountFromEvents_csv(String group_id){
+        MongoCollection eventsCollection = CsvToMongoTransformer.csvDocuments.getCollection("events.csv");
+
+        List<Document> aggregationList = Arrays.asList(new Document("$match",
+                        new Document("group_id", group_id)),
+                new Document("$count", "eventCount"));
+
+        int eventCountFromEventsCsv=0;
+
+        MongoCursor mongoCursor = eventsCollection.aggregate(aggregationList).cursor();
+
+        if (mongoCursor.hasNext()) {
+            eventCountFromEventsCsv=((Document) mongoCursor.next()).getInteger("eventCount");
+        }
+
+        return eventCountFromEventsCsv;
     }
 
     public List<Document> extractOrganizer(Document oldGroupDocument){
@@ -245,6 +262,7 @@ public class MongoDbGroupOperations {
             newGroupDocument.append("upcoming_events",extractUpcomingEvents(oldGroupDocument));
             newGroupDocument.append("group_photo",extractGroupPhoto(oldGroupDocument));
 //            newGroupDocument.append("topcis",extractTopicsForGroups(oldGroupDocument));//might do this if we want
+
         groupCollection.insertOne(newGroupDocument);
         }
     }

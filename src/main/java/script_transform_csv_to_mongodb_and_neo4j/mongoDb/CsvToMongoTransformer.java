@@ -261,10 +261,20 @@ public class CsvToMongoTransformer {
         return  IdsFromSourceColl;
     }
 
-    public static void assignIfFound(Document document,String key,String value){
-        if (!value.equalsIgnoreCase("not_found")){
-            document.append(key,value);
+    public static void assignIfFound(Document document,String key,Object value){
+        if (value == null) return;
+
+        if (value instanceof Document){
+            Document document1 = (Document) value;
+             if (document1.isEmpty()) return;
         }
+
+        if (value instanceof String){
+           String val = (String) value;
+           if (val.equalsIgnoreCase("not_found")|| val.isEmpty()) return;
+        }
+
+            document.append(key,value);
     }
 
     //To be used for the creation of Neo4J database ,for easier than working with CSV

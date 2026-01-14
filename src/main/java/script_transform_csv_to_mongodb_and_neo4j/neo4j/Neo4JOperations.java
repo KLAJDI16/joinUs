@@ -149,11 +149,35 @@ public class Neo4JOperations {
 
             driver.executableQuery("""
                     MATCH (group:Group {group_id:$group_id})
-                    MATCH (member:Member {member:$member_id})
+                    MATCH (member:Member {member_id:$member_id})
                     CREATE (member)-[:MEMBER_OF]->(group)
                     CREATE (member)<-[:MEMBER_OF]-(group)
 
                     """).withConfig(QueryConfig.builder().withDatabase(neo4jDatabase).build()).withParameters(Map.of("group_id", group_id, "member_id", member_id)).execute();
+        }
+    }
+    /**
+     * This is extra to the edges created from Rsvps.csv , this is based on group_id contained in original events.csv data
+     */
+    public void createGroupEventsEdges() {
+        MongoCollection<Document> collecion = CsvToMongoTransformer.newMongoDatabase.getCollection("events");
+        try (MongoCursor<Document> mongoCursor = collecion
+                .find(new Document("creator_group.id", new Document("$exists", true))).cursor()) {
+
+            String group_id;
+            String event_id;
+
+            while (mongoCursor.hasNext()) {
+                group_id = mongoCursor.next().getEmbedded(List.of("creator_group","id"),String.class);
+                event_id = mongoCursor.next().getString("event_id");
+
+                driver.executableQuery("""
+                         MATCH (group:Group {group_id:$group_id})
+                         MATCH (event:Event {event_id:$event_id})
+                        CREATE (group)<-[:ORGANIZES]-(event)
+                        CREATE (group)-[:ORGANIZES]->(event)
+                        """).withConfig(QueryConfig.builder().withDatabase(neo4jDatabase).build()).withParameters(Map.of("group_id", group_id, "event_id", event_id)).execute();
+            }
         }
     }
 

@@ -57,6 +57,7 @@ public class MongoToNeo4JTransformer {
         thread4.join();
 
         neo4JOperations.createEdgesFromRsvp();
+        neo4JOperations.createGroupEventsEdges();
         neo4JOperations.createGroupTopicsEdges();
         neo4JOperations.createGroupMemberEdges();
         neo4JOperations.createMemberTopicsEdges();
