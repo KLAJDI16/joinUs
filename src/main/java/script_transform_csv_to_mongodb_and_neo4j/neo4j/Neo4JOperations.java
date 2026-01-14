@@ -83,9 +83,12 @@ public class Neo4JOperations {
                     MATCH (member:Member {member_id:$member_id})
                     MATCH (event:Event {event_id:$event_id})
                     MATCH (group:Group {group_id:$group_id})
-                    CREATE (member)-[:MEMBER_OF]-(group)
-                    CREATE (group)-[:ORGANIZES]-(event)
-                    CREATE (member)-[:ATTENDS]-(event)
+                    CREATE (member)-[:MEMBER_OF]->(group)
+                    CREATE (group)-[:ORGANIZES]->(event)
+                    CREATE (member)-[:ATTENDS]->(event)
+                    CREATE (member)<-[:MEMBER_OF]-(group)
+                    CREATE (group)<-[:ORGANIZES]-(event)
+                    CREATE (member)<-[:ATTENDS]-(event)
                     """).withConfig(QueryConfig.builder().withDatabase(neo4jDatabase).build())
                     .withParameters(Map.of("member_id", member_id, "event_id", event_id, "group_id", group_id)).execute();
         }
@@ -105,8 +108,8 @@ public class Neo4JOperations {
             driver.executableQuery("""
                     MATCH (member:Member {member_id:$member_id})
                     MATCH (topic:Topic {topic_id:$topic_id})
-                    CREATE (member)-[:INTERESTED_IN]-(topic)
-                    
+                    CREATE (member)-[:INTERESTED_IN]->(topic)
+                    CREATE (member)<-[:INTERESTED_IN]-(topic)
                     """).withConfig(QueryConfig.builder().withDatabase(neo4jDatabase).build()).withParameters(Map.of("member_id", member_id, "topic_id", topic_id)).execute();
         }
     }
@@ -125,8 +128,8 @@ public class Neo4JOperations {
             driver.executableQuery("""
                     MATCH (group:Group {group_id:$group_id})
                     MATCH (topic:Topic {topic_id:$topic_id})
-                    CREATE (group)-[:INTERESTED_IN]-(topic)
-                    
+                    CREATE (group)-[:INTERESTED_IN]->(topic)
+                    CREATE (group)<-[:INTERESTED_IN]-(topic)
                     """).withConfig(QueryConfig.builder().withDatabase(neo4jDatabase).build()).withParameters(Map.of("group_id", group_id, "topic_id", topic_id)).execute();
         }
     }
@@ -147,7 +150,9 @@ public class Neo4JOperations {
             driver.executableQuery("""
                     MATCH (group:Group {group_id:$group_id})
                     MATCH (member:Member {member:$member_id})
-                    CREATE (member)-[:MEMBER_OF]-(group)
+                    CREATE (member)-[:MEMBER_OF]->(group)
+                    CREATE (member)<-[:MEMBER_OF]-(group)
+
                     """).withConfig(QueryConfig.builder().withDatabase(neo4jDatabase).build()).withParameters(Map.of("group_id", group_id, "member_id", member_id)).execute();
         }
     }
@@ -180,7 +185,7 @@ public class Neo4JOperations {
        for (String key:document.keySet()){
            node.append(key.replaceAll("\"",""));
            node.append(": ");
-           node.append("\""+document.get(key).toString()+"\"");
+           node.append("\""+(document.get(key)!=null ? document.get(key).toString() : "")+"\"");
            node.append(",");
        }
        node.deleteCharAt(node.lastIndexOf(","));

@@ -47,8 +47,7 @@ public class CsvToMongoTransformer {
    if (csvPath.contains("edge")) return; //THESE ARE FOR THE Neo4J so not needed here
 
 
-        if (!Files.isDirectory(Path.of(csvPath))
-        ) {
+        if (!Files.isDirectory(Path.of(csvPath))) {
             MongoCollection<Document> collection = csvDocuments.getCollection(
                     csvPath.substring(csvPath.lastIndexOf(File.separator) + 1));
 
@@ -97,9 +96,9 @@ public class CsvToMongoTransformer {
 // throughout collections of the first dataset in order to save the state of rsvps.csv for the GraphDB
        Thread thread1 = new Thread(() -> MongoDbUserOperations.updateIdsForMembers());
         Thread thread2 = new Thread( () ->  updateIdsForCollection("meta-events.csv", "event_id",
-                "events.csv", "event_id"));
+                 "event_id","events.csv"));
         Thread thread3 = new Thread( () ->    updateIdsForCollection("meta-groups.csv", "group_id",
-                "groups.csv", "group_id"));
+                "group_id","groups.csv","members.csv","groups_topics.csv","events.csv" ));
 //
         thread1.start();
         thread2.start();
@@ -135,10 +134,10 @@ public class CsvToMongoTransformer {
 
 
 
-
         long endingTime = System.currentTimeMillis();
 
         System.out.println("THE  PROCESS TOOK "+(endingTime-startingTime)/1000 +" seconds ");
+
 
     }
 
@@ -175,22 +174,31 @@ public class CsvToMongoTransformer {
         return flattenedMap;
     }
 
-
     /**
-Get all Ids/Otherkeys from the collection of the sourceCollection
-and assign them randomly to the records of the destinationCollection
+     *
+     * @param sourceCollection The meta collection from which we will get the id
+     * @param sourceKey
+     * @param destinationCollections  All the collections which need to update the key (id) to what has been chosen from sourceCollection
+     *                                for example (meta-groups ---> group_id  -->   group.csv, groups_topics.csv , events.csv)
+     * @param destinationKey   The key needs to have the same name for all the destinationCollections , e.g. group_id
+     * @return
+     */
 
-For now ,it is supposed to assign random Ids from the collections of the second dataset
- to the collections of the first dataset , in order to not change the GraphDB edges (rsvps.csv)
- */
-    public static List<String> updateIdsForCollection(String sourceCollection, String sourceKey, String destinationCollection, String destinationKey){
+    public static List<String> updateIdsForCollection(String sourceCollection, String sourceKey, String destinationKey, String... destinationCollections){
         MongoCollection sourceColl= CsvToMongoTransformer.csvDocuments.getCollection(sourceCollection);
-        MongoCollection destColl= CsvToMongoTransformer.csvDocuments.getCollection(destinationCollection);
+        if (destinationCollections==null || destinationCollections.length<1) throw new RuntimeException("Please provide a destinationCollection");
+
+        List<MongoCollection> destinationColls = new ArrayList<>();
+
+        for (String destColl : destinationCollections){
+            destinationColls.add(CsvToMongoTransformer.csvDocuments.getCollection(destColl));
+        }
+//        MongoCollection destColl= CsvToMongoTransformer.csvDocuments.getCollection(destinationCollection);
 
         List<String> IdsFromSourceColl = retrieveIds(sourceCollection,sourceKey);
 
         int totalSourceRecords=IdsFromSourceColl.size();
-        List<String> destinationIds = retrieveIds(destinationCollection,destinationKey);
+        List<String> destinationIds = retrieveIds(destinationCollections[0], destinationKey);
         int totalDesinationRecords = destinationIds.size();
 
 
@@ -210,12 +218,16 @@ For now ,it is supposed to assign random Ids from the collections of the second 
 
             chosenRecords.add(chosenRecord);
 
-            destColl.updateMany(
-                    Filters.eq(destinationKey, chosenRecord),
-                    new Document("$set",
-                            new Document(destinationKey, IdsFromSourceColl.get(idsChosen))
-                    )
-            );
+            //Updating the key for all the collections
+            for (MongoCollection destinationCollection : destinationColls) {
+
+                destinationCollection.updateMany(
+                        Filters.eq(destinationKey, chosenRecord),
+                        new Document("$set",
+                                new Document(destinationKey, IdsFromSourceColl.get(idsChosen))
+                        )
+                );
+            }
 
             idsChosen++;
         }

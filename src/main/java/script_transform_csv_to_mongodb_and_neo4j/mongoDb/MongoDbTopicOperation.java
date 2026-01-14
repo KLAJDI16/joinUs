@@ -18,7 +18,7 @@ public class MongoDbTopicOperation {
         this.mongoOriginalDatabase = mongoOriginalDatabase;
     }
 
-    public MongoCollection getNewTopiCollection() {
+    public MongoCollection getNewTopicCollection() {
         mongoOriginalDatabase.createCollection(newTopicCollectionName);
         MongoCollection mongoCollection = mongoOriginalDatabase.getCollection(newTopicCollectionName);
         return mongoCollection;
@@ -49,7 +49,7 @@ public class MongoDbTopicOperation {
     }
 
     public void createTopicCollection(){
-        MongoCollection newCollection = getNewTopiCollection();
+        MongoCollection newCollection = getNewTopicCollection();
         MongoCollection oldCollection= CsvToMongoTransformer.csvDocuments.getCollection("topics.csv");
         MongoCursor mongoCursor = oldCollection.find().cursor();
         Document newDocument;

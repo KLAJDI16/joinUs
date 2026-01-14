@@ -14,9 +14,9 @@ public class MongoToNeo4JTransformer {
     private static String dbPassword="Klajdi2003.";
     private static String defaultDatabase="neo4j";
 
-    public static Driver driver ;
+    public  Driver driver ;
 
-    private static void initDriver() {
+    private  void initDriver() {
      Config config =    Config.builder()
                 .withConnectionTimeout(2, TimeUnit.MINUTES)
                 .withMaxConnectionPoolSize(100)
@@ -29,7 +29,7 @@ public class MongoToNeo4JTransformer {
             driver=GraphDatabase.driver(uri,config);
         }
     }
-    public static Driver getNeo4jDriver(){
+    public  Driver getNeo4jDriver(){
         if (driver==null) {
             initDriver();
         }
@@ -60,6 +60,9 @@ public class MongoToNeo4JTransformer {
         neo4JOperations.createGroupTopicsEdges();
         neo4JOperations.createGroupMemberEdges();
         neo4JOperations.createMemberTopicsEdges();
+
+        neo4JOperations.mongoClient.close();
+        this.driver.close();
 
     }
 }
