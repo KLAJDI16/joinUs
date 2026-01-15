@@ -1,0 +1,105 @@
+package com.example.joinUs.model.mongodb;
+
+
+import com.example.joinUs.dto.EventDTO;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.MongoId;
+//import org.springframework.data.mongodb.core;
+
+
+import java.util.Date;
+import java.util.List;
+
+@Data
+//@JsonInclude(JsonInclude.Include.NON_NULL)
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Document(collection = "events")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class Event {
+
+    @Id
+    @Field("_id")
+    private ObjectId id;
+
+    @Field("event_id")
+    private String event_id;
+
+    @Field("description")
+    private String description;
+
+    @Field("event_url")
+    private String event_url;
+
+    @Field("event_name")
+    private String event_name;
+
+    @Field("event_status")
+    private String event_status;
+
+    @Field("created")
+    private Date created;
+
+    @Field("event_time")
+    private Date event_time;
+
+    @Field("updated")
+    private Date updated;
+
+    @Field("duration")
+    private long duration;
+
+    @Field("utc_offset")
+    private long utc_offset;
+
+    @Field("categories")
+    private List<Category> categories;
+
+    @Field("member_count")
+    private double member_count;
+
+//     @Field("venue")
+//     private Venue venue;
+
+    @Field("creator_group")
+    private Group creator_group;
+
+        public EventDTO toDTO() {
+            EventDTO dto = new EventDTO();
+
+            dto.setEvent_id(this.event_id);
+            dto.setEvent_name(this.event_name);
+            dto.setEvent_url(this.event_url);
+            dto.setDescription(this.description);
+            dto.setEvent_status(this.event_status);
+
+            dto.setCreated(this.created);
+            dto.setEvent_time(this.event_time);
+            dto.setUpdated(this.updated);
+
+            dto.setDuration(this.duration);
+            dto.setUtc_offset(this.utc_offset);
+
+            dto.setMember_count(this.member_count);
+
+            dto.setCategories(this.categories);
+
+            if (this.creator_group!=null) {
+                dto.setCreator_group(this.creator_group.toDTO());
+            }
+//            dto.setVenue(this.venue);
+            return dto;
+        }
+
+
+}
+
