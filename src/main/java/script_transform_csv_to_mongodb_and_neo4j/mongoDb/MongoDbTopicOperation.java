@@ -5,6 +5,8 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
+import script_transform_csv_to_mongodb_and_neo4j.ParallelExecutor;
+import script_transform_csv_to_mongodb_and_neo4j.neo4j.Neo4JOperations;
 
 import java.util.List;
 
@@ -12,10 +14,12 @@ public class MongoDbTopicOperation {
     public MongoClient mongoClient;
     public MongoDatabase mongoOriginalDatabase;
     public static String newTopicCollectionName ="topics";
+    private final ParallelExecutor parallelExecutor;
 
-    public MongoDbTopicOperation(MongoClient mongoClient, MongoDatabase mongoOriginalDatabase) {
+    public MongoDbTopicOperation(MongoClient mongoClient, MongoDatabase mongoOriginalDatabase, ParallelExecutor parallelExecutor) {
         this.mongoClient = mongoClient;
         this.mongoOriginalDatabase = mongoOriginalDatabase;
+        this.parallelExecutor = parallelExecutor;
     }
 
     public MongoCollection getNewTopicCollection() {
@@ -25,9 +29,10 @@ public class MongoDbTopicOperation {
     }
 
 
-    public MongoDbTopicOperation(MongoClient mongoClient) {
+    public MongoDbTopicOperation(MongoClient mongoClient, ParallelExecutor parallelExecutor) {
         this.mongoClient = mongoClient;
         mongoOriginalDatabase = mongoClient.getDatabase("joinUs");
+        this.parallelExecutor = parallelExecutor;
     }
 
 
@@ -51,13 +56,28 @@ public class MongoDbTopicOperation {
     public void createTopicCollection(){
         MongoCollection newCollection = getNewTopicCollection();
         MongoCollection oldCollection= CsvToMongoTransformer.csvDocuments.getCollection("topics.csv");
-        MongoCursor mongoCursor = oldCollection.find().cursor();
-        Document newDocument;
-        Document oldDocument;
-        while (mongoCursor.hasNext()){
-            oldDocument=(Document) mongoCursor.next();
-            newDocument=extractTopicDocument(oldDocument);
-            newCollection.insertOne(newDocument);
+        try (MongoCursor<Document> mongoCursor = oldCollection.find().cursor()) {
+
+            Document oldDocument;
+            final boolean[] neo4jIndexCreated = {false};
+
+            while (mongoCursor.hasNext()) {
+                oldDocument =  mongoCursor.next();
+
+                Document finalOldDocument1 = oldDocument;
+                parallelExecutor.submit( () -> {
+                       Neo4JOperations.createTopicNode(finalOldDocument1, null, true);
+
+                       if (!neo4jIndexCreated[0]) {
+                           Neo4JOperations.createNeo4JIndex("Topic", "topic_id");
+                           neo4jIndexCreated[0] = true;
+                       }
+
+                   });
+
+                Document finalOldDocument = oldDocument;
+                parallelExecutor.submit( () ->  newCollection.insertOne(extractTopicDocument(finalOldDocument)) );
+            }
         }
     }
 }

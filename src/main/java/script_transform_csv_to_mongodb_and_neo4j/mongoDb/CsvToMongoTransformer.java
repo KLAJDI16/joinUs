@@ -6,17 +6,16 @@ import com.opencsv.CSVReader;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import script_transform_csv_to_mongodb_and_neo4j.ConfigurationFileReader;
-import tools.jackson.databind.ObjectMapper;
+import script_transform_csv_to_mongodb_and_neo4j.CsvDataUpdater;
+import script_transform_csv_to_mongodb_and_neo4j.ParallelExecutor;
 
-import javax.print.Doc;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class CsvToMongoTransformer {
 
@@ -26,153 +25,97 @@ public class CsvToMongoTransformer {
     public static final MongoDatabase csvDocuments = client.getDatabase("CSV_Documents");
     public static final MongoDatabase newMongoDatabase=client.getDatabase(ConfigurationFileReader.getMongoDatabase());
     private static final int BATCH_SIZE = 1000;
+    private final ParallelExecutor parallelExecutor;
+    public static boolean useCsvDataUpdater = true; // if true update data directly in CSV before importin , else update through mongodb
 
-
-
-
-    /**
-     *
-     * @param csvPath folder to find the files to import on MongoDB as they are
-     * @throws Exception
-     *
-     * The goal of this method is simply to import the csv data on MongoDB ,
-     * which would still require the necessary modifications to make sense for MongoDB.
-     *
-     *
-     */
-    public static void importCsvToMongoDB(
-            String csvPath
-    ) throws Exception {
-
-
-   if (csvPath.contains("edge")) return; //THESE ARE FOR THE Neo4J so not needed here
-
-        if (!Files.isDirectory(Path.of(csvPath))) {
-            MongoCollection<Document> collection = csvDocuments.getCollection(
-                    csvPath.substring(csvPath.lastIndexOf(File.separator) + 1));
-
-            try (CSVReader reader = new CSVReader(
-                    new FileReader(csvPath))) {
-
-                String[] header = reader.readNext(); // first line
-                String[] row;
-
-                List<Document> batch = new ArrayList<>();
-
-                while ((row = reader.readNext()) != null) {
-                    Document doc = new Document();
-
-                    for (int i = 0; i < header.length; i++) {
-                        doc.append(header[i].contains(".") ? header[i].replace(".","___") : header[i], row.length > i ? row[i] : null);
-                    }
-
-                    batch.add(doc);
-
-                    if (batch.size() == BATCH_SIZE) {
-                        collection.insertMany(batch);
-                        batch.clear();
-                    }
-                }
-                if (!batch.isEmpty()) {
-                    collection.insertMany(batch);
-                }
-            }
-        } else {
-            for (File file : new File(csvPath).listFiles()) {
-                importCsvToMongoDB(file.toString());
-            }
-        }
+    public CsvToMongoTransformer(ParallelExecutor parallelExecutor){
+        this.parallelExecutor = parallelExecutor;
     }
 
-
-    public void tranformCsvDataToMongoDB() throws Exception {
+    public void transformCsvDataToMongoDB() throws Exception {
 
                 long startingTime = System.currentTimeMillis();
 
 // Step-1 , import all the csv data to MongoDB as it is (replace '.' with '___' in the fields that contain '.' due to issues with MongoDB)
-//        System.out.println("IMPORTING THE CSV DATA INTO MongoDB !!!! ");
-
-        importCsvToMongoDB(firstDatasetFolder);
-        importCsvToMongoDB(secondDatasetFolder);
-
-//Step-2 , Get Ids from the second dataset and assign them
-// throughout collections of the first dataset in order to save the state of rsvps.csv for the GraphDB
-
-
-
-
-        Thread thread2 = new Thread( () -> {
-
-            updateIdsForCollection("meta-events.csv", "event_id",
-                    "event_id", "events.csv");
-            System.out.println("UPDATED THE COLLECTION : updateIdsForCollection.events");
-
+ArrayList<Future> futureArrayList =new ArrayList<>();
+        if (useCsvDataUpdater){
+        CsvDataUpdater.updateIdsDirectlyFromCSV();
         }
-        );
 
-        Thread thread1 = new Thread(() ->{
+        System.out.println("IMPORTING THE CSV DATA INTO MongoDB !!!! ");
 
-            MongoDbUserOperations.updateIdsForMembers();
-            System.out.println("UPDATED THE COLLECTION : MongoDbUserOperations.updateIdsForMembers()");
+        importCsvToMongoDB(firstDatasetFolder,-1);
+        importCsvToMongoDB(secondDatasetFolder,-1);
 
-        });
+        if (useCsvDataUpdater) importCsvToMongoDB(CsvDataUpdater.transformedDatasetFolder,-1);
 
-        Thread thread3 = new Thread( () -> {
+        System.out.println("FINISHED IMPORTING THE CSV DATA INTO MongoDB !!!! ");
 
-            updateIdsForCollection("meta-groups.csv", "group_id",
-                    "group_id", "groups.csv", "members.csv", "groups_topics.csv", "events.csv");
-            System.out.println("UPDATED THE COLLECTION : updateIdsForCollection.groups");
+        if (!useCsvDataUpdater) updateIdsFromMongoDb();
 
-        });
 
-        thread1.start();
-        thread2.start();
-        thread3.start();
-        thread1.join();
-        thread2.join();
-        thread3.join();
-//
-////Step-3 ,Create the new Collection we will use for our project , in the new database 'JoinUs'
+        createIndexesForCsvCollections();
+
+
+
+//Step-2 ,Create the new Collection we will use for our project , in the new database 'JoinUs'
 //
         System.out.println("NOW READY TO CREATE THE NEW DATABASE !!!! ");
-
+//
         System.out.println("CREATING THE COLLECTION : createEventCollection");
-
-        new MongoDbEventOperations(client,newMongoDatabase).createEventCollection();
-
-
-        Thread thread4 =  new Thread(() ->   new MongoDbUserOperations(client,newMongoDatabase)
-            .createMemberCollection(true));
-
-
-        Thread thread5 =     new Thread(() -> {
-            try {
-                new MongoDbGroupOperations(client,newMongoDatabase).createGroupCollection();
-            } catch (ParseException e) {
+//
+        futureArrayList.add( parallelExecutor.submit(() ->   {
+            try {     new MongoDbEventOperations(client,newMongoDatabase,parallelExecutor).createEventCollection();
+      createIndexesForEventsCollection();
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        });
-
-        Thread thread6 =     new Thread(() ->    new MongoDbTopicOperation(client,newMongoDatabase).createTopicCollection());
-
-        Thread thread7 =     new Thread(() ->    new MongoDbCityOperation(client,newMongoDatabase).createCityCollection());
-
-        thread4.start();
-        thread5.start();
-        thread6.start();
-        thread7.start();
-
-        thread4.join();
-        thread5.join();
-        thread6.join();
-        thread7.join();
+            System.out.println("Finished creating Events Collection");
+        }));
+        futureArrayList.add( parallelExecutor.submit(() ->   {
+            try {
+                new MongoDbUserOperations(client,newMongoDatabase,parallelExecutor)
+                .createMemberCollection(true);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("Finished creating Member Collection");
+            createIndexesForMembersCollection();
+        }));
 
 
+        futureArrayList.add( parallelExecutor.submit(() -> {
+            try {
+                new MongoDbGroupOperations(client,newMongoDatabase,parallelExecutor).createGroupCollection();
+            System.out.println("Finished creating Group Collection");
+            createIndexesForGroupsCollection();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }) );
 
+
+      futureArrayList .add( parallelExecutor.submit(() ->  {
+
+          new MongoDbTopicOperation(client,newMongoDatabase,parallelExecutor).createTopicCollection();
+          createIndexesForTopicsCollection();
+        }
+        ));
+
+        futureArrayList .add( parallelExecutor.submit(() ->  {
+
+          new MongoDbCityOperation(client,newMongoDatabase,parallelExecutor).createCityCollection();
+            createIndexesForMembersCollection();
+
+        }));
+
+
+        parallelExecutor.getFutures(futureArrayList);
+//
         long endingTime = System.currentTimeMillis();
 
-        System.out.println("THE  PROCESS TOOK "+(endingTime-startingTime)/1000 +" seconds ");
 
+        System.out.println("THE  PROCESS TOOK "+(endingTime-startingTime)/1000 +" seconds ");
 
     }
 
@@ -209,6 +152,35 @@ public class CsvToMongoTransformer {
         return flattenedMap;
     }
 
+    public  void updateIdsFromMongoDb(){
+
+        parallelExecutor.submit( () -> {
+
+            updateIdsForCollection(parallelExecutor,"meta-events.csv", "event_id",
+                    "event_id", "events.csv");
+            System.out.println("UPDATED THE COLLECTION : updateIdsForCollection.events");
+
+        });
+
+        parallelExecutor.submit( () ->{
+            MongoDbUserOperations.updateIdsForMembers();
+//
+//            updateIdsForCollection("meta-members.csv","member_id","member_id","members.csv");
+            System.out.println("UPDATED THE COLLECTION : updateIdsForMembers.members");
+//
+        });
+
+
+        parallelExecutor.submit( () -> {
+//
+            updateIdsForCollection(parallelExecutor,"meta-groups.csv", "group_id",
+                    "group_id", "groups.csv", "groups_topics.csv", "events.csv","members.csv");//
+            System.out.println("UPDATED THE COLLECTION : updateIdsForCollection.groups");
+
+        });
+
+    }
+
     /**
      *
      * @param sourceCollection The meta collection from which we will get the id
@@ -218,23 +190,25 @@ public class CsvToMongoTransformer {
      * @param destinationKey   The key needs to have the same name for all the destinationCollections , e.g. group_id
      * @return
      */
-
-    public static List<String> updateIdsForCollection(String sourceCollection, String sourceKey, String destinationKey, String... destinationCollections){
-        MongoCollection sourceColl= CsvToMongoTransformer.csvDocuments.getCollection(sourceCollection);
-        if (destinationCollections==null || destinationCollections.length<1) throw new RuntimeException("Please provide a destinationCollection");
+    public static void updateIdsForCollection(ParallelExecutor parallelExecutor ,String sourceCollection, String sourceKey,
+                                                      String destinationKey, String... destinationCollections) {
+        MongoCollection sourceColl = CsvToMongoTransformer.csvDocuments.getCollection(sourceCollection);
+        sourceColl.createIndex(new Document(sourceKey,1));
+        if (destinationCollections == null || destinationCollections.length < 1)
+            throw new RuntimeException("Please provide a destinationCollection");
 
         List<MongoCollection> destinationColls = new ArrayList<>();
 
-        for (String destColl : destinationCollections){
+        for (String destColl : destinationCollections) {
             destinationColls.add(CsvToMongoTransformer.csvDocuments.getCollection(destColl));
         }
 //        MongoCollection destColl= CsvToMongoTransformer.csvDocuments.getCollection(destinationCollection);
 
-        List<String> IdsFromSourceColl = retrieveIds(sourceCollection,sourceKey);
+        List<String> IdsFromSourceColl = retrieveIds(sourceCollection, sourceKey);
 
-        int totalSourceRecords=IdsFromSourceColl.size();
+        int totalSourceRecords = IdsFromSourceColl.size();
         List<String> destinationIds = retrieveIds(destinationCollections[0], destinationKey);
-        int totalDesinationRecords = destinationIds.size();
+        int totalDestinationRecords = destinationIds.size();
 
 
         Set<String> chosenRecords = new HashSet<>();
@@ -242,31 +216,120 @@ public class CsvToMongoTransformer {
         Random random = new Random();
         String chosenRecord;
 
-        int idsChosen =0;
+        int idsChosen = 0;
 
 
-        while (idsChosen < Math.min(totalSourceRecords,totalDesinationRecords)){
-            do{
-                chosenRecord = destinationIds.get(random.nextInt(totalDesinationRecords));
+        while (idsChosen < Math.min(totalSourceRecords, totalDestinationRecords)) {
+            do {
+                chosenRecord = destinationIds.get(random.nextInt(totalDestinationRecords));
             }
             while (chosenRecords.contains(chosenRecord));
 
             chosenRecords.add(chosenRecord);
 
+            List<Thread> threadList = new ArrayList<>();
             //Updating the key for all the collections
-            for (MongoCollection destinationCollection : destinationColls) {
+//            for (MongoCollection destinationCollection : destinationColls) {
 
-                destinationCollection.updateMany(
-                        Filters.eq(destinationKey, chosenRecord),
-                        new Document("$set",
-                                new Document(destinationKey, IdsFromSourceColl.get(idsChosen))
-                        )
-                );
+            Future[] futures = new Future[destinationCollections.length];
+          int i=0;
+            for (String destCollection:destinationCollections){
+                MongoCollection<Document> destinationCollection = CsvToMongoTransformer.csvDocuments.getCollection(destCollection);
+
+                String finalChosenRecord = chosenRecord;
+                int finalIdsChosen = idsChosen;
+                futures[i++] =parallelExecutor.submit( () ->{ destinationCollection.updateMany(
+                            Filters.eq(destinationKey, finalChosenRecord),
+                            new Document("$set",
+                                    new Document(destinationKey, IdsFromSourceColl.get(finalIdsChosen))
+                            )
+                    ); });
             }
-
+            for (Future future : futures) {
+                try {
+                    future.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+            }
             idsChosen++;
+
         }
-        return chosenRecords.stream().toList();
+//        return chosenRecords.stream().toList();
+    }
+
+    public static void createIndexesForCsvCollections(){
+        MongoCollection metaMembersCollection= CsvToMongoTransformer.csvDocuments.getCollection("meta-members.csv");
+        metaMembersCollection.createIndex(new Document("member_id",1));
+
+        MongoCollection metaEventsCollection= CsvToMongoTransformer.csvDocuments.getCollection("meta-events.csv");
+        metaEventsCollection.createIndex(new Document("event_id",1));
+
+        MongoCollection metaGroupsCollection= CsvToMongoTransformer.csvDocuments.getCollection("meta-groups.csv");
+        metaGroupsCollection.createIndex(new Document("group_id",1));
+
+        MongoCollection membersCollection= CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
+        membersCollection.createIndex(new Document("member_id",1));
+        membersCollection.createIndex(new Document("group_id",1));
+
+        MongoCollection memberTopicsCollection= CsvToMongoTransformer.csvDocuments.getCollection("members_topics.csv");
+        memberTopicsCollection.createIndex(new Document("member_id",1));
+        memberTopicsCollection.createIndex(new Document("topic_id",1));
+
+        MongoCollection rsvpsCollection= CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
+        rsvpsCollection.createIndex(new Document("member_id",1));
+        rsvpsCollection.createIndex(new Document("event_id",1));
+        rsvpsCollection.createIndex(new Document("group_id",1));
+
+        MongoCollection groupsCollection= CsvToMongoTransformer.csvDocuments.getCollection("groups.csv");
+        groupsCollection.createIndex(new Document("group_id",1));
+        groupsCollection.createIndex(new Document("group_name",1));
+
+        MongoCollection groupTopicsCollection= CsvToMongoTransformer.csvDocuments.getCollection("groups_topics.csv");
+        groupTopicsCollection.createIndex(new Document("group_id",1));
+        groupTopicsCollection.createIndex(new Document("topic_id",1));
+//
+//group_name
+        MongoCollection eventsCollection= CsvToMongoTransformer.csvDocuments.getCollection("events.csv");
+        eventsCollection.createIndex(new Document("event_id",1));
+        eventsCollection.createIndex(new Document("event_name",1));
+        eventsCollection.createIndex(new Document("group_id",1));
+
+        MongoCollection citiesCollection= CsvToMongoTransformer.csvDocuments.getCollection("cities.csv");
+        citiesCollection.createIndex(new Document("city",1));
+        citiesCollection.createIndex(new Document("city_id",1));
+
+    }
+    public static void createIndexesForNewCollections(){
+        createIndexesForEventsCollection();
+        createIndexesForGroupsCollection();
+        createIndexesForMembersCollection();
+        createIndexesForCitiesCollections();
+        createIndexesForCitiesCollections();
+    }
+    public static void createIndexesForCitiesCollections(){
+
+        MongoCollection citiesCollection= CsvToMongoTransformer.newMongoDatabase.getCollection("cities");
+        citiesCollection.createIndex(new Document("name",1));
+
+    }
+    public static void createIndexesForEventsCollection(){
+        MongoCollection eventsCollection= CsvToMongoTransformer.newMongoDatabase.getCollection("events");
+        eventsCollection.createIndex(new Document("event_id",1));
+        eventsCollection.createIndex(new Document("event_name",1));
+        eventsCollection.createIndex(new Document("group_id",1));
+    }
+    public static void createIndexesForMembersCollection(){
+        MongoCollection membersCollection= CsvToMongoTransformer.newMongoDatabase.getCollection("members");
+        membersCollection.createIndex(new Document("member_id",1));
+    }
+    public static void createIndexesForGroupsCollection(){
+        MongoCollection groupsCollection= CsvToMongoTransformer.newMongoDatabase.getCollection("groups");
+        groupsCollection.createIndex(new Document("group_id",1));
+    }
+    public static void createIndexesForTopicsCollection(){
+        MongoCollection topicsCollection= CsvToMongoTransformer.newMongoDatabase.getCollection("topics");
+        topicsCollection.createIndex(new Document("topic_id",1));
     }
 
     public static List<String> retrieveIds(String collection,String key){
@@ -328,7 +391,7 @@ public class CsvToMongoTransformer {
 
         for (String coll : collectionsToVerify) {
             allCollectionsCreated.set(false);
-            client.getDatabase(ConfigurationFileReader.getNeo4JDatabase()).listCollectionNames().forEach(e -> {
+            client.getDatabase(ConfigurationFileReader.getMongoDatabase()).listCollectionNames().forEach(e -> {
                 if (e.equalsIgnoreCase(coll)) {
                     allCollectionsCreated.set(true);
                 }
@@ -355,7 +418,76 @@ public class CsvToMongoTransformer {
         return document1;
     }
 
+    /**
+     *
+     * @param csvPath folder to find the files to import on MongoDB as they are
+     * @throws Exception
+     *
+     * The goal of this method is simply to import the csv data on MongoDB ,
+     * which would still require the necessary modifications to make sense for MongoDB.
+     *
+     *
+     */
+    public static void importCsvToMongoDB(
+            String csvPath,double membersCsvLimit
+    ) throws Exception {
+
+        if (filterForImportCsvToMongoDBMethod(csvPath)) return; //THESE ARE FOR THE Neo4J so not needed here
+
+        if (!Files.isDirectory(Path.of(csvPath))) {
+            MongoCollection<Document> collection = csvDocuments.getCollection(
+                    csvPath.substring(csvPath.lastIndexOf(File.separator) + 1));
+
+            try (CSVReader reader = new CSVReader(
+                    new FileReader(csvPath))) {
+
+                String[] header = reader.readNext(); // first line
+                String[] row;
+
+                List<Document> batch = new ArrayList<>();
+
+                double rowCount=0;
+                while ((row = reader.readNext()) != null) {
+                    Document doc = new Document();
+
+                    for (int i = 0; i < header.length; i++) {
+                        doc.append(header[i].contains(".") ? header[i].replace(".","___") : header[i], row.length > i ? row[i] : null);
+                    }
+
+                    batch.add(doc);
 
 
+                    if (batch.size() == BATCH_SIZE) {
+                        collection.insertMany(batch);
+                        batch = new ArrayList<>();
+                    }
+                    if (csvPath.contains("members.csv") && (membersCsvLimit>0 && rowCount>=membersCsvLimit)) break;
+                    rowCount++;
+                }
+                if (!batch.isEmpty()) {
+                    collection.insertMany(batch);
+                }
+            }
+        } else {
+            for (File file : new File(csvPath).listFiles()) {
+                importCsvToMongoDB(file.toString(),membersCsvLimit);
+            }
+        }
+    }
 
+    public static boolean filterForImportCsvToMongoDBMethod(String csvPath){
+        if (!Files.isDirectory(Path.of(csvPath))){
+            if (csvPath.contains("edge")) return true;
+
+            if (useCsvDataUpdater==true && ! ((new File(csvPath).getParent()+"\\").equalsIgnoreCase(CsvDataUpdater.transformedDatasetFolder))){
+                for (File file:new File(CsvDataUpdater.transformedDatasetFolder).listFiles()){
+                    if (file.getName().equalsIgnoreCase(csvPath.substring(csvPath.lastIndexOf("\\")+1))) {
+                        return true;
+                    }
+                }
+            }
+
+        }
+        return false;
+    }
 }
