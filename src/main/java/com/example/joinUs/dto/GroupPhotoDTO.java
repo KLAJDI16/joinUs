@@ -12,18 +12,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CityDTO {
+public class GroupPhotoDTO {
 
-    private String id;
-    private String name;
-
-    private String country;
-    private String zip;
-    private String state;
-    private String localizedCountryName;
-
-    private Double latitude;
-    private Double longitude;
-    private Double distance;
+    private String baseUrl;
+    private String highresLink;
+    private String photoId;
+    private String photoLink;
+    private String thumbLink;
+    private String type;
 
 }

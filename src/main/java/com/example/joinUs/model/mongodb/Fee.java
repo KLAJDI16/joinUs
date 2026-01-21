@@ -1,28 +1,20 @@
 package com.example.joinUs.model.mongodb;
 
-
-import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 @Data
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Fee {
 
-private String accepts;
-private Long amount;
-private String description;
-private Boolean isRequired;
+    private String accepts;
+    private Integer amount;
+    private String description;
+    private Boolean isRequired;
 
-    //        "fee": {
-//        "accepts": "others",
-//                "amount": 0,
-//                "description": "per person",
-//                "isRequired": false
-//    },
 }

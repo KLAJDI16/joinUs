@@ -1,13 +1,14 @@
 package com.example.joinUs.dto;
 
-import com.example.joinUs.model.mongodb.Category;
-import com.example.joinUs.model.mongodb.City;
-import com.example.joinUs.model.mongodb.GroupPhoto;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 import java.util.List;
+
 
 @Data
 @NoArgsConstructor
@@ -16,22 +17,23 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GroupDTO {
 
-    private String group_id;
+    private String groupId;
     private String description;
-    private String group_name;
+    private String groupName;
     private String link;
     private String timezone;
     private Date created;
 
     private CityDTO city;
-    private List<Category> categories;
+    private List<CategoryDTO> categories;
 
-    private Double member_count;
-    private Double event_count;
+    private Integer memberCount;
+    private Integer eventCount;
 
-    private List<UserDTO> organizer_members;
-    private List<EventDTO> upcoming_events;
+    private List<UserDTO> organizerMembers;
+    private List<EventDTO> upcomingEvents;
 
-    private GroupPhoto group_photo;
+    private GroupPhotoDTO groupPhoto;
+
 }
 

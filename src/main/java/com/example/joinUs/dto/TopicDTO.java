@@ -12,18 +12,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CityDTO {
+public class TopicDTO {
 
-    private String id;
-    private String name;
-
-    private String country;
-    private String zip;
-    private String state;
-    private String localizedCountryName;
-
-    private Double latitude;
-    private Double longitude;
-    private Double distance;
+    private String topicId;
+    private String topicName;
+    private String link;
+    private String description;
+    private String urlkey;
 
 }

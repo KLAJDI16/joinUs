@@ -43,9 +43,10 @@ public class UserService {
     private MongoTemplate mongoTemplate;
 
     public List<UserDTO> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(user -> user.toDTO())
-                .toList();
+        return null; // TODO
+//        return userRepository.findAll().stream()
+//                .map(user -> user.toDTO())
+//                .toList();
     }
 
     public UserDTO getUserProfile(){

@@ -8,22 +8,14 @@ import lombok.NoArgsConstructor;
 
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CityDTO {
+public class CategoryDTO {
 
-    private String id;
+    private String categoryId;
     private String name;
-
-    private String country;
-    private String zip;
-    private String state;
-    private String localizedCountryName;
-
-    private Double latitude;
-    private Double longitude;
-    private Double distance;
+    private String shortName;
 
 }

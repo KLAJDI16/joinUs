@@ -1,7 +1,5 @@
 package com.example.joinUs.dto;
 
-import com.example.joinUs.model.mongodb.Category;
-import com.example.joinUs.model.mongodb.Venue;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 import java.util.List;
 
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,22 +17,25 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class EventDTO {
 
-    private String event_id;
-    private String event_name;
-    private String event_url;
+    private String eventId;
+    private String eventName;
+    private String eventUrl;
     private String description;
-    private String event_status;
+    private String eventStatus;
 
     private Date created;
-    private Date event_time;
+    private Date eventTime;
     private Date updated;
 
-    private Long duration;
-    private Long utc_offset;
+    private Integer duration;
+    private Integer utcOffset;
 
-    private Double member_count;
+    private FeeDTO fee;
+    private VenueDTO venue;
+    private List<CategoryDTO> categories;
 
-    private List<Category> categories;
-    private GroupDTO creator_group;
-    private Venue venue;
+    private Integer memberCount;
+
+    private GroupDTO creatorGroup;
+
 }
