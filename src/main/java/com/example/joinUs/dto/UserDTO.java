@@ -1,10 +1,13 @@
 package com.example.joinUs.dto;
 
-import com.example.joinUs.model.mongodb.Topic;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
+
 
 @Data
 @NoArgsConstructor
@@ -13,18 +16,19 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDTO {
 
-    private String member_id;
-    private String member_name;
+    private String memberId;
+    private String memberName;
 
     private CityDTO city;
 
-    private String member_status;
+    private String memberStatus;
     private String bio;
 
-    private List<Topic> topics;
+    private List<TopicDTO> topics;
 
-    private double event_count;
-    private double group_count;
+    private Integer eventCount;
+    private Integer groupCount;
 
-    private List<EventDTO> upcoming_events;
+    private List<EventDTO> upcomingEvents;
+
 }

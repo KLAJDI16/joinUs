@@ -1,15 +1,15 @@
 package com.example.joinUs.service;
 
 import com.example.joinUs.dto.EventDTO;
-import com.example.joinUs.dto.EventNeo4jDTO;
+import com.example.joinUs.mapping.EventMapper;
 import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.repository.EventRepository;
 import com.example.joinUs.repository.Event_Neo4J_Repo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
 
 @Service
 public class EventService {
@@ -18,20 +18,19 @@ public class EventService {
     private EventRepository eventRepository;
 
     @Autowired
-    private Event_Neo4J_Repo eventNeo4JRepo;
+    private EventMapper eventMapper;
 
     @Autowired
-    private MongoTemplate mongoTemplate;
+    private Event_Neo4J_Repo eventNeo4JRepo; // TODO
 
-    public List<EventDTO> getAllEvents(){
-        return eventRepository.findAll().stream()
-                .map(Event::toDTO)
-                .toList();
+    public List<EventDTO> getAllEvents() {
+        List<Event> events = eventRepository.findAll();
+        return eventMapper.toDTOs(events);
     }
 
-    public List<EventNeo4jDTO> getAllEventsFromGraph(){
-        return eventNeo4JRepo.findAll().stream()
-                .map(e -> e.toDTO())
-                .toList();
+    public EventDTO getEventById(String id) {
+        Event event = eventRepository.findByEventId(id);
+        return eventMapper.toDTO(event);
     }
+
 }

@@ -1,5 +1,6 @@
 package com.example.joinUs.dto;
 
+import com.example.joinUs.model.mongodb.City;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,18 +13,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CityDTO {
+public class VenueDTO {
 
-    private String id;
-    private String name;
-
-    private String country;
-    private String zip;
-    private String state;
-    private String localizedCountryName;
-
-    private Double latitude;
-    private Double longitude;
-    private Double distance;
+    private City city;
+    private String address1;
+    private String address2;
 
 }
