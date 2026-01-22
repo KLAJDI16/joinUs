@@ -3,8 +3,8 @@ package script_transform_csv_to_mongodb_and_neo4j.mongoDb;
 import com.mongodb.client.*;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import script_transform_csv_to_mongodb_and_neo4j.ParallelExecutor;
-import script_transform_csv_to_mongodb_and_neo4j.neo4j.Neo4JOperations;
 
 import java.util.*;
 import java.util.concurrent.Future;
@@ -48,7 +48,7 @@ public class MongoDbUserOperations {
      */
     public   List<Document> extractTopicPerMember(String memberId) {
 
-        MongoCollection topicCollection = CsvToMongoTransformer.csvDocuments.getCollection("members_topics.csv");
+        MongoCollection topicCollection = MongoDataLoader.csvDocuments.getCollection("members_topics.csv");
 
         List<Document> userTopics = new ArrayList<>();
         try (MongoCursor<Document> cursor = topicCollection
@@ -57,7 +57,6 @@ public class MongoDbUserOperations {
                 .cursor()) {
             while (cursor.hasNext()) {
                 Document document = cursor.next();
-           parallelExecutor.submit( () ->     Neo4JOperations.createMemberTopicEdge(memberId,document.getString("topic_id")));
                 userTopics.add( document);
             }
         }
@@ -98,8 +97,7 @@ public class MongoDbUserOperations {
                                 .append("groupCount",
                                         new Document("$addToSet", "$group_id"))),
                 new Document("$project",
-                        new Document("_id", 0L)
-                                .append("member_id", "$_id")
+                        new Document("member_id", "$_id")
                                 .append("groupCount",
                                         new Document("$size", "$groupCount"))),
                 new Document("$project",
@@ -108,7 +106,7 @@ public class MongoDbUserOperations {
                                         new Document("$toDouble", "$groupCount"))));
 
 
-        MongoCollection membersCollection = CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
+        MongoCollection membersCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
             MongoCursor<Document> cursor = membersCollection.aggregate(membersAggregationList).cursor();
 
             while (cursor.hasNext()){
@@ -121,31 +119,42 @@ public class MongoDbUserOperations {
         return groupCount;
     }
 
-    public HashMap<String,Double> extractEventCountPerMember() {
+    public static HashMap<String,Double> extractEventCountPerMember() {
         //rsvps.csv
         HashMap<String,Double> eventCount = new HashMap<>();
-        MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection = MongoDataLoader.csvDocuments.getCollection("rsvps.csv");
 
-        List<Document> aggregationList = Arrays.asList(new Document("$group",
+        List<Document> aggregationList = Arrays.asList(
+                new Document("$group",
                         new Document("_id", "$member_id")
                                 .append("count",
-                                        new Document("$sum", 1L))),
+                                        new Document("$sum", 1))),
                 new Document("$project",
                         new Document("member_id", "$_id")
                                 .append("event_count",
                                         new Document("$toDouble", "$count"))
-                                .append("_id", 0L)));
+                                ));
 
 
         try (MongoCursor<Document> mongoCursor = rsvpsCollection.aggregate(aggregationList).cursor()) {
 
-            if (mongoCursor.hasNext()) {
+            while (mongoCursor.hasNext()) {
                 Document document = mongoCursor.next();
                 eventCount.put(document.getString("member_id"),document.getDouble("event_count"));
             }
         }
 
         return eventCount;
+    }
+    public  List<String> extractGroupIdsWhereOrganizer(String memberName){
+        List<String> list =new ArrayList<>();
+        MongoCollection groupCollection = MongoDataLoader.csvDocuments.getCollection("groups.csv");
+
+       MongoCursor<Document> mongoCursor = groupCollection.find(Filters.eq("organizer___name",memberName)).projection(new Document("group_id",1)).cursor();
+        while (mongoCursor.hasNext()){
+            list.add(mongoCursor.next().getString("group_id"));
+        }
+            return list;
     }
 
     /**
@@ -157,7 +166,7 @@ public class MongoDbUserOperations {
      */
     public  List<Document> extractFutureEventsPerMember(String memberId) {
         //rsvps.csv
-        MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection = MongoDataLoader.csvDocuments.getCollection("rsvps.csv");
         List<String> eventIdsFromRsvps = new ArrayList<>();
         List<Document> upcomingEvents;
         try (MongoCursor<Document> cursor = rsvpsCollection.find(Filters.eq("member_id", memberId)).cursor()) {
@@ -165,11 +174,10 @@ public class MongoDbUserOperations {
             if (cursor != null) {
                 while (cursor.hasNext()) {
                     String event_id = ( cursor.next()).getString("event_id");
-              parallelExecutor.submit( () ->       Neo4JOperations.createMemberEventEdge(event_id,memberId));
                     eventIdsFromRsvps.add(event_id);
                 }
 
-                MongoCollection eventCollection = CsvToMongoTransformer.newMongoDatabase.getCollection("events");
+                MongoCollection eventCollection = MongoDataLoader.newMongoDatabase.getCollection("events");
 
                 MongoCursor eventCursor = eventCollection.find
                         (
@@ -210,7 +218,7 @@ public class MongoDbUserOperations {
             Document member = members.get(0);
             cityName = member.getString("city");
         } else {
-            MongoCollection memberCollection = CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
+            MongoCollection memberCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
             cityName = ((Document) memberCollection.find(Filters.eq("member_id", memberId))
                     .first()).getString("city");
         }
@@ -233,12 +241,12 @@ public class MongoDbUserOperations {
             document.append("member_id", member.getString("member_id"));
             document.append("member_name", member.getString("member_name"));
             document.append("member_status", member.getString("member_status"));
-            CsvToMongoTransformer.assignIfFound(document,"hometown",member.getString("hometown"));
+            MongoDataLoader.assignIfFound(document,"hometown",member.getString("hometown"));
             document.append("link", member.getString("link"));
-            CsvToMongoTransformer.assignIfFound(document,"bio",member.getString("bio"));
+            MongoDataLoader.assignIfFound(document,"bio",member.getString("bio"));
 
         } else {
-            MongoCollection memberCollection = CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
+            MongoCollection memberCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
             document = ((Document) memberCollection.find(Filters.eq("member_id", memberId))
                     .projection(new Document("member_id", 1).append("member_name", 1)
                             .append("member_status", 1).append("_id", 0).append("bio", 1).append("hometown", 1).append("link", 1))
@@ -252,70 +260,88 @@ public class MongoDbUserOperations {
         List<String> memberIds = metaMembersIds!=null? metaMembersIds : retrieveIdsFromMetaMembers();
         boolean includeFilter = includeOnlyMembersWithModifiedId && !memberIds.isEmpty();
 
-        MongoCollection oldMemberCollection = CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
+        MongoCollection oldMemberCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
         MongoCollection newMemberCollection = getNewUserCollection();
-        Document finalDocument = new Document();
+        Document finalDocument;
+
+        Future[] futures = new Future[5];
 
         try (MongoCursor<Document> mongoCursor = includeFilter ? oldMemberCollection.find(Filters.in("member_id", memberIds)).cursor() : oldMemberCollection.find().cursor()) {
 
-            HashMap<String,Double> groupCount = extractGroupCountPerMember();
-            HashMap<String,Double> eventCount = extractEventCountPerMember();
+            futures[0] = parallelExecutor.submit(() -> extractEventCountPerMember());
+            futures[1] = parallelExecutor.submit(() -> extractGroupCountPerMember());
+
+            HashMap<String,Double> groupCount = (HashMap<String, Double>) futures[1].get();
+            HashMap<String,Double> eventCount = (HashMap<String, Double>) futures[0].get();
 
             List<Document> membersWithId = new ArrayList<>();
             Set<String> membersAlreadyEvaluated = new HashSet<>();
             String memberId;
+            String memberName;
+            int count=0;
 
-            boolean neo4JIndexCreated=false;
 
             while (mongoCursor.hasNext()) {
                 Document document =  mongoCursor.next();
                 memberId = document.getString("member_id");
-                Future[] futures = new Future[4];
-    //            futures[0] = parallelExecutor.submit(MongoDbUserOperations::extractTopicPerMember,memberId);
+                memberName = document.getString("member_name");
+
+                String finalMemberId = memberId;
 
                 if (!membersAlreadyEvaluated.contains(memberId)) {
 
                     futures[0] = parallelExecutor.submit(MongoDbUserOperations::extractMemberDocument,memberId,membersWithId);
 
                     futures[2] = parallelExecutor.submit(MongoDbUserOperations::extractCityDocumentToEmbedPerMember,memberId,membersWithId);
+                    futures[1] = parallelExecutor.submit(e -> extractTopicPerMember(e), memberId);
+                    futures[3] = parallelExecutor.submit(e -> extractFutureEventsPerMember(e), memberId);
+
 
                     finalDocument= (Document) futures[0].get();
-
                     finalDocument.append("city", futures[2].get());
 
-                    Neo4JOperations.createMemberNode(finalDocument,null,true);
 
-                    if (!neo4JIndexCreated){
-                        Neo4JOperations.createNeo4JIndex("Member","member_id");
-                        neo4JIndexCreated=true;
-                    }
-                    futures[1] = parallelExecutor.submit(e -> extractTopicPerMember(e),memberId);
-                    finalDocument.append("topics", futures[1].get());
-                    futures[3] = parallelExecutor.submit(e -> extractFutureEventsPerMember(e),memberId);
+
+
+                    String finalMemberName1 = memberName;
+//                    futures[4] = parallelExecutor.submit((e) -> extractGroupIdsWhereOrganizer(e),finalMemberName1);
 
                     finalDocument.append("upcoming_events", futures[3].get());
+                    //TODO: Re-order if needed for Neo4J
+                    finalDocument.append("topics", futures[1].get());
 
 
 //                    finalDocument = extractMemberDocument(memberId, membersWithId);
 //                    finalDocument.append("topics", this.extractTopicPerMember(memberId));
 //                    finalDocument.append("city", this.extractCityDocumentToEmbedPerMember(memberId, membersWithId));
-                    finalDocument.append("event_count", eventCount.get(memberId));
+//                    finalDocument.append("event_count", eventCount.get(memberId)!=null ? eventCount.get(memberId):0);
 //                    finalDocument.append("upcoming_events", this.extractFutureEventsPerMember(memberId));
-                    finalDocument.append("group_count", groupCount.get(memberId));
 
+
+                    finalDocument.append("password",new BCryptPasswordEncoder().encode(memberName+"_password"));
+                    finalDocument.append("isAdmin",count<5);
+
+//                    List<String> groups_organizer= new ArrayList<>();
+//                    if (MongoDbGroupOperations.groups_per_organizer.get(memberId)!=null) {
+//                      groups_organizer = MongoDbGroupOperations.groups_per_organizer.get(memberId);
+//                    }
+//                    List<String> groups_organizer= (List<String>) futures[4].get();
+//                    finalDocument.append("groups_organizer",groups_organizer);
+//                    finalDocument.append("group_count", (groupCount.get(memberId)!=null?groupCount.get(memberId):0)+groups_organizer.size());
 
                     Document finalDocument1 = finalDocument;
                     parallelExecutor.submit(() ->  newMemberCollection.insertOne(finalDocument1));
 
                     membersAlreadyEvaluated.add(memberId);
                 }
+                count++;
             }
         }
     }
 
     public List<Document> getMembersWithMemberId(String member_id) {
         List<Document> documentList = new ArrayList<>();
-        MongoCollection oldMemberCollection = CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
+        MongoCollection oldMemberCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
         try (MongoCursor mongoCursor = oldMemberCollection.find(Filters.eq("member_id", member_id)).cursor()) {
             while (mongoCursor.hasNext()) {
                 Document document = (Document) mongoCursor.next();
@@ -327,7 +353,7 @@ public class MongoDbUserOperations {
 
 
     public static List retrieveIdsFromMetaMembers(){
-        MongoCollection metaMembersCollection= CsvToMongoTransformer.csvDocuments.getCollection("meta-members.csv");
+        MongoCollection metaMembersCollection= MongoDataLoader.csvDocuments.getCollection("meta-members.csv");
      metaMembersCollection.createIndex(new Document("member_id",1));
         List<String> IdsFromMetaMembersColl = new ArrayList<>();
 
@@ -341,7 +367,7 @@ public class MongoDbUserOperations {
                  return IdsFromMetaMembersColl;
     }
     public static List retrieveIdsFromMembers(int limit){
-        MongoCollection metaMembersCollection= CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
+        MongoCollection metaMembersCollection= MongoDataLoader.csvDocuments.getCollection("members.csv");
         List<String> IdsFromMetaMembersColl = new ArrayList<>();
 
         MongoCursor mongoCursor = metaMembersCollection.find()
@@ -358,8 +384,8 @@ public class MongoDbUserOperations {
     }
 
     public static List updateIdsForMembers() {
-        MongoCollection membersCollection = CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
-        MongoCollection memberTopicsCollection = CsvToMongoTransformer.csvDocuments.getCollection("members_topics.csv");
+        MongoCollection membersCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
+        MongoCollection memberTopicsCollection = MongoDataLoader.csvDocuments.getCollection("members_topics.csv");
         membersCollection.createIndex(new Document("member_id", 1));
         memberTopicsCollection.createIndex(new Document("member_id", 1));
         List<String> IdsFromMetaMembersColl = retrieveIdsFromMetaMembers();
@@ -430,10 +456,12 @@ public class MongoDbUserOperations {
         return IdsFromMetaMembersColl;
     }
 
-
-//        public void allUserOperations () {
-////        for ()
-//        }
+//    public static long countUpdatedMember(){
+//      List<String> list =  retrieveIdsFromMetaMembers();
+//      MongoCollection mongoCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
+//      long count = mongoCollection.countDocuments(Filters.in("member_id",list));
+//      return count;
+//    }
 
 
 }

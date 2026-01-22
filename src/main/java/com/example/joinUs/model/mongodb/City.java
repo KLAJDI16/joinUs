@@ -7,6 +7,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Immutable;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor
@@ -35,13 +36,13 @@ public class City {
     private String localized_country_name;
 
     @Field("latitude")
-    private long latitude;
+    private String latitude;
 
     @Field("longitude")
-    private long longitude;
+    private String longitude;
 
     @Field("distance")
-    private long distance;
+    private String distance;
 
     public CityDTO toDTO() {
         CityDTO dto = new CityDTO();
@@ -58,4 +59,22 @@ public class City {
 
         return dto;
     }
+    public static City fromDTO(CityDTO dto) {
+        if (dto == null) return null;
+
+        City city = new City();
+
+        city.setId(dto.getId());
+        city.setName(dto.getName());
+        city.setCountry(dto.getCountry());
+        city.setZip(dto.getZip());
+        city.setState(dto.getState());
+        city.setLocalized_country_name(dto.getLocalized_country_name());
+        city.setLatitude(dto.getLatitude());
+        city.setLongitude(dto.getLongitude());
+        city.setDistance(dto.getDistance());
+
+        return city;
+    }
+
 }

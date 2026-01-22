@@ -8,9 +8,7 @@ import com.mongodb.client.model.Filters;
 import org.bson.Document;
 import script_transform_csv_to_mongodb_and_neo4j.ConfigurationFileReader;
 import script_transform_csv_to_mongodb_and_neo4j.ParallelExecutor;
-import script_transform_csv_to_mongodb_and_neo4j.neo4j.Neo4JOperations;
 
-import javax.print.Doc;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -21,6 +19,7 @@ public class MongoDbGroupOperations {
     public MongoDatabase mongoOriginalDatabase;
     public static String newGroupCollectionName="groups";
     private final ParallelExecutor parallelExecutor;
+    public static HashMap<String,List<String>> groups_per_organizer=new HashMap<>();
 
     public MongoCollection getNewGroupsCollection(){
         mongoOriginalDatabase.createCollection(newGroupCollectionName);
@@ -72,7 +71,7 @@ public class MongoDbGroupOperations {
 
         int membersFromRsvps = 0;
         //rsvps.csv
-        MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection = MongoDataLoader.csvDocuments.getCollection("rsvps.csv");
 
         List<Document> aggregationList = Arrays.asList(
                 new Document("$group",
@@ -83,19 +82,18 @@ public class MongoDbGroupOperations {
                         new Document("group_id", "$_id")
                                 .append("member_count",
                                         new Document("$size", "$member_count"))
-                                .append("_id", 0L)
                                 .append("total_Member", 1L)));
 
         try (MongoCursor<Document> mongoCursor = rsvpsCollection.aggregate(aggregationList).cursor()) {
 
-            if (mongoCursor.hasNext()) {
+            while (mongoCursor.hasNext()) {
                 Document document = mongoCursor.next();
 
                 memberCount.put(document.getString("group_id"),Double.parseDouble(document.get("member_count")+""));
             }
         }
 
-        MongoCollection membersCollection = CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
+        MongoCollection membersCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
 
 
         List<Document> aggregationOnMembers = Arrays.asList(new Document("$group",
@@ -103,12 +101,11 @@ public class MongoDbGroupOperations {
                                 .append("member_count",
                                         new Document("$sum", 1L))),
                 new Document("$project",
-                        new Document("_id", 0L)
-                                .append("group_id", "$_id")
+                        new Document("group_id", "$_id")
                                 .append("member_count", 1L)));
 
         try (MongoCursor<Document> cursor = membersCollection.aggregate(aggregationOnMembers).cursor()) {
-            if (cursor.hasNext()) {
+            while (cursor.hasNext()) {
                 Document document = cursor.next();
 
                 if (!memberCount.containsKey(document.getString("group_id"))) {
@@ -123,13 +120,12 @@ public class MongoDbGroupOperations {
     }
 
     public  List<Document> extractUpcomingEventsFromEvents_csv(String group_id){
-        MongoCollection eventsCollection = CsvToMongoTransformer.csvDocuments.getCollection("events.csv");
+        MongoCollection eventsCollection = MongoDataLoader.csvDocuments.getCollection("events.csv");
         List<String> eventIdsFromEvents = new ArrayList<>();
         try (MongoCursor<Document> cursor = eventsCollection.find(Filters.eq("group_id", group_id)).cursor()) {
             while (cursor.hasNext()) {
                 String event_id=( cursor.next()).getString("event_id");
                 eventIdsFromEvents.add(event_id);
-           parallelExecutor.submit( () ->     Neo4JOperations.createGroupEventEdge(group_id,event_id));
             }
         }
 
@@ -139,7 +135,7 @@ public class MongoDbGroupOperations {
 
     public  List<Document> extractUpcomingEventsFromRSVPS_csv(String group_id){
         //rsvps.csv
-        MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection = MongoDataLoader.csvDocuments.getCollection("rsvps.csv");
         List<String> eventIdsFromRsvps = new ArrayList<>();
         try (MongoCursor<Document> cursor = rsvpsCollection.find(Filters.eq("group_id", group_id)).cursor()) {
 
@@ -147,7 +143,6 @@ public class MongoDbGroupOperations {
             while (cursor.hasNext()) {
                 String event_id = ( cursor.next()).getString("event_id");
                 eventIdsFromRsvps.add(event_id);
-                parallelExecutor.submit( () ->     Neo4JOperations.createGroupEventEdge(group_id,event_id));
             }
         }
 
@@ -171,7 +166,7 @@ public class MongoDbGroupOperations {
 
 
         String group_id=oldGroupDocument.getString("group_id");
-        MongoCollection topicCollection = CsvToMongoTransformer.csvDocuments.getCollection("groups_topics.csv");
+        MongoCollection topicCollection = MongoDataLoader.csvDocuments.getCollection("groups_topics.csv");
 
         List<Document> groupTopics = new ArrayList<>();
         MongoCursor cursor = topicCollection
@@ -194,28 +189,27 @@ public class MongoDbGroupOperations {
     public  HashMap<String,Double> extractEventCount(){
         HashMap<String,Double> eventCounts=new HashMap<>();
 
-//        extractEventCountFromRsvps_csv(eventCounts);
+        extractEventCountFromRsvps_csv(eventCounts);
         extractEventCountFromEvents_csv(eventCounts);
 
         return eventCounts;
     }
     public void extractEventCountFromRsvps_csv(HashMap<String,Double> eventCount){
-        MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection = MongoDataLoader.csvDocuments.getCollection("rsvps.csv");
 
         List<Document> aggregationList = Arrays.asList(new Document("$group",
                         new Document("_id", "$group_id")
                                 .append("eventCount",
                                         new Document("$addToSet", "$event_id"))),
                 new Document("$project",
-                        new Document("_id", 0L)
-                                .append("group_id", "$_id")
+                        new Document("group_id", "$_id")
                                 .append("eventCount",
                                         new Document("$size", "$eventCount"))));
 
 
         try (MongoCursor<Document> mongoCursor = rsvpsCollection.aggregate(aggregationList).cursor()) {
 
-            if (mongoCursor.hasNext()) {
+            while (mongoCursor.hasNext()) {
                 Document document = mongoCursor.next();
                 eventCount.put(document.getString("group_id"),Double.parseDouble(String.valueOf(document.get("eventCount"))));
 
@@ -224,7 +218,7 @@ public class MongoDbGroupOperations {
     }
     public void extractEventCountFromEvents_csv(HashMap<String,Double> eventCount){
 
-        MongoCollection eventsCollection = CsvToMongoTransformer.csvDocuments.getCollection("events.csv");
+        MongoCollection eventsCollection = MongoDataLoader.csvDocuments.getCollection("events.csv");
 
         List<Document> aggregationList = Arrays.asList(
                 new Document("$group",
@@ -235,9 +229,9 @@ public class MongoDbGroupOperations {
 
         try (MongoCursor<Document> mongoCursor = eventsCollection.aggregate(aggregationList).cursor()) {
 
-            if (mongoCursor.hasNext()) {
+            while (mongoCursor.hasNext()) {
                 Document document = mongoCursor.next();
-                String group_id = document.getString("group_id");
+                String group_id = document.getString("_id");
                 if (!eventCount.containsKey(group_id))
                      eventCount.put(group_id,Double.parseDouble(String.valueOf(document.get("total_events"))));
             }
@@ -249,10 +243,17 @@ public class MongoDbGroupOperations {
         List<Document> organizers=new ArrayList<>();
         String group_id=oldGroupDocument.getString("group_id");
         Document organizer = new Document();
-        organizer.append("name",oldGroupDocument.getString("organizer___name"));
-        organizer.append("id",oldGroupDocument.getString("organizer___member_id"));
-     parallelExecutor.submit( () ->   Neo4JOperations.createMemberGroupEdge(
-             oldGroupDocument.getString("organizer___member_id"),group_id) );
+        String organizerName=oldGroupDocument.getString("organizer___name");
+        organizer.append("name",organizerName);
+        String organizerId=oldGroupDocument.getString("organizer___member_id");
+        organizer.append("id",organizerId);
+//        if (groups_per_organizer.containsKey(organizerId)){
+//            groups_per_organizer.get(organizerId).add(group_id);
+//        }
+//        else {
+//            groups_per_organizer.put(organizerId,new ArrayList<>());
+//        }
+
         organizers.add(organizer);
 
         return organizers;
@@ -267,7 +268,7 @@ public class MongoDbGroupOperations {
                 newGroupDocument.append(key,oldGroupDocument.getString(key));
             }
         }
-        CsvToMongoTransformer.assignIfFound(newGroupDocument,"description",oldGroupDocument.getString("description"));
+        MongoDataLoader.assignIfFound(newGroupDocument,"description",oldGroupDocument.getString("description"));
 
         SimpleDateFormat simpleDateFormat =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date created = null;
@@ -279,9 +280,9 @@ public class MongoDbGroupOperations {
 
         newGroupDocument.append("created",created);
 
-        Double rating = Double.parseDouble(oldGroupDocument.getString("rating"));
+//        Double rating = Double.parseDouble(oldGroupDocument.getString("rating"));
         Long utcOffset = Long.parseLong(oldGroupDocument.getString("utc_offset"));
-        newGroupDocument.append("rating",rating);
+//        newGroupDocument.append("rating",rating);
         newGroupDocument.append("utc_offset",utcOffset);
 
         return newGroupDocument;
@@ -292,7 +293,7 @@ public class MongoDbGroupOperations {
         for (String key : oldGroupDocument.keySet()){
             if (key.startsWith("group_photo___")){
                 String newKey=key.substring("group_photo___".length());
-                CsvToMongoTransformer.assignIfFound(photo,newKey,oldGroupDocument.getString(key));
+                MongoDataLoader.assignIfFound(photo,newKey,oldGroupDocument.getString(key));
             }
         }
         return photo;
@@ -303,12 +304,11 @@ public class MongoDbGroupOperations {
         MongoCollection groupCollection = getNewGroupsCollection();
 
 
-        try (MongoCursor<Document> mongoCursor = CsvToMongoTransformer.csvDocuments.getCollection("groups.csv").find().cursor()) {
+        try (MongoCursor<Document> mongoCursor = MongoDataLoader.csvDocuments.getCollection("groups.csv").find().cursor()) {
 
             HashMap<String,Double> memberCount=extractMemberCount();
             HashMap<String,Double> eventCount=extractEventCount();
 
-            boolean neo4JIndexCreated=false;
 
             while (mongoCursor.hasNext()) {
                 Document oldGroupDocument =  mongoCursor.next();
@@ -321,38 +321,22 @@ public class MongoDbGroupOperations {
                 futures[1] = parallelExecutor.submit(MongoDbGroupOperations::extractCityForGroup,oldGroupDocument);
                 futures[2] = parallelExecutor.submit(MongoDbGroupOperations::extractCategoriesFromGroup,oldGroupDocument);
 
+                futures[3] = parallelExecutor.submit(e -> extractOrganizer(e),oldGroupDocument);
+                futures[4] = parallelExecutor.submit(e ->extractUpcomingEvents(e),oldGroupDocument);
+                futures[5] = parallelExecutor.submit(MongoDbGroupOperations::extractGroupPhoto,oldGroupDocument);
+
                 newGroupDocument = (Document) futures[0].get();
                 newGroupDocument.append("city", futures[1].get());
                 newGroupDocument.append("categories", futures[2].get());
 
-                Neo4JOperations.createGroupNode(newGroupDocument,null,true);
-           if (!neo4JIndexCreated){
-               Neo4JOperations.createNeo4JIndex("Group","group_id");
-               neo4JIndexCreated=true;
-           }
-
-                futures[3] = parallelExecutor.submit(e -> extractOrganizer(e),oldGroupDocument);
-                futures[4] = parallelExecutor.submit(e ->extractUpcomingEvents(e),oldGroupDocument);
-                futures[5] = parallelExecutor.submit(MongoDbGroupOperations::extractGroupPhoto,oldGroupDocument);
-//
-////
-
-
 
                 Document finalNewGroupDocument1 = newGroupDocument;
-
-
-//                    List<String> fieldsToInclude = List.of("group_id", "group_name", "city", "description", "link");
-//                    createNodesByCollectionName("groups", "Group", fieldsToInclude, true);
-//                    createNeo4JIndex("Group","group_id");
-//
-//                }
 
                 newGroupDocument.append("organizer_members", futures[3].get());
                 newGroupDocument.append("upcoming_events", futures[4].get());
                 newGroupDocument.append("group_photo", futures[5].get());
-                newGroupDocument.append("event_count", eventCount.get(group_id));
-                newGroupDocument.append("member_count", memberCount.get(group_id));
+                newGroupDocument.append("event_count", eventCount.get(group_id)!=null? eventCount.get(group_id):0);
+                newGroupDocument.append("member_count", memberCount.get(group_id)!=null? memberCount.get(group_id):0);
 
 
 
@@ -371,8 +355,9 @@ public class MongoDbGroupOperations {
                parallelExecutor.submit(() ->  groupCollection.insertOne(finalNewGroupDocument));
             }
             }
-        }
 
+
+        }
 
 
 }

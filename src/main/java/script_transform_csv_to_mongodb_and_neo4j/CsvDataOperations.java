@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class CsvDataUpdater {
+public class CsvDataOperations {
     public static final String firstDatasetFolder= ConfigurationFileReader.checkAndGetProp("firstDatasetFolder");
     public static final String secondDatasetFolder=ConfigurationFileReader.checkAndGetProp("secondDatasetFolder");;
     public static  String transformedDatasetFolder=firstDatasetFolder.substring(0,firstDatasetFolder
@@ -31,6 +31,8 @@ public class CsvDataUpdater {
     public static final String transformedEvents=transformedDatasetFolder+"events.csv";
     public static final String transformedGroupTopics=transformedDatasetFolder+"groups_topics.csv";
     public static final String transformedMemberTopics=transformedDatasetFolder+"member_topics.csv";
+    public static double membersLimit= Double.parseDouble(ConfigurationFileReader.checkAndGetProp("membersLimit"));
+    public static double recordsLimit= Double.parseDouble(ConfigurationFileReader.checkAndGetProp("recordsLimit"));
 
     static List<String> readColumnValues(String csvPath, String column) throws Exception {
         try (CSVReader reader = new CSVReader(new FileReader(csvPath))) {
@@ -124,7 +126,7 @@ public class CsvDataUpdater {
 
                 futures.add(executor.submit(() -> {
                     try {
-                        applyMapping(csv, finalOutput, destinationIdColumn, mapping);
+                        applyMapping(csv, finalOutput, destinationIdColumn, mapping); //mapping is old,new
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -169,7 +171,11 @@ public class CsvDataUpdater {
             int index = Arrays.asList(header).indexOf(idColumn);
 
             String[] row;
+            int count=0;
             while ((row = reader.readNext()) != null) {
+             if ((inputCsv.contains("members") && (membersLimit>0 && count>membersLimit)) ||
+                     (recordsLimit>0 && count>recordsLimit)) break;
+             count++;
                 String oldId = row[index];
                 if (mapping.containsKey(oldId)) {
                     row[index] = mapping.get(oldId);
@@ -180,36 +186,36 @@ public class CsvDataUpdater {
     }
 
     public static void updateMemberIdsAtCSV() throws Exception {
-        CsvDataUpdater.updateIdsFromCsv(CsvDataUpdater.metaMembersPath,"member_id","member_id",-1,CsvDataUpdater.membersPath,CsvDataUpdater.memberTopicsPath);
-        CsvDataUpdater.updateIdsFromCsv(CsvDataUpdater.transformedMembers,"member_id","organizer.member_id",-1,CsvDataUpdater.groupsPath);
+        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaMembersPath,"member_id","member_id",-1, CsvDataOperations.membersPath, CsvDataOperations.memberTopicsPath);
+        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.transformedMembers,"member_id","organizer.member_id",-1, CsvDataOperations.groupsPath);
 
     }
     public static void updateEventIdsAtCSV() throws Exception {
-        CsvDataUpdater.updateIdsFromCsv(CsvDataUpdater.metaEventsPath,"event_id","event_id",-1,CsvDataUpdater.eventsPath);
+        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaEventsPath,"event_id","event_id",-1, CsvDataOperations.eventsPath);
     }
     public static void updateGroupIdsAtCSV() throws Exception {
-        CsvDataUpdater.updateIdsFromCsv(CsvDataUpdater.metaGroupsPath,"group_id","group_id",-1,CsvDataUpdater.transformedGroups,transformedDatasetFolder+"members.csv",CsvDataUpdater.groupTopicsPath,CsvDataUpdater.transformedEvents);
+        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaGroupsPath,"group_id","group_id",-1, CsvDataOperations.transformedGroups,transformedDatasetFolder+"members.csv", CsvDataOperations.groupTopicsPath, CsvDataOperations.transformedEvents);
     }
 
     public static void updateIdsDirectlyFromCSV(){
 
         try {
-            CsvDataUpdater.updateEventIdsAtCSV();
-            CsvDataUpdater.updateMemberIdsAtCSV();
-            CsvDataUpdater.updateGroupIdsAtCSV();
+            CsvDataOperations.updateEventIdsAtCSV();
+            CsvDataOperations.updateMemberIdsAtCSV();
+            CsvDataOperations.updateGroupIdsAtCSV();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void moveFilesToNeo4JImportFolder() throws IOException {
+    public static void copyFilesToNeo4JImportFolder() throws IOException {
 String importFolder=ConfigurationFileReader.checkAndGetProp("importFolder");
-for (File file : new File(CsvDataUpdater.transformedDatasetFolder).listFiles()){
+for (File file : new File(CsvDataOperations.transformedDatasetFolder).listFiles()){
     String fileName=file.getName();
     Files.copy(file.toPath(),new FileOutputStream(importFolder+fileName));
 }
 Files.copy(Path.of(topicsPath),new FileOutputStream(importFolder+"topics.csv"));
-Files.copy(Path.of(CsvDataUpdater.secondDatasetFolder+"rsvps.csv"),new FileOutputStream(importFolder+"rsvps.csv"));
+Files.copy(Path.of(CsvDataOperations.secondDatasetFolder+"rsvps.csv"),new FileOutputStream(importFolder+"rsvps.csv"));
 
     }
 

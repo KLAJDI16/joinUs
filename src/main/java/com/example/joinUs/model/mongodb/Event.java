@@ -56,16 +56,16 @@ public class Event {
     private Date updated;
 
     @Field("duration")
-    private long duration;
+    private Long duration;
 
     @Field("utc_offset")
-    private long utc_offset;
+    private Long utc_offset;
 
     @Field("categories")
     private List<Category> categories;
 
     @Field("member_count")
-    private double member_count;
+    private Double member_count;
 
 //     @Field("venue")
 //     private Venue venue;
@@ -99,6 +99,38 @@ public class Event {
 //            dto.setVenue(this.venue);
             return dto;
         }
+
+
+    public static Event fromDTO(EventDTO dto) {
+        if (dto == null) return null;
+
+        Event event = new Event();
+
+        event.setEvent_id(dto.getEvent_id());
+        event.setEvent_name(dto.getEvent_name());
+        event.setEvent_url(dto.getEvent_url());
+        event.setDescription(dto.getDescription());
+        event.setEvent_status(dto.getEvent_status());
+
+        event.setCreated(dto.getCreated());
+        event.setEvent_time(dto.getEvent_time());
+        event.setUpdated(dto.getUpdated());
+
+        event.setDuration(dto.getDuration());
+        event.setUtc_offset(dto.getUtc_offset());
+
+        event.setMember_count(dto.getMember_count());
+        event.setCategories(dto.getCategories());
+
+        if (dto.getCreator_group() != null) {
+            event.setCreator_group(Group.fromDTO(dto.getCreator_group()));
+        }
+
+        // If you have venue mapping in the future:
+        // event.setVenue(Venue.fromDTO(dto.getVenue()));
+
+        return event;
+    }
 
 
 }

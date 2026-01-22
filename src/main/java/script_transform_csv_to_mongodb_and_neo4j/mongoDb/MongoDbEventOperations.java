@@ -7,7 +7,6 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;
 import script_transform_csv_to_mongodb_and_neo4j.ParallelExecutor;
-import script_transform_csv_to_mongodb_and_neo4j.neo4j.Neo4JOperations;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -77,7 +76,7 @@ public class MongoDbEventOperations {
     public   Document  extractCreatorGroupForEvent(Document oldEvent) {
         Document groupDocument = new Document();
         String event_id = oldEvent.getString("event_id");
-        MongoCollection groupCollection = CsvToMongoTransformer.csvDocuments.getCollection("groups.csv");
+        MongoCollection groupCollection = MongoDataLoader.csvDocuments.getCollection("groups.csv");
 
         String groupName = oldEvent.getString("group___name");
 
@@ -86,9 +85,7 @@ public class MongoDbEventOperations {
         if (document == null) return null;
 
         groupDocument.append("id", document.getString("group_id"));
-parallelExecutor.submit( () -> {
-            Neo4JOperations.createGroupEventEdge(document.getString("group_id"), event_id);
-        });
+
         groupDocument.append("name", document.getString(
                 "group_name"));
 
@@ -105,8 +102,8 @@ parallelExecutor.submit( () -> {
 
         Document city = MongoDbCityOperation.extractCityToEmbedFromCityName(cityName);
         venue.append("city", city);
-        CsvToMongoTransformer.assignIfFound(venue, "address_1", oldEvent.getString("venue___address_1"));
-        CsvToMongoTransformer.assignIfFound(venue, "address_2", oldEvent.getString("venue___address_2"));
+        MongoDataLoader.assignIfFound(venue, "address_1", oldEvent.getString("venue___address_1"));
+        MongoDataLoader.assignIfFound(venue, "address_2", oldEvent.getString("venue___address_2"));
         String phoneNumber = oldEvent.getString("venue___phone");
         if (!phoneNumber.equalsIgnoreCase("-1")) {
             venue.append("phone_number", oldEvent.getString("venue___phone"));
@@ -172,7 +169,7 @@ parallelExecutor.submit( () -> {
     public static List<Document> extractCategoryForEvent(Document oldEvent) {
         Document eventDocument = new Document();
 
-        MongoCollection groupCollection = CsvToMongoTransformer.csvDocuments.getCollection("groups.csv");
+        MongoCollection groupCollection = MongoDataLoader.csvDocuments.getCollection("groups.csv");
 
         Document group = (Document) groupCollection.find(Filters.eq("group_name", oldEvent.getString("group___name"))).first();
 
@@ -182,15 +179,14 @@ parallelExecutor.submit( () -> {
 
     public HashMap<String, Double> extractMemberCountForEvent() {
         HashMap<String, Double> memberCount = new HashMap<>();
-        MongoCollection rsvpsCollection = CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection = MongoDataLoader.csvDocuments.getCollection("rsvps.csv");
 
         List<Document> aggregationList = Arrays.asList(new Document("$group",
                         new Document("_id", "$event_id")
                                 .append("member_count",
                                         new Document("$sum", 1L))),
                 new Document("$project",
-                        new Document("_id", 0L)
-                                .append("event_id", "$_id")
+                        new Document("event_id", "$_id")
                                 .append("member_count",
                                         new Document("$toDouble", "$member_count"))));
 
@@ -198,7 +194,7 @@ parallelExecutor.submit( () -> {
 
         while (mongoCursor.hasNext()) {
             Document document = mongoCursor.next();
-            memberCount.put(document.getString("event_id"), document.getDouble("member_count"));
+            memberCount.put(document.getString("event_id"), document.getDouble("member_count")!=null?document.getDouble("member_count"):0 );
         }
         return memberCount;
 
@@ -210,9 +206,8 @@ parallelExecutor.submit( () -> {
 
         HashMap<String, Double> memberCount = extractMemberCountForEvent();
 
-        MongoCollection oldEventCollection = CsvToMongoTransformer.csvDocuments.getCollection("events.csv");
+        MongoCollection oldEventCollection = MongoDataLoader.csvDocuments.getCollection("events.csv");
 
-        boolean neo4JIndexCreated=false;
 
         try (MongoCursor<Document> mongoCursor = oldEventCollection.find().cursor()) {
             Future[] futures = new Future[5];
@@ -226,6 +221,7 @@ parallelExecutor.submit( () -> {
                 futures[1] = parallelExecutor.submit(MongoDbEventOperations::extractCategoryForEvent, oldDocument);
                 futures[2] = parallelExecutor.submit(MongoDbEventOperations::extractFeeFromEvent, oldDocument);
                 futures[3] = parallelExecutor.submit(MongoDbEventOperations::extractVenueForEvent, oldDocument);
+                futures[4] = parallelExecutor.submit(e -> extractCreatorGroupForEvent(e),oldDocument);
 
                 newEvent = (Document) futures[0].get();
 
@@ -233,20 +229,9 @@ parallelExecutor.submit( () -> {
                 newEvent.append("fee", futures[2].get());
                 newEvent.append("venue", futures[3].get());
 
-//               parallelExecutor.submit()
-                Neo4JOperations.createEventNode(newEvent,null,true);
 
-
-                if (!neo4JIndexCreated){
-                    Neo4JOperations.createNeo4JIndex("Event","event_id");
-                    neo4JIndexCreated=true;
-                }
-
-
-                futures[4] = parallelExecutor.submit(e -> extractCreatorGroupForEvent(e),oldDocument);
-
-                CsvToMongoTransformer.assignIfFound(newEvent, "creator_group", futures[4].get());
-                newEvent.append("member_count", memberCount.get(event_id));
+                MongoDataLoader.assignIfFound(newEvent, "creator_group", futures[4].get());
+                newEvent.append("member_count", memberCount.get(event_id)!=null?memberCount.get(event_id):0);
 
 
 //                newEvent = extractEventDocument(oldDocument);
@@ -267,7 +252,7 @@ parallelExecutor.submit( () -> {
 
     public static List<Document> extractUpcomingEventsToEmbed(List<String> event_ids) {
         List<Document> upcomingEvents = new ArrayList<>();
-        MongoCollection<Document> eventCollection = CsvToMongoTransformer.newMongoDatabase.getCollection("events");
+        MongoCollection<Document> eventCollection = MongoDataLoader.newMongoDatabase.getCollection("events");
 
 
         try (MongoCursor<Document> eventCursor = eventCollection.find(

@@ -26,8 +26,8 @@ public class GroupDTO {
     private CityDTO city;
     private List<Category> categories;
 
-    private double member_count;
-    private double event_count;
+    private Double member_count;
+    private Double event_count;
 
     private List<UserDTO> organizer_members;
     private List<EventDTO> upcoming_events;

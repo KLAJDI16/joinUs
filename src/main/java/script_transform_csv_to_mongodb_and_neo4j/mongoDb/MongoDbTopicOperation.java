@@ -6,7 +6,6 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import script_transform_csv_to_mongodb_and_neo4j.ParallelExecutor;
-import script_transform_csv_to_mongodb_and_neo4j.neo4j.Neo4JOperations;
 
 import java.util.List;
 
@@ -46,8 +45,8 @@ public class MongoDbTopicOperation {
             if (keysToIncludeDirectly.contains(key))
              documentToReturn.append(key,oldDocument.getString(key));
         }
-        long member_count=Long.parseLong(oldDocument.getString("members"));
-        documentToReturn.append("member_count",member_count);
+//        long member_count=Long.parseLong(oldDocument.getString("members"));
+//        documentToReturn.append("member_count",member_count);
 
 
         return documentToReturn;
@@ -55,7 +54,7 @@ public class MongoDbTopicOperation {
 
     public void createTopicCollection(){
         MongoCollection newCollection = getNewTopicCollection();
-        MongoCollection oldCollection= CsvToMongoTransformer.csvDocuments.getCollection("topics.csv");
+        MongoCollection oldCollection= MongoDataLoader.csvDocuments.getCollection("topics.csv");
         try (MongoCursor<Document> mongoCursor = oldCollection.find().cursor()) {
 
             Document oldDocument;
@@ -65,15 +64,6 @@ public class MongoDbTopicOperation {
                 oldDocument =  mongoCursor.next();
 
                 Document finalOldDocument1 = oldDocument;
-                parallelExecutor.submit( () -> {
-                       Neo4JOperations.createTopicNode(finalOldDocument1, null, true);
-
-                       if (!neo4jIndexCreated[0]) {
-                           Neo4JOperations.createNeo4JIndex("Topic", "topic_id");
-                           neo4jIndexCreated[0] = true;
-                       }
-
-                   });
 
                 Document finalOldDocument = oldDocument;
                 parallelExecutor.submit( () ->  newCollection.insertOne(extractTopicDocument(finalOldDocument)) );

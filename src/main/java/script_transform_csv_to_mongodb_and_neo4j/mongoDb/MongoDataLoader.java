@@ -17,7 +17,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class CsvToMongoTransformer {
+import static script_transform_csv_to_mongodb_and_neo4j.CsvDataOperations.membersLimit;
+
+public class MongoDataLoader {
 
     public static MongoClient client = MongoClients.create(ConfigurationFileReader.getMongoUrl());
     public static final String firstDatasetFolder = ConfigurationFileReader.checkAndGetProp("firstDatasetFolder");// PATH OF THE DATASET FOUND BY MOIN
@@ -28,12 +30,11 @@ public class CsvToMongoTransformer {
     private final ParallelExecutor parallelExecutor;
     public static boolean useCsvDataUpdater = true;
 
-    public static double membersLimit= Double.parseDouble(ConfigurationFileReader.checkAndGetProp("membersLimit"));
 
 
     // if true update data directly in CSV before importing , else update through mongodb
 
-    public CsvToMongoTransformer(ParallelExecutor parallelExecutor){
+    public MongoDataLoader(ParallelExecutor parallelExecutor){
         this.parallelExecutor = parallelExecutor;
     }
 
@@ -41,9 +42,8 @@ public class CsvToMongoTransformer {
         long startingTime = System.currentTimeMillis();
 
 // Step-1 , import all the csv data to MongoDB as it is (replace '.' with '___' in the fields that contain '.' due to issues with MongoDB)
-//        if (useCsvDataUpdater){
-//        CsvDataUpdater.updateIdsDirectlyFromCSV();
-//        }
+
+
 //
         System.out.println("IMPORTING THE CSV DATA INTO MongoDB !!!! ");
 
@@ -52,6 +52,7 @@ public class CsvToMongoTransformer {
 
         if (useCsvDataUpdater) importCsvToMongoDB(CsvDataOperations.transformedDatasetFolder,membersLimit);
 
+//
         System.out.println("FINISHED IMPORTING THE CSV DATA INTO MongoDB !!!! ");
 
 //        if (!useCsvDataUpdater) updateIdsFromMongoDb();
@@ -59,11 +60,10 @@ public class CsvToMongoTransformer {
 
         createIndexesForCsvCollections();
 
-
-ArrayList<Future> futureArrayList =new ArrayList<>();
-
 //Step-2 ,Create the new Collection we will use for our project , in the new database 'JoinUs'
 
+        ArrayList<Future> futureArrayList =new ArrayList<>();
+//
         System.out.println("NOW READY TO CREATE THE NEW DATABASE !!!! ");
 
         System.out.println("CREATING THE Events COLLECTION : ");
@@ -71,7 +71,8 @@ ArrayList<Future> futureArrayList =new ArrayList<>();
         startingTime = System.currentTimeMillis();
 
         futureArrayList.add( parallelExecutor.submit(() ->   {
-            try {     new MongoDbEventOperations(client,newMongoDatabase,parallelExecutor).createEventCollection();
+            try {
+                new MongoDbEventOperations(client,newMongoDatabase,parallelExecutor).createEventCollection();
       createIndexesForEventsCollection();
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -201,7 +202,7 @@ ArrayList<Future> futureArrayList =new ArrayList<>();
      */
     public static void updateIdsForCollection(ParallelExecutor parallelExecutor ,String sourceCollection, String sourceKey,
                                                       String destinationKey, String... destinationCollections) {
-        MongoCollection sourceColl = CsvToMongoTransformer.csvDocuments.getCollection(sourceCollection);
+        MongoCollection sourceColl = MongoDataLoader.csvDocuments.getCollection(sourceCollection);
         sourceColl.createIndex(new Document(sourceKey,1));
         if (destinationCollections == null || destinationCollections.length < 1)
             throw new RuntimeException("Please provide a destinationCollection");
@@ -209,7 +210,7 @@ ArrayList<Future> futureArrayList =new ArrayList<>();
         List<MongoCollection> destinationColls = new ArrayList<>();
 
         for (String destColl : destinationCollections) {
-            destinationColls.add(CsvToMongoTransformer.csvDocuments.getCollection(destColl));
+            destinationColls.add(MongoDataLoader.csvDocuments.getCollection(destColl));
         }
 //        MongoCollection destColl= CsvToMongoTransformer.csvDocuments.getCollection(destinationCollection);
 
@@ -243,7 +244,7 @@ ArrayList<Future> futureArrayList =new ArrayList<>();
             Future[] futures = new Future[destinationCollections.length];
           int i=0;
             for (String destCollection:destinationCollections){
-                MongoCollection<Document> destinationCollection = CsvToMongoTransformer.csvDocuments.getCollection(destCollection);
+                MongoCollection<Document> destinationCollection = MongoDataLoader.csvDocuments.getCollection(destCollection);
 
                 String finalChosenRecord = chosenRecord;
                 int finalIdsChosen = idsChosen;
@@ -268,45 +269,45 @@ ArrayList<Future> futureArrayList =new ArrayList<>();
     }
 
     public static void createIndexesForCsvCollections(){
-        MongoCollection metaMembersCollection= CsvToMongoTransformer.csvDocuments.getCollection("meta-members.csv");
+        MongoCollection metaMembersCollection= MongoDataLoader.csvDocuments.getCollection("meta-members.csv");
         metaMembersCollection.createIndex(new Document("member_id",1));
 
-        MongoCollection metaEventsCollection= CsvToMongoTransformer.csvDocuments.getCollection("meta-events.csv");
+        MongoCollection metaEventsCollection= MongoDataLoader.csvDocuments.getCollection("meta-events.csv");
         metaEventsCollection.createIndex(new Document("event_id",1));
 
-        MongoCollection metaGroupsCollection= CsvToMongoTransformer.csvDocuments.getCollection("meta-groups.csv");
+        MongoCollection metaGroupsCollection= MongoDataLoader.csvDocuments.getCollection("meta-groups.csv");
         metaGroupsCollection.createIndex(new Document("group_id",1));
 
-        MongoCollection membersCollection= CsvToMongoTransformer.csvDocuments.getCollection("members.csv");
+        MongoCollection membersCollection= MongoDataLoader.csvDocuments.getCollection("members.csv");
         membersCollection.createIndex(new Document("member_id",1));
         membersCollection.createIndex(new Document("group_id",1));
 
-        MongoCollection memberTopicsCollection= CsvToMongoTransformer.csvDocuments.getCollection("members_topics.csv");
+        MongoCollection memberTopicsCollection= MongoDataLoader.csvDocuments.getCollection("members_topics.csv");
         memberTopicsCollection.createIndex(new Document("member_id",1));
         memberTopicsCollection.createIndex(new Document("topic_id",1));
 
-        MongoCollection rsvpsCollection= CsvToMongoTransformer.csvDocuments.getCollection("rsvps.csv");
+        MongoCollection rsvpsCollection= MongoDataLoader.csvDocuments.getCollection("rsvps.csv");
         rsvpsCollection.createIndex(new Document("member_id",1));
         rsvpsCollection.createIndex(new Document("event_id",1));
         rsvpsCollection.createIndex(new Document("group_id",1));
 
-        MongoCollection groupsCollection= CsvToMongoTransformer.csvDocuments.getCollection("groups.csv");
+        MongoCollection groupsCollection= MongoDataLoader.csvDocuments.getCollection("groups.csv");
         groupsCollection.createIndex(new Document("group_id",1));
         groupsCollection.createIndex(new Document("group_name",1));
         groupsCollection.createIndex(new Document("organizer___name",1));
         groupsCollection.createIndex(new Document("organizer___member_id",1));
 
-        MongoCollection groupTopicsCollection= CsvToMongoTransformer.csvDocuments.getCollection("groups_topics.csv");
+        MongoCollection groupTopicsCollection= MongoDataLoader.csvDocuments.getCollection("groups_topics.csv");
         groupTopicsCollection.createIndex(new Document("group_id",1));
         groupTopicsCollection.createIndex(new Document("topic_id",1));
 //
 //group_name
-        MongoCollection eventsCollection= CsvToMongoTransformer.csvDocuments.getCollection("events.csv");
+        MongoCollection eventsCollection= MongoDataLoader.csvDocuments.getCollection("events.csv");
         eventsCollection.createIndex(new Document("event_id",1));
         eventsCollection.createIndex(new Document("event_name",1));
         eventsCollection.createIndex(new Document("group_id",1));
 
-        MongoCollection citiesCollection= CsvToMongoTransformer.csvDocuments.getCollection("cities.csv");
+        MongoCollection citiesCollection= MongoDataLoader.csvDocuments.getCollection("cities.csv");
         citiesCollection.createIndex(new Document("city",1));
         citiesCollection.createIndex(new Document("city_id",1));
 
@@ -320,31 +321,31 @@ ArrayList<Future> futureArrayList =new ArrayList<>();
     }
     public static void createIndexesForCitiesCollections(){
 
-        MongoCollection citiesCollection= CsvToMongoTransformer.newMongoDatabase.getCollection("cities");
+        MongoCollection citiesCollection= MongoDataLoader.newMongoDatabase.getCollection("cities");
         citiesCollection.createIndex(new Document("name",1));
 
     }
     public static void createIndexesForEventsCollection(){
-        MongoCollection eventsCollection= CsvToMongoTransformer.newMongoDatabase.getCollection("events");
+        MongoCollection eventsCollection= MongoDataLoader.newMongoDatabase.getCollection("events");
         eventsCollection.createIndex(new Document("event_id",1));
         eventsCollection.createIndex(new Document("event_name",1));
         eventsCollection.createIndex(new Document("creator_group",1));
     }
     public static void createIndexesForMembersCollection(){
-        MongoCollection membersCollection= CsvToMongoTransformer.newMongoDatabase.getCollection("members");
+        MongoCollection membersCollection= MongoDataLoader.newMongoDatabase.getCollection("members");
         membersCollection.createIndex(new Document("member_id",1));
     }
     public static void createIndexesForGroupsCollection(){
-        MongoCollection groupsCollection= CsvToMongoTransformer.newMongoDatabase.getCollection("groups");
+        MongoCollection groupsCollection= MongoDataLoader.newMongoDatabase.getCollection("groups");
         groupsCollection.createIndex(new Document("group_id",1));
     }
     public static void createIndexesForTopicsCollection(){
-        MongoCollection topicsCollection= CsvToMongoTransformer.newMongoDatabase.getCollection("topics");
+        MongoCollection topicsCollection= MongoDataLoader.newMongoDatabase.getCollection("topics");
         topicsCollection.createIndex(new Document("topic_id",1));
     }
 
     public static List<String> retrieveIds(String collection,String key){
-        MongoCollection sourceColl= CsvToMongoTransformer.csvDocuments.getCollection(collection);
+        MongoCollection sourceColl= MongoDataLoader.csvDocuments.getCollection(collection);
         List<String> IdsFromSourceColl = new ArrayList<>();
 
         MongoCursor mongoCursor = sourceColl.find()
@@ -357,7 +358,7 @@ ArrayList<Future> futureArrayList =new ArrayList<>();
         return  IdsFromSourceColl;
     }
     public static List<String> retrieveIds(String collection, String key, Bson bson){
-        MongoCollection sourceColl= CsvToMongoTransformer.csvDocuments.getCollection(collection);
+        MongoCollection sourceColl= MongoDataLoader.csvDocuments.getCollection(collection);
         List<String> IdsFromSourceColl = new ArrayList<>();
 
         MongoCursor mongoCursor = sourceColl.find(bson)
@@ -394,7 +395,7 @@ ArrayList<Future> futureArrayList =new ArrayList<>();
                 databaseExists.set(true);
             }
         });
-        if (!databaseExists.get()) throw new Exception("Database"+CsvToMongoTransformer.newMongoDatabase.getName()+" not created in MongoDb."
+        if (!databaseExists.get()) throw new Exception("Database"+ MongoDataLoader.newMongoDatabase.getName()+" not created in MongoDb."
                 );
 
         AtomicBoolean allCollectionsCreated = new AtomicBoolean(false);

@@ -28,10 +28,10 @@ public class EventDTO {
     private Date event_time;
     private Date updated;
 
-    private long duration;
-    private long utc_offset;
+    private Long duration;
+    private Long utc_offset;
 
-    private double member_count;
+    private Double member_count;
 
     private List<Category> categories;
     private GroupDTO creator_group;

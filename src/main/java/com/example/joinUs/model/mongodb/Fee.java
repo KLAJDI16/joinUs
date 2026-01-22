@@ -15,9 +15,9 @@ import lombok.NoArgsConstructor;
 public class Fee {
 
 private String accepts;
-private long amount;
+private Long amount;
 private String description;
-private boolean isRequired;
+private Boolean isRequired;
 
     //        "fee": {
 //        "accepts": "others",

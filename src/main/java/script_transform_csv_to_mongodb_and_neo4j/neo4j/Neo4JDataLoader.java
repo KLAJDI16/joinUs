@@ -1,17 +1,13 @@
 package script_transform_csv_to_mongodb_and_neo4j.neo4j;
 
-import com.mongodb.client.MongoClient;
 import org.neo4j.driver.*;
-import org.springframework.beans.factory.annotation.Value;
 import script_transform_csv_to_mongodb_and_neo4j.ConfigurationFileReader;
 import script_transform_csv_to_mongodb_and_neo4j.ParallelExecutor;
-import script_transform_csv_to_mongodb_and_neo4j.mongoDb.CsvToMongoTransformer;
 
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 
-public class MongoToNeo4JTransformer {
+public class Neo4JDataLoader {
     private static String uri=ConfigurationFileReader.getNeo4JURL();
     private static String dbUserName= ConfigurationFileReader.getNeo4JUsername();
     private static String dbPassword=ConfigurationFileReader.getNeo4JPassword();
@@ -19,7 +15,7 @@ public class MongoToNeo4JTransformer {
 
     private ParallelExecutor parallelExecutor;
 
-    public MongoToNeo4JTransformer(ParallelExecutor parallelExecutor){
+    public Neo4JDataLoader(ParallelExecutor parallelExecutor){
         this.parallelExecutor = parallelExecutor;
     }
 

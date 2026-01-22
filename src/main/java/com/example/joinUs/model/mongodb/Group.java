@@ -23,7 +23,7 @@ import java.util.List;
 @Document(collection = "groups")
 public class Group {
 
-    @Id
+//    @Id
     @Field("group_id")
     private String group_id;
 
@@ -49,10 +49,10 @@ public class Group {
     private List<Category> categories;
 
     @Field("member_count")
-    private double member_count;
+    private Double member_count;
 
     @Field("event_count")
-    private double event_count;
+    private Double event_count;
 
     @Field("organizer_members")
     private List<User> organizer_members;
@@ -64,6 +64,7 @@ public class Group {
     private GroupPhoto group_photo;
 
     public GroupDTO toDTO() {
+        if (this ==null) return new GroupDTO();
         GroupDTO dto = new GroupDTO();
 
         dto.setGroup_id(this.group_id);
@@ -98,4 +99,50 @@ public class Group {
 
         return dto;
     }
+
+    public static Group fromDTO(GroupDTO dto) {
+        if (dto == null) return null;
+
+        Group group = new Group();
+
+        group.setGroup_id(dto.getGroup_id());
+        group.setDescription(dto.getDescription());
+        group.setGroup_name(dto.getGroup_name());
+        group.setLink(dto.getLink());
+        group.setTimezone(dto.getTimezone());
+        group.setCreated(dto.getCreated());
+
+        if (dto.getCity() != null) {
+            group.setCity(City.fromDTO(dto.getCity()));
+        }
+
+        group.setCategories(dto.getCategories() != null ? dto.getCategories() : new ArrayList<>());
+        group.setMember_count(dto.getMember_count());
+        group.setEvent_count(dto.getEvent_count());
+
+        if (dto.getOrganizer_members() != null) {
+            group.setOrganizer_members(
+                    dto.getOrganizer_members().stream()
+                            .map(User::fromDTO)
+                            .toList()
+            );
+        } else {
+            group.setOrganizer_members(new ArrayList<>());
+        }
+
+        if (dto.getUpcoming_events() != null) {
+            group.setUpcoming_events(
+                    dto.getUpcoming_events().stream()
+                            .map(Event::fromDTO)
+                            .toList()
+            );
+        } else {
+            group.setUpcoming_events(new ArrayList<>());
+        }
+
+        group.setGroup_photo(dto.getGroup_photo());
+
+        return group;
+    }
+
 }

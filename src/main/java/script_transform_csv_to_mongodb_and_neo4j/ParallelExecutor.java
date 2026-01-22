@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class ParallelExecutor implements AutoCloseable {
 
@@ -26,10 +27,15 @@ public class ParallelExecutor implements AutoCloseable {
     }
 
     public <T, R> Future<R> submit(Function<T, R> task, T input) {
-        return executor.submit(() ->{
+        return executor.submit(() -> {
 
-      return   task.apply(input);
-    });
+            return task.apply(input);
+        });
+    }
+     public <T> Future<T> submit(Supplier<T> task) {
+            return executor.submit(() ->{
+                return   task.get();
+            });
 
     }
     public < R> Future<R> submit(Function<String, R> task, String input) {

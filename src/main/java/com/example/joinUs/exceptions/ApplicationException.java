@@ -4,7 +4,8 @@ public class ApplicationException extends Exception{
 
     String message;
 
-    public ApplicationException(Exception e){
-        message=e.getMessage();
+    public ApplicationException(String e){
+        super(e);
+        message=e;
     }
 }

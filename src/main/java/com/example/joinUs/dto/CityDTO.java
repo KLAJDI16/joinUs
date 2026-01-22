@@ -19,7 +19,7 @@ public class CityDTO {
     private String zip;
     private String state;
     private String localized_country_name;
-    private long latitude;
-    private long longitude;
-    private long distance;
+    private String latitude;
+    private String longitude;
+    private String distance;
 }

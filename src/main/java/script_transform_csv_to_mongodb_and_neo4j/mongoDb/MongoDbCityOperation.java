@@ -10,7 +10,6 @@ import script_transform_csv_to_mongodb_and_neo4j.ParallelExecutor;
 
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
 public class MongoDbCityOperation {
     public MongoClient mongoClient;
@@ -38,7 +37,7 @@ public class MongoDbCityOperation {
     }
 
     protected static Document extractCityToEmbedFromId(String cityId) {
-        MongoCollection cityCollection = CsvToMongoTransformer.csvDocuments.getCollection("cities.csv");
+        MongoCollection cityCollection = MongoDataLoader.csvDocuments.getCollection("cities.csv");
 
         return (Document) cityCollection.find(Filters.eq("city_id", cityId))
                 .projection(new Document("_id", 0).append("member_count", 0).append("ranking", 0)).first();
@@ -46,7 +45,7 @@ public class MongoDbCityOperation {
 
     protected static Document extractCityToEmbedFromCityName(String cityName) {
         Callable<Document> callable = () -> {
-            MongoCollection cityCollection = CsvToMongoTransformer.csvDocuments.getCollection("cities.csv");
+            MongoCollection cityCollection = MongoDataLoader.csvDocuments.getCollection("cities.csv");
             return (Document) cityCollection.find(Filters.eq("city", cityName))
                     .projection(new Document("_id", 0).append("member_count", 0).append("ranking", 0)).first();
         };
@@ -86,7 +85,7 @@ public class MongoDbCityOperation {
 
     public void createCityCollection() {
         MongoCollection newCollection = getCityCollection();
-        MongoCollection oldCollection = CsvToMongoTransformer.csvDocuments.getCollection("cities.csv");
+        MongoCollection oldCollection = MongoDataLoader.csvDocuments.getCollection("cities.csv");
 
 
         try (MongoCursor<Document> mongoCursor = oldCollection.find().cursor()) {

@@ -15,6 +15,7 @@ public class UserDTO {
 
     private String member_id;
     private String member_name;
+    private String password;
 
     private CityDTO city;
 
@@ -23,8 +24,8 @@ public class UserDTO {
 
     private List<Topic> topics;
 
-    private double event_count;
-    private double group_count;
+    private Double event_count;
+    private Double group_count;
 
     private List<EventDTO> upcoming_events;
 }
