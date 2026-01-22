@@ -3,6 +3,7 @@ package com.example.joinUs.controller;
 import com.example.joinUs.dto.EventDTO;
 import com.example.joinUs.dto.EventNeo4jDTO;
 import com.example.joinUs.dto.UserNeo4jDTO;
+import com.example.joinUs.exceptions.ApplicationException;
 import com.example.joinUs.service.EventService;
 import com.example.joinUs.service.UserService;
 import org.bson.json.JsonObject;
