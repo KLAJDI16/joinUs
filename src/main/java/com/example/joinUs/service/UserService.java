@@ -49,16 +49,16 @@ public class UserService {
 //                .toList();
     }
 
-    public UserDTO getUserProfile(){
-        SecurityContext securityContext = SecurityContextHolder.getContext();
-        Object principal = securityContext.getAuthentication().getPrincipal();
-        User user = (User) principal;
-        return user.toDTO();
-    }
+//    public UserDTO getUserProfile(){
+//        SecurityContext securityContext = SecurityContextHolder.getContext();
+//        Object principal = securityContext.getAuthentication().getPrincipal();
+//        User user = (User) principal;
+//        return user.toDTO();
+//    }
     public UserDTO editUserProfile(UserDTO userUpdates){
         SecurityContext securityContext = SecurityContextHolder.getContext();
         User member = (User) securityContext.getAuthentication().getPrincipal();
-        String userId = member.getMember_id();
+        String userId = member.getMemberId();
 
         // Fetch the existing user from DB
         User existingUser = userRepository.findByMember_id(userId)
@@ -66,8 +66,8 @@ public class UserService {
 
         // Update only the allowed fields
         if (userUpdates.getBio() != null) existingUser.setBio(userUpdates.getBio());
-        if (userUpdates.getMember_name() != null) existingUser.setMember_name(userUpdates.getMember_name());
-        if (userUpdates.getMember_status() != null) existingUser.setMember_status(userUpdates.getMember_status());
+        if (userUpdates.getMemberName() != null) existingUser.setMemberName(userUpdates.getMemberName());
+        if (userUpdates.getMemberStatus() != null) existingUser.setMemberStatus(userUpdates.getMemberStatus());
 
         if (userUpdates.getCity() != null) {
             CityDTO updatedCity = userUpdates.getCity();
@@ -81,8 +81,8 @@ public class UserService {
             if (updatedCity.getLatitude() != null) existingCity.setLatitude(updatedCity.getLatitude());
             if (updatedCity.getLongitude() != null) existingCity.setLongitude(updatedCity.getLongitude());
             if (updatedCity.getDistance() != null) existingCity.setDistance(updatedCity.getDistance());
-            if (updatedCity.getLocalized_country_name() != null)
-                existingCity.setLocalized_country_name(updatedCity.getLocalized_country_name());
+            if (updatedCity.getLocalizedCountryName() != null)
+                existingCity.setLocalized_country_name(updatedCity.getLocalizedCountryName());
 
             existingUser.setCity(existingCity);
         }
@@ -90,18 +90,19 @@ public class UserService {
         // Save the updated user
         userRepository.save(existingUser);
 
-        return existingUser.toDTO();
+//        return existingUser.toDTO();
+        return null;
     }
 
     public List<UserNeo4jDTO> getAllUsersFromGraph() {
         return userNeo4JRepo.findAll().stream().map(userNeo4J -> userNeo4J.toDTO()).toList();
     }
 
-    public User createUser(UserDTO userDTO) {
-        User user = User.fromDTO(userDTO);
-        userRepository.save(user);
-        return user;
-    }
+//    public User createUser(UserDTO userDTO) {
+//        User user = User.(userDTO);
+//        userRepository.save(user);
+//        return user;
+//    }
 
     public JsonObject userHasPermissionToEditGroup(String groupId) throws ApplicationException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -109,7 +110,7 @@ public class UserService {
             throw new ApplicationException("User is not authenticated in the application");
         }
         User user = (User) authentication.getPrincipal();
-        String userId=user.getMember_id();
+        String userId=user.getMemberId();
         List<Group> groups = groupRepository.findGroupsByOrganizerId(userId);
         if (groups==null|| groups.isEmpty())
             return new JsonObject("""
@@ -132,7 +133,7 @@ public class UserService {
             throw new ApplicationException("User is not authenticated in the application");
         }
         User user = (User) authentication.getPrincipal();
-        String userId=user.getMember_id();
+        String userId=user.getMemberId();
         List<Group> groups = groupRepository.findGroupsByOrganizerId(userId);
         if (groups==null)   return new JsonObject("""
                 {"result":"You do not have permission to edit this event"}

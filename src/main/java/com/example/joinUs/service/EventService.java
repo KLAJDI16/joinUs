@@ -29,7 +29,7 @@ public class EventService {
     }
 
     public EventDTO getEventById(String id) {
-        Event event = eventRepository.findByEventId(id);
+        Event event = eventRepository.findEventById(id);
         return eventMapper.toDTO(event);
     }
 

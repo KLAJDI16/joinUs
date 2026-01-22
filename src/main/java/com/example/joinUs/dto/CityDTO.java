@@ -22,8 +22,8 @@ public class CityDTO {
     private String state;
     private String localizedCountryName;
 
-    private Double latitude;
-    private Double longitude;
-    private Double distance;
+    private String latitude;
+    private String longitude;
+    private String distance;
 
 }

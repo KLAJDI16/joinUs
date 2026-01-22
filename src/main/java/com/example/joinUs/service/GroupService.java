@@ -20,7 +20,7 @@ public class GroupService {
     private GroupMapper groupMapper;
 
     public GroupDTO getGroupById(String id) {
-        Group group = groupRepository.findByGroupId(id);
+        Group group = groupRepository.findGroupById(id);
         return groupMapper.toDTO(group);
     }
 

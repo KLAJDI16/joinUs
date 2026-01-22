@@ -3,7 +3,6 @@ package com.example.joinUs.service;
 import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.mongodb.User;
-import com.example.joinUs.model.mongodb.UserSecurity;
 import com.example.joinUs.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
