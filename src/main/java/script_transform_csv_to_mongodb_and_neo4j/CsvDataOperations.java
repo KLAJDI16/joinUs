@@ -3,8 +3,7 @@ package script_transform_csv_to_mongodb_and_neo4j;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -15,10 +14,7 @@ import java.util.concurrent.Future;
 public class CsvDataUpdater {
     public static final String firstDatasetFolder= ConfigurationFileReader.checkAndGetProp("firstDatasetFolder");
     public static final String secondDatasetFolder=ConfigurationFileReader.checkAndGetProp("secondDatasetFolder");;
-    public static  String transformedDatasetFolder=
-            ConfigurationFileReader.getProperty("transformedDatasetFolder")!=null ?
-            ConfigurationFileReader.getProperty("transformedDatasetFolder") :
-            firstDatasetFolder.substring(0,firstDatasetFolder
+    public static  String transformedDatasetFolder=firstDatasetFolder.substring(0,firstDatasetFolder
             .substring(0,firstDatasetFolder.length()-2).lastIndexOf("\\")+1)+"TransformedDataset\\";
     public static final String metaMembersPath= secondDatasetFolder+"meta-members.csv";
     public static final String metaEventsPath= secondDatasetFolder+"meta-events.csv";
@@ -26,11 +22,13 @@ public class CsvDataUpdater {
     public static final String membersPath= firstDatasetFolder+"members.csv";
     public static final String groupsPath= firstDatasetFolder+"groups.csv";
     public static final String eventsPath= firstDatasetFolder+"events.csv";
+    public static final String topicsPath= firstDatasetFolder+"topics.csv";
+
     public static final String memberTopicsPath= firstDatasetFolder+"members_topics.csv";
     public static final String groupTopicsPath= firstDatasetFolder+"groups_topics.csv";
     public static final String transformedMembers=transformedDatasetFolder+"members.csv";
-    public static final String transformedGroups=transformedDatasetFolder+"members.csv";
-    public static final String transformedEvents=transformedDatasetFolder+"members.csv";
+    public static final String transformedGroups=transformedDatasetFolder+"groups.csv";
+    public static final String transformedEvents=transformedDatasetFolder+"events.csv";
     public static final String transformedGroupTopics=transformedDatasetFolder+"groups_topics.csv";
     public static final String transformedMemberTopics=transformedDatasetFolder+"member_topics.csv";
 
@@ -183,16 +181,17 @@ public class CsvDataUpdater {
 
     public static void updateMemberIdsAtCSV() throws Exception {
         CsvDataUpdater.updateIdsFromCsv(CsvDataUpdater.metaMembersPath,"member_id","member_id",-1,CsvDataUpdater.membersPath,CsvDataUpdater.memberTopicsPath);
+        CsvDataUpdater.updateIdsFromCsv(CsvDataUpdater.transformedMembers,"member_id","organizer.member_id",-1,CsvDataUpdater.groupsPath);
+
     }
     public static void updateEventIdsAtCSV() throws Exception {
         CsvDataUpdater.updateIdsFromCsv(CsvDataUpdater.metaEventsPath,"event_id","event_id",-1,CsvDataUpdater.eventsPath);
     }
     public static void updateGroupIdsAtCSV() throws Exception {
-        CsvDataUpdater.updateIdsFromCsv(CsvDataUpdater.metaGroupsPath,"group_id","group_id",-1,CsvDataUpdater.groupsPath,transformedDatasetFolder+"members.csv",CsvDataUpdater.groupTopicsPath,CsvDataUpdater.eventsPath);
+        CsvDataUpdater.updateIdsFromCsv(CsvDataUpdater.metaGroupsPath,"group_id","group_id",-1,CsvDataUpdater.transformedGroups,transformedDatasetFolder+"members.csv",CsvDataUpdater.groupTopicsPath,CsvDataUpdater.transformedEvents);
     }
 
     public static void updateIdsDirectlyFromCSV(){
-
 
         try {
             CsvDataUpdater.updateEventIdsAtCSV();
@@ -201,6 +200,17 @@ public class CsvDataUpdater {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void moveFilesToNeo4JImportFolder() throws IOException {
+String importFolder=ConfigurationFileReader.checkAndGetProp("importFolder");
+for (File file : new File(CsvDataUpdater.transformedDatasetFolder).listFiles()){
+    String fileName=file.getName();
+    Files.copy(file.toPath(),new FileOutputStream(importFolder+fileName));
+}
+Files.copy(Path.of(topicsPath),new FileOutputStream(importFolder+"topics.csv"));
+Files.copy(Path.of(CsvDataUpdater.secondDatasetFolder+"rsvps.csv"),new FileOutputStream(importFolder+"rsvps.csv"));
+
     }
 
 
