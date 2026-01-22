@@ -98,7 +98,7 @@ public class Neo4JDataLoader {
         System.out.println("FINISHED CREATING  Edges Group-Members ");
 
           ParallelExecutor.getFutures(futures);
-        System.out.println("Finished CREATING Edges ");
+        System.out.println("Finished CREATING Edges AND All the process for Neo4J");
 
         this.driver.close();
 
