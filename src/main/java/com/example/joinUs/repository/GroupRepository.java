@@ -4,10 +4,16 @@ import com.example.joinUs.model.mongodb.Group;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 
 @Repository
 public interface GroupRepository extends MongoRepository<Group, String> {
 
-    Group findByGroupId(String groupId);
+    Optional<Group> findByGroupId(String groupId);
+
+    boolean existsByGroupId(String groupId);
+
+    void deleteByGroupId(String groupId);
 
 }
