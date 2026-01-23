@@ -84,9 +84,9 @@ public class MongoDbEventOperations {
 
         if (document == null) return null;
 
-        groupDocument.append("id", document.getString("group_id"));
+        groupDocument.append("group_id", document.getString("group_id"));
 
-        groupDocument.append("name", document.getString(
+        groupDocument.append("group_name", document.getString(
                 "group_name"));
 
         groupDocument.append("link", document.getString("link"));
