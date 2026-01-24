@@ -7,7 +7,12 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 
@@ -16,7 +21,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Document(collection = "members")
-public class User {
+public class User implements UserDetails {
 
     @Id
     @Field("member_id")
@@ -46,21 +51,59 @@ public class User {
     @Field("upcoming_events")
     private List<Event> upcomingEvents;
 
-    //"member_id","bio","city","country","hometown","joined",
-    // "lat","link","lon","member_name","state","member_status","visited","group_id"
+    @Field("password")
+    private String password;
 
-    //    {
-    //        "_id": {…},
-    //        "member_id": "8386",
-    //            "member_name": "Scott Heiferman",
-    //            "member_status": "active",
-    //            "link": "http://www.meetup.com/members/6",
-    //            "bio": "Community organizer",
-    //            "topics": […],
-    //        "city": {…},
-    //        "event_count": 28,
-    //            "upcoming_events": […],
-    //        "group_count": {…}
-    //    }
+
+    @Field("isAdmin")
+    private Boolean isAdmin;
+
+//    public List<String> getRoles(){
+//        List<String> roles = new ArrayList<>();
+//        if (this.isAdmin) roles.add("ADMIN");
+//        for (String str:getCreated_groups()){
+//            roles.add("ORGANIZE_"+str);
+//        }
+//        return roles;
+//    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        Collection<String> list = new ArrayList<>();
+
+        if (isAdmin) list.add("ROLE_ADMIN"); // TODO also include groups?
+
+        return list.stream().map(e -> new SimpleGrantedAuthority(e)).toList();
+    }
+
+    @Override
+    public String getPassword() {
+        return this.getPassword();
+    }
+
+    @Override
+    public String getUsername() {
+        return this.getMemberName();
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 
 }

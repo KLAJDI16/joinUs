@@ -18,6 +18,7 @@ public class UserDTO {
 
     private String memberId;
     private String memberName;
+    private String password; // TODO discuss
 
     private CityDTO city;
 
@@ -30,5 +31,6 @@ public class UserDTO {
     private Integer groupCount;
 
     private List<EventDTO> upcomingEvents;
+
 
 }

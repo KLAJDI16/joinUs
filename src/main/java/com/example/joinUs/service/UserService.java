@@ -4,6 +4,7 @@ import com.example.joinUs.dto.CityDTO;
 import com.example.joinUs.dto.UserDTO;
 import com.example.joinUs.dto.UserNeo4jDTO;
 import com.example.joinUs.exceptions.ApplicationException;
+import com.example.joinUs.mapping.UserMapper;
 import com.example.joinUs.model.mongodb.City;
 import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
@@ -42,19 +43,22 @@ public class UserService {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    public List<UserDTO> getAllUsers() {
-        return null; // TODO
+    @Autowired
+    private UserMapper userMapper;
+
+//    public List<UserDTO> getAllUsers() {
+//        return null; // TODO
 //        return userRepository.findAll().stream()
 //                .map(user -> user.toDTO())
 //                .toList();
-    }
-
-//    public UserDTO getUserProfile(){
-//        SecurityContext securityContext = SecurityContextHolder.getContext();
-//        Object principal = securityContext.getAuthentication().getPrincipal();
-//        User user = (User) principal;
-//        return user.toDTO();
 //    }
+
+    public UserDTO getUserProfile(){
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        Object principal = securityContext.getAuthentication().getPrincipal();
+        User user = (User) principal;
+        return userMapper.toDTO(user);
+    }
     public UserDTO editUserProfile(UserDTO userUpdates){
         SecurityContext securityContext = SecurityContextHolder.getContext();
         User member = (User) securityContext.getAuthentication().getPrincipal();
@@ -82,7 +86,7 @@ public class UserService {
             if (updatedCity.getLongitude() != null) existingCity.setLongitude(updatedCity.getLongitude());
             if (updatedCity.getDistance() != null) existingCity.setDistance(updatedCity.getDistance());
             if (updatedCity.getLocalizedCountryName() != null)
-                existingCity.setLocalized_country_name(updatedCity.getLocalizedCountryName());
+                existingCity.setLocalizedCountryName(updatedCity.getLocalizedCountryName());
 
             existingUser.setCity(existingCity);
         }
@@ -118,7 +122,7 @@ public class UserService {
                 """);
 
         for (Group group : groups){
-            if (group.getGroup_id().equalsIgnoreCase(groupId)) return null;
+            if (group.getGroupId().equalsIgnoreCase(groupId)) return null;
         }
 
         return new JsonObject("""
@@ -140,9 +144,9 @@ public class UserService {
                 """);;
 
         for (Group group : groups){
-            List<Event> events = eventRepository.findEventsByCreator_group(group.getGroup_id());
+            List<Event> events = eventRepository.findEventsByCreatorGroup(group.getGroupId());
             for (Event event : events) {
-                if (event.getEvent_id().equalsIgnoreCase(eventId)) return null;
+                if (event.getEventId().equalsIgnoreCase(eventId)) return null;
             }
         }
 

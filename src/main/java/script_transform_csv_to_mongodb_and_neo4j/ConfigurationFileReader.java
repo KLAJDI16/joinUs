@@ -22,10 +22,10 @@ public  class ConfigurationFileReader {
     }
 
     public static String getMongoUrl()  {
-        return  checkAndGetProp("spring.data.mongodb.uri");
+        return  checkAndGetProp("spring.mongodb.uri");
     }
     public static String getMongoDatabase()  {
-        return  checkAndGetProp("spring.data.mongodb.database");
+        return  checkAndGetProp("spring.mongodb.database");
     }
 
     public static String getNeo4JDatabase()  {
