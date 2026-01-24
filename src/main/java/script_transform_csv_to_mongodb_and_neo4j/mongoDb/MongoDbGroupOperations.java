@@ -244,9 +244,9 @@ public class MongoDbGroupOperations {
         String group_id=oldGroupDocument.getString("group_id");
         Document organizer = new Document();
         String organizerName=oldGroupDocument.getString("organizer___name");
-        organizer.append("name",organizerName);
+        organizer.append("member_name",organizerName);
         String organizerId=oldGroupDocument.getString("organizer___member_id");
-        organizer.append("id",organizerId);
+        organizer.append("member_id",organizerId);
 //        if (groups_per_organizer.containsKey(organizerId)){
 //            groups_per_organizer.get(organizerId).add(group_id);
 //        }

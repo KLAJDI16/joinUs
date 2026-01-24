@@ -36,27 +36,24 @@ public class MongoDbCityOperation {
         this.parallelExecutor = parallelExecutor;
     }
 
-    protected static Document extractCityToEmbedFromId(String cityId) {
+    protected  Document extractCityToEmbedFromId(String cityId) {
         MongoCollection cityCollection = MongoDataLoader.csvDocuments.getCollection("cities.csv");
 
-        return (Document) cityCollection.find(Filters.eq("city_id", cityId))
+        Document oldDocument = (Document) cityCollection.find(Filters.eq("city_id", cityId))
                 .projection(new Document("_id", 0).append("member_count", 0).append("ranking", 0)).first();
+
+        return extractCityDocument(oldDocument);
     }
 
     protected static Document extractCityToEmbedFromCityName(String cityName) {
-        Callable<Document> callable = () -> {
             MongoCollection cityCollection = MongoDataLoader.csvDocuments.getCollection("cities.csv");
-            return (Document) cityCollection.find(Filters.eq("city", cityName))
-                    .projection(new Document("_id", 0).append("member_count", 0).append("ranking", 0)).first();
-        };
-        try {
-            return callable.call();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+            Document document = (Document) cityCollection.find(Filters.eq("city", cityName))
+                    .projection(new Document("_id", 0)).first();
+
+            return extractCityDocument(document);
     }
 
-    private Document extractCityDocument(Document oldDocument) {
+    private static Document extractCityDocument(Document oldDocument) {
         if (oldDocument == null || oldDocument.isEmpty()) return new Document();
         Document documentToReturn = new Document();
         List<String> keysToIncludeDirectly = List.of("country",
@@ -68,15 +65,11 @@ public class MongoDbCityOperation {
         documentToReturn.append("name", oldDocument.get("city"));
         documentToReturn.append("id", oldDocument.get("city_id"));
 
-        double ranking = Double.parseDouble(oldDocument.getString("ranking"));
-        long member_count = Long.parseLong(oldDocument.getString("member_count"));
         double distance = Double.parseDouble(oldDocument.getString("distance"));
         double latitude = Double.parseDouble(oldDocument.getString("latitude"));
         double longitude = Double.parseDouble(oldDocument.getString("longitude"));
 
         documentToReturn.append("distance", distance);
-        documentToReturn.append("ranking", ranking);
-        documentToReturn.append("member_count", member_count);
         documentToReturn.append("latitude", latitude);
         documentToReturn.append("longitude", longitude);
 
