@@ -1,4 +1,4 @@
-package com.example.joinUs.model.mongodb;
+package com.example.joinUs.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -8,11 +8,11 @@ import lombok.NoArgsConstructor;
 
 
 @Data
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GroupPhoto {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class GroupPhotoDTO {
 
     private String baseUrl;
     private String highresLink;

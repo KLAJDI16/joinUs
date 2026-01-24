@@ -1,5 +1,6 @@
-package com.example.joinUs.model.mongodb;
+package com.example.joinUs.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,7 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Fee {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class FeeDTO {
 
     private String accepts;
     private Integer amount;

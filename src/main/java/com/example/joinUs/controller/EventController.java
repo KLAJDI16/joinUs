@@ -1,9 +1,6 @@
 package com.example.joinUs.controller;
 
-
 import com.example.joinUs.dto.EventDTO;
-import com.example.joinUs.dto.EventNeo4jDTO;
-import com.example.joinUs.dto.UserNeo4jDTO;
 import com.example.joinUs.exceptions.ApplicationException;
 import com.example.joinUs.service.EventService;
 import com.example.joinUs.service.UserService;
@@ -15,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
 @RestController()
 @RequestMapping("/events")
 public class EventController {
@@ -25,33 +23,24 @@ public class EventController {
     @Autowired
     private UserService userService;
 
-//    @GetMapping("/fromMongo")
-//    public List<EventDTO> getAllEvents(){
-//        return eventService.getAllEvents();
-//    }
-//
-//
-//
-//
-//    @GetMapping("/fromGraph")
-//    public List<EventNeo4jDTO> getAllUsersFromGraph() {
-//        return eventService.getAllEventsFromGraph();
-//    }
-
     @GetMapping("")
-    public JsonObject getAllEvents() {
-        JsonObject jsonObject = new JsonObject("{\"result\":\"Successfully hit GET /events \"}");
-        return jsonObject;
+    public List<EventDTO> getAllEvents() {
+        return eventService.getAllEvents();
+    }
+
+    @GetMapping("/{id}")
+    public EventDTO getEventById(@PathVariable String id) {
+        return eventService.getEventById(id);
     }
 
     @PostMapping("")
-    public JsonObject createEvent() {
+    public JsonObject createEvent() { // TODO
         JsonObject jsonObject = new JsonObject("{\"result\":\"Successfully hit POST /events \"}");
         return jsonObject;
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity editEvent(@PathVariable String id) {
+    public ResponseEntity editEvent(@PathVariable String id) { // TODO
         try {
             if (userService.userHasPermissionToEditEvent(id) != null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

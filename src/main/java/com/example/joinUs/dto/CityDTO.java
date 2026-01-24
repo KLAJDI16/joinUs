@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,11 +16,14 @@ public class CityDTO {
 
     private String id;
     private String name;
+
     private String country;
     private String zip;
     private String state;
-    private String localized_country_name;
+    private String localizedCountryName;
+
     private String latitude;
     private String longitude;
     private String distance;
+
 }

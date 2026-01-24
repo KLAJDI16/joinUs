@@ -4,12 +4,13 @@ import com.example.joinUs.dto.GroupDTO;
 import com.example.joinUs.exceptions.ApplicationException;
 import com.example.joinUs.service.GroupService;
 import com.example.joinUs.service.UserService;
-import org.bson.json.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/groups")
@@ -17,53 +18,48 @@ public class GroupController {
 
     @Autowired
     private GroupService groupService;
+
     @Autowired
     private UserService userService;
 
-//    @GetMapping("")
-//    public List<GroupDTO> getAllGroups() {
-//
-//      System.out.println(SecurityContextHolder.getContext().getAuthentication());
-//        return groupService.getAllGroups();
-//    }
-
-    @GetMapping("")
-    public JsonObject getAllGroups() {
-         JsonObject jsonObject = new JsonObject("{\"result\":\"Successfully hit GET /groups \"}");
-         return jsonObject;
-    }
-    @PostMapping("")
-    public JsonObject createGroup() {
-        JsonObject jsonObject = new JsonObject("{\"result\":\"Successfully hit POST /groups \"}");
-        return jsonObject;
+    // READ: list all groups
+    @GetMapping
+    public List<GroupDTO> getAllGroups() {
+        return groupService.getAllGroups();
     }
 
-    @PutMapping("/{id}/edit")
-    public ResponseEntity editGroup(@PathVariable String id)  {
+    // READ: get one group by groupId
+    @GetMapping("/{id}")
+    public GroupDTO getGroupById(@PathVariable String id) {
+        return groupService.getGroupById(id);
+    }
 
+    // CREATE: create a new group
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public GroupDTO createGroup(@RequestBody GroupDTO groupDTO) {
+        return groupService.createGroup(groupDTO);
+    }
+
+    // UPDATE (partial): update an existing group
+    @PatchMapping("/{id}")
+    public ResponseEntity updateGroup(@PathVariable String id, @RequestBody GroupDTO groupDTO) {
         try {
             if (userService.userHasPermissionToEditGroup(id)!=null)
             { return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(userService.userHasPermissionToEditGroup(id));}
             else {
-            return ResponseEntity.ok(groupService.findById(id));
+                return ResponseEntity.ok(groupService.updateGroup(id, groupDTO));
             }
         } catch (ApplicationException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-
-//    // Example: get group by id
-//    @GetMapping("/{id}")
-//    public GroupDTO getGroupById(@PathVariable String id) {
-//        return groupService.getGroupById(id);
-//    }
-//
-//    // Example: create a new group
-//    @PostMapping("")
-//    public GroupDTO createGroup(@RequestBody GroupDTO groupDTO) {
-//        return groupService.createGroup(groupDTO);
-//    }
+    // DELETE: delete a group
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteGroup(@PathVariable String id) {
+        groupService.deleteGroup(id);
+    }
 }
-

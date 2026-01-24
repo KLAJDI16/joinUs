@@ -1,21 +1,19 @@
-package com.example.joinUs.model.mongodb;
+package com.example.joinUs.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Document(collection = "topics")
-public class Topic {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class TopicDTO {
 
-    @Id
     private String topicId;
     private String topicName;
     private String link;
