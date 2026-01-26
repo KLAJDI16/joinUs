@@ -1,32 +1,36 @@
 package com.example.joinUs.service;
 
-import com.example.joinUs.dto.CityDTO;
-import com.example.joinUs.dto.UserDTO;
-import com.example.joinUs.dto.UserNeo4jDTO;
+import com.example.joinUs.Utils;
+import com.example.joinUs.dto.*;
 import com.example.joinUs.exceptions.ApplicationException;
 import com.example.joinUs.mapping.UserMapper;
 import com.example.joinUs.model.mongodb.City;
 import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.mongodb.User;
+import com.example.joinUs.model.neo4j.User_Neo4J;
 import com.example.joinUs.repository.EventRepository;
 import com.example.joinUs.repository.GroupRepository;
 import com.example.joinUs.repository.UserRepository;
 import com.example.joinUs.repository.User_Neo4J_Repo;
-import org.bson.json.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 @Service
 public class UserService {
+
+    @Autowired
+    AuthenticationManager authManager;
 
     @Autowired
     private UserRepository userRepository;
@@ -53,10 +57,19 @@ public class UserService {
 //                .toList();
 //    }
 
+    public List<User_Neo4J> getMembersOfAgroup(String groupId){
+
+        return  userNeo4JRepo.getMembersLinkedToGroup(groupId);
+    }
+
     public UserDTO getUserProfile(){
         SecurityContext securityContext = SecurityContextHolder.getContext();
-        Object principal = securityContext.getAuthentication().getPrincipal();
-        User user = (User) principal;
+        User user = null;
+
+        Authentication authentication = securityContext.getAuthentication();
+        if (authentication!=null){
+           user= (User) authentication.getPrincipal();
+        }
         return userMapper.toDTO(user);
     }
     public UserDTO editUserProfile(UserDTO userUpdates){
@@ -108,52 +121,84 @@ public class UserService {
 //        return user;
 //    }
 
-    public JsonObject userHasPermissionToEditGroup(String groupId) throws ApplicationException {
+    public boolean checkUserHasPermissionToEditGroup(String groupId)  {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!authentication.isAuthenticated()){
-            throw new ApplicationException("User is not authenticated in the application");
+        if (authentication==null || !authentication.isAuthenticated() ){
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"User is not authenticated in the application");
         }
         User user = (User) authentication.getPrincipal();
         String userId=user.getMemberId();
         List<Group> groups = groupRepository.findGroupsByOrganizerId(userId);
         if (groups==null|| groups.isEmpty())
-            return new JsonObject("""
-                {"result":"You do not have permission to edit this group"}
-                """);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this group");
 
         for (Group group : groups){
-            if (group.getGroupId().equalsIgnoreCase(groupId)) return null;
+            if (group.getGroupId().equalsIgnoreCase(groupId)) return true;
         }
 
-        return new JsonObject("""
-                {"result":"You do not have permission to edit this group"}
-                """);
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this group");
+
 
     }
 
-    public JsonObject userHasPermissionToEditEvent(String eventId) throws ApplicationException {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!authentication.isAuthenticated()){
-            throw new ApplicationException("User is not authenticated in the application");
-        }
-        User user = (User) authentication.getPrincipal();
+    public boolean checkUserHasPermissionToEditEvent(String eventId)  {
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        if ( authentication==null || !authentication.isAuthenticated()){
+//            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"User is not authenticated in the application");
+//        }
+//        User user = (User) authentication.getPrincipal();
+        User user = Utils.getUserFromContext();
         String userId=user.getMemberId();
         List<Group> groups = groupRepository.findGroupsByOrganizerId(userId);
-        if (groups==null)   return new JsonObject("""
-                {"result":"You do not have permission to edit this event"}
-                """);;
+        if (groups==null)  throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this event");
 
+//        boolean foundEvent;
         for (Group group : groups){
             List<Event> events = eventRepository.findEventsByCreatorGroup(group.getGroupId());
             for (Event event : events) {
-                if (event.getEventId().equalsIgnoreCase(eventId)) return null;
+                if (event.getEventId().equalsIgnoreCase(eventId)) return true;
             }
         }
-
-            return new JsonObject("""
-                {"result":"You do not have permission to edit this event"}
-                """);
+           throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this event");
     }
 
+    //TODO implement correctly
+    public ResponseMessage registerUser(UserDTO userDTO) {
+       User user = userMapper.toEntity(userDTO);
+       user.setEventCount(0);
+       user.setGroupCount(0);
+
+        try {
+            Authentication auth = authManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            userDTO.getMemberName(), userDTO.getPassword()
+                    )
+            );
+
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(auth);
+            SecurityContextHolder.setContext(context);
+
+            return new ResponseMessage("success", "Your registration was succesful");
+        } catch (Exception e) {
+         throw  new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Your registration failed "+"\n Error : "+e.getMessage().toString());
+        }
+    }
+
+    public SecurityContext loginUser(LoginForm loginForm){
+        Authentication auth = authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginForm.username, loginForm.password
+                )
+        );
+
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(auth);
+        SecurityContextHolder.setContext(context);
+
+        return context;
+
+    }
 }
 

@@ -6,6 +6,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface Topic_Neo4J_Repo extends Neo4jRepository<Topic_Neo4J, String> {
-    // Example: find topics by name
+
     // List<Topic_Neo4J> findByTopicName(String topicName);
+
+
 }

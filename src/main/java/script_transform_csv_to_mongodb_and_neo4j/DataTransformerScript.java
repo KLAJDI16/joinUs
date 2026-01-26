@@ -30,7 +30,7 @@ public class DataTransformerScript {
         CsvDataOperations.copyFilesToNeo4JImportFolder();
             future2 = parallelExecutor.submit(() -> {
                 try {
-                    new Neo4JDataLoader(parallelExecutor).transformMongoDataToNeo4j();
+                    new Neo4JDataLoader(parallelExecutor).transformCsvDataToNeo4j();
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

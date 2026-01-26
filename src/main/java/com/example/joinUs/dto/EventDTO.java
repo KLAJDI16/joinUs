@@ -1,5 +1,6 @@
 package com.example.joinUs.dto;
 
+import com.example.joinUs.dto.embedded.GroupEmbeddedDTO;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,5 +38,7 @@ public class EventDTO {
     private Integer memberCount;
 
     private GroupDTO creatorGroup;
+
+
 
 }

@@ -1,6 +1,7 @@
 package com.example.joinUs.controller;
 
 import com.example.joinUs.dto.LoginForm;
+import com.example.joinUs.dto.ResponseMessage;
 import com.example.joinUs.dto.UserDTO;
 import com.example.joinUs.service.UserService;
 import jakarta.servlet.http.HttpServlet;
@@ -45,8 +46,7 @@ public class FirstController {
 
     @Autowired
      AuthenticationManager authManager;
-//    private final UserRepository userRepo;
-//    private final PasswordEncoder encoder;
+
 
 //    @ApiIgnore
     @RequestMapping("/")
@@ -61,49 +61,34 @@ public class FirstController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginForm req,HttpServletRequest request) {
+    public ResponseEntity login(@RequestBody LoginForm req, HttpServletRequest request) {
 
-        Authentication auth = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        req.username, req.password
-                )
-        );
-
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(auth);
-        SecurityContextHolder.setContext(context);
-
-//        SecurityContextHolder.getContext().setAuthentication(auth);
-        request.getSession(true).setAttribute("SPRING_SECURITY_CONTEXT",context);
-        return ResponseEntity.ok("Logged in");
+        SecurityContext securityContext = userService.loginUser(req);
+        if (securityContext != null) {
+            request.getSession(true).setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
+            return ResponseEntity.ok(new ResponseMessage("success", "Login of the user was successful "));
+        }
+        else {
+            SecurityContextHolder.clearContext();
+            return   ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage("failure",
+                    "Your login failed "));
+        }
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request) {
+    public ResponseEntity logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
-        return ResponseEntity.ok("Logged out");
+        return ResponseEntity.ok(new ResponseMessage("success","Your logout was successful"));
     }
 
-//    @PostMapping("/register")
-//    public ResponseEntity<UserDTO> register(HttpServletRequest request,@RequestBody UserDTO userDTO) {
-//
-//        userService.createUser(userDTO);
-//
-//        Authentication auth = authManager.authenticate(
-//                new UsernamePasswordAuthenticationToken(
-//                        userDTO.getMember_name(),
-//                )
-//        );
-//
-//        SecurityContext context = SecurityContextHolder.createEmptyContext();
-//        context.setAuthentication(auth);
-//        SecurityContextHolder.setContext(context);
-//
-//        return ResponseEntity.ok("Logged out");
-//    }
+    @PostMapping("/register")
+    public ResponseEntity register(HttpServletRequest request,@RequestBody UserDTO userDTO) {
+        return ResponseEntity.ok(userService.registerUser(userDTO));
+           }
+
 
 }

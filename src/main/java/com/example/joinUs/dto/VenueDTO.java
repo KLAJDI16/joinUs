@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class VenueDTO {
 
-    private City city;
+    private CityDTO city;
     private String address1;
     private String address2;
 

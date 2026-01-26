@@ -42,7 +42,7 @@ public class Neo4JDataLoader {
 
 
 
-    public void transformMongoDataToNeo4j() throws Exception {
+    public void transformCsvDataToNeo4j() throws Exception {
         Neo4JOperations neo4JOperations = new Neo4JOperations(getNeo4jDriver(),defaultDatabase,parallelExecutor);
 
         System.out.println("CREATING Nodes");
@@ -70,6 +70,16 @@ public class Neo4JDataLoader {
 
 
         System.out.println("CREATING Edges ");
+//        futures[2] = parallelExecutor.submit(() -> {
+        Neo4JOperations.createGroupTopicsEdges();
+//        });
+//        futures[3] =   parallelExecutor.submit( () -> {
+        Neo4JOperations.createMemberEventsEdges();
+//        });
+
+//        futures[2].get();
+//        futures[3].get();
+        System.out.println("FINISHED CREATING  Edges Group-Topics  and Member-Events ");
 
 //        futures[0] = parallelExecutor.submit(() -> neo4JOperations.createEdgesFromRsvp());
 //        futures[1] = parallelExecutor.submit(() -> {
@@ -81,16 +91,7 @@ public class Neo4JDataLoader {
 //             futures[1].get();
 //             futures[4].get();
         System.out.println("FINISHED CREATING  Edges Group-Events  and Member-Topics ");
-//        futures[2] = parallelExecutor.submit(() -> {
-            Neo4JOperations.createGroupTopicsEdges();
-//        });
-//        futures[3] =   parallelExecutor.submit( () -> {
-            Neo4JOperations.createMemberEventsEdges();
-//        });
 
-//        futures[2].get();
-//        futures[3].get();
-        System.out.println("FINISHED CREATING  Edges Group-Topics  and Member-Events ");
 
 //        futures[5] =   parallelExecutor.submit( () -> {
             Neo4JOperations.createMemberGroupsEdge();

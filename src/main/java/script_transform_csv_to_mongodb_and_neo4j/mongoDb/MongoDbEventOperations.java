@@ -216,6 +216,9 @@ public class MongoDbEventOperations {
             while (mongoCursor.hasNext()) {
                 Document oldDocument = mongoCursor.next();
                 String event_id = oldDocument.getString("event_id");
+                String event_name = oldDocument.getString("event_name");
+
+                if (event_name==null || event_name.isEmpty() || event_name.isBlank()) continue;
 
                 futures[0] = parallelExecutor.submit(MongoDbEventOperations::extractEventDocument, oldDocument);
                 futures[1] = parallelExecutor.submit(MongoDbEventOperations::extractCategoryForEvent, oldDocument);

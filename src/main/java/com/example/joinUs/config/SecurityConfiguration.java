@@ -1,4 +1,4 @@
-package com.example.joinUs.configuration;
+package com.example.joinUs.config;
 
 import com.example.joinUs.authorization.RestAccessDeniedHandler;
 import com.example.joinUs.authorization.RestAuthenticationEntryPoint;
@@ -10,7 +10,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -29,6 +28,7 @@ public class SecurityConfiguration {
 
     @Autowired
     UserDetailsService userDetailsService;
+
     @Autowired
     RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
@@ -57,6 +57,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST,"/groups/**", "/events/**").authenticated()
                         .requestMatchers(HttpMethod.PUT,"/groups/**", "/events/**").authenticated()
                                 .requestMatchers(HttpMethod.PATCH,"/groups/**", "/events/**").authenticated()
+                                .requestMatchers(HttpMethod.DELETE,"/groups/**", "/events/**").authenticated()
                                 .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().permitAll()
                 )

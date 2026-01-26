@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 
 @Data
@@ -16,6 +17,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Topic {
 
     @Id
+    @Field("_id")
+    private String id;
+
     private String topicId;
     private String topicName;
     private String link;

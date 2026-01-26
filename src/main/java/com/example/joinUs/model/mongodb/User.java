@@ -24,6 +24,9 @@ import java.util.List;
 public class User implements UserDetails {
 
     @Id
+    @Field("_id")
+    private String id;
+
     @Field("member_id")
     private String memberId;
 
@@ -78,12 +81,12 @@ public class User implements UserDetails {
 
     @Override
     public String getPassword() {
-        return this.getPassword();
+        return this.password;
     }
 
     @Override
     public String getUsername() {
-        return this.getMemberName();
+        return this.memberName;
     }
 
     @Override

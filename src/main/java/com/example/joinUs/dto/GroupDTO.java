@@ -30,7 +30,8 @@ public class GroupDTO {
     private Integer memberCount;
     private Integer eventCount;
 
-    private List<UserDTO> organizerMembers;
+    private List<UserDTO> organizerMembers; //TODO create UserEmbeddedDTO and replace here ?
+
     private List<EventDTO> upcomingEvents;
 
     private GroupPhotoDTO groupPhoto;

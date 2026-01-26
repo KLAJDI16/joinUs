@@ -53,11 +53,11 @@ public class MongoDbUserOperations {
         List<Document> userTopics = new ArrayList<>();
         try (MongoCursor<Document> cursor = topicCollection
                 .find(new Document("member_id", memberId))
-                .projection(new Document("topic_id", 1).append("topic_key", 1))
+                .projection(new Document("topic_id", 1).append("topic_name", 1).append("_id",0))
                 .cursor()) {
             while (cursor.hasNext()) {
                 Document document = cursor.next();
-                userTopics.add( document);
+                userTopics.add(document);
             }
         }
 

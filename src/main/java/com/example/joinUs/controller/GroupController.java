@@ -37,23 +37,15 @@ public class GroupController {
     // CREATE: create a new group
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public GroupDTO createGroup(@RequestBody GroupDTO groupDTO) {
+    public GroupDTO createGroup(@RequestBody GroupDTO groupDTO)  {
         return groupService.createGroup(groupDTO);
     }
 
     // UPDATE (partial): update an existing group
     @PatchMapping("/{id}")
     public ResponseEntity updateGroup(@PathVariable String id, @RequestBody GroupDTO groupDTO) {
-        try {
-            if (userService.userHasPermissionToEditGroup(id)!=null)
-            { return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(userService.userHasPermissionToEditGroup(id));}
-            else {
-                return ResponseEntity.ok(groupService.updateGroup(id, groupDTO));
-            }
-        } catch (ApplicationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+
+        return ResponseEntity.ok(groupService.updateGroup(id, groupDTO));
     }
 
     // DELETE: delete a group

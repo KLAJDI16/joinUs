@@ -23,10 +23,16 @@ import java.util.List;
 public class User_Neo4J {
 
     @Id
+    @Property(name = "member_id")
     private String member_id;
 
+    @Property(name = "member_name")
     private String member_name;
+
+    @Property(name = "member_status")
     private String member_status;
+
+    @Property(name = "bio")
     private String bio;
 
     // City-related fields

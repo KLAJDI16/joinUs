@@ -1,5 +1,7 @@
 package com.example.joinUs.dto;
 
+import com.example.joinUs.dto.embedded.EventEmbeddedDTO;
+import com.example.joinUs.dto.embedded.TopicEmbeddedDTO;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
+//@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDTO {
 
     private String memberId;
@@ -25,12 +27,12 @@ public class UserDTO {
     private String memberStatus;
     private String bio;
 
-    private List<TopicDTO> topics;
+    private List<TopicEmbeddedDTO> topics;
 
     private Integer eventCount;
     private Integer groupCount;
 
-    private List<EventDTO> upcomingEvents;
+    private List<EventEmbeddedDTO> upcomingEvents;
 
 
 }

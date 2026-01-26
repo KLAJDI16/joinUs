@@ -50,6 +50,7 @@ public class Group_Neo4J {
     @Property(name = "city_distance")
     private String city_distance;
 
+
     public GroupNeo4jDTO toDTO() {
         return GroupNeo4jDTO.builder()
                 .groupId(this.group_id)

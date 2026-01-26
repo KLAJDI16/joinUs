@@ -10,8 +10,10 @@ import java.util.List;
 
 
 @Mapper(config = CentralMappingConfig.class,
-        uses = { CityMapper.class, CategoryMapper.class, EventMapper.class, GroupPhotoMapper.class, UserMapper.class },
+        uses = { CityMapper.class, CategoryMapper.class, EventMapper.class,
+                GroupPhotoMapper.class, UserMapper.class },
         nullValueMappingStrategy = NullValueMappingStrategy.RETURN_DEFAULT // TODO others also
+
 )
 public interface GroupMapper {
 
