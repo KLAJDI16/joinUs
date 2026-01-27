@@ -12,17 +12,14 @@ import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.mongodb.User;
 import com.example.joinUs.repository.*;
-import org.neo4j.cypherdsl.core.Use;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.BasicUpdate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.UpdateDefinition;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -71,8 +68,17 @@ public class EventService {
     @Autowired
     private MongoTemplate mongoTemplate;
 
+//    @Autowired
+//    private Neo4jClient neo4jClient;
+
+
+
     @Autowired
     private Event_Neo4J_Repo eventNeo4JRepo; // TODO
+
+
+
+
 
     public Page<EventDTO> getAllEvents(int page, int size) {
         Page<EventDTO> events = eventRepository.findAllEvents(PageRequest.of(page, size + 1));
@@ -315,8 +321,8 @@ public class EventService {
         if (fromDate != null)
             query.addCriteria(Criteria.where("event_time").gte(fromDate));
 
-        if (toDate != null)
-            query.addCriteria(Criteria.where("event_time").lte(toDate));
+//        if (toDate != null)
+//            query.addCriteria(Criteria.where("event_time").lte(toDate));
 
         if (category != null)
             query.addCriteria(Criteria.where("categories.name").is(category));
@@ -366,6 +372,7 @@ public class EventService {
         if (venueDTO != null) newEvent.setVenue(venueMapper.toEntity(venueDTO));
     }
 
+    //TODO require the group_id or throw error and check if the user is organizer of that group
     public void setCreatorGroupForCreate(EventDTO newEventDTO, EventDTO eventDTO) {
         User user = Utils.getUserFromContext();
         String memberId = user.getMemberId();

@@ -31,7 +31,14 @@ public class Neo4JOperations {
     private static void createNode(String fileName, String nodeName,List<String> columnsToInclude){
         StringJoiner columnText=new StringJoiner(",");
         for (String str:columnsToInclude){
-            columnText.add(str+": row."+str);
+//            if (str.equalsIgnoreCase("event_time")){
+                //2019-06-01T18:40:32.142+0100
+                //2017-10-30 02:30:00
+//            }
+            //        event_time = Date.from(eventTimeInstant.plus(9 * 365 + 2, ChronoUnit.DAYS));
+//           else{
+               columnText.add(str+": row."+str);
+//           }
         }
         String txt=   columnText.toString();
 //            .substring(0,columnText.length()-1);

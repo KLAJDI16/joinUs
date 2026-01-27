@@ -1,6 +1,5 @@
 package com.example.joinUs.model.neo4j;
 
-import com.example.joinUs.dto.EventNeo4jDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,6 +7,10 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Property;
+
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.util.Date;
 
 @Data
 @AllArgsConstructor
@@ -17,72 +20,86 @@ import org.springframework.data.neo4j.core.schema.Property;
 public class Event_Neo4J {
 
     @Id
-    private String event_id;
-    private String event_name;
+    @Property(name = "event_id")
+    private String eventId;
+    @Property(name = "event_name")
+    private String eventName;
+
+    @Property(name = "description")
     private String description;
-    private String event_time;
-    private String event_url;
 
-    // Fee fields
-    private String fee_description;
-    private String fee_accepts;
+    @Property(name = "event_time")
+    private ZonedDateTime eventTime;
 
-    @Property(name = "fee_isRequired")
-    private String fee_isRequired;
+    @Property(name = "event_url")
+    private String eventUrl;
 
-    @Property(name = "fee_amount")
-    private String fee_amount;
+//    private static final List<String> eventProperties=List.of("event_id", "event_name",
+//    "event_time", "description", "event_url", "fee");
 
-    // Venue/City fields
-    @Property(name = "venue_city_city")
-    private String venue_city;
+//    // Fee fields
+//    private String fee_description;
+//    private String fee_accepts;
+//
+//    @Property(name = "fee_isRequired")
+//    private String fee_isRequired;
+//
+//    @Property(name = "fee_amount")
+//    private String fee_amount;
+//
+//    // Venue/City fields
+//    @Property(name = "venue_city_city")
+//    private String venue_city;
+//
+//    @Property(name = "venue_city_country")
+//    private String venue_country;
+//
+//    @Property(name = "venue_city_state")
+//    private String venue_state;
+//
+//    @Property(name = "venue_city_zip")
+//    private String venue_zip;
+//
+//    @Property(name = "venue_city_localized_country_name")
+//    private String venue_localized_country_name;
+//
+//    @Property(name = "venue_city_latitude")
+//    private String venue_latitude;
+//
+//    @Property(name = "venue_city_longitude")
+//    private String venue_longitude;
+//
+//    @Property(name = "venue_city_city_id")
+//    private String venue_city_id;
+//
+//    @Property(name = "venue_city_distance")
+//    private String venue_distance;
+//
+//    public EventNeo4jDTO toDTO() {
+//        return EventNeo4jDTO.builder()
+//                .eventId(this.eventId)
+//                .eventName(this.eventName)
+//                .description(this.description)
+//                .eventTime(this.eventTime)
+//                .eventUrl(this.eventUrl)
+//                .feeDescription(this.fee_description)
+//                .feeAccepts(this.fee_accepts)
+//                .feeIsRequired(this.fee_isRequired)
+//                .feeAmount(this.fee_amount)
+//                .venueCity(this.venue_city)
+//                .venueCountry(this.venue_country)
+//                .venueState(this.venue_state)
+//                .venueZip(this.venue_zip)
+//                .venueLocalizedCountryName(this.venue_localized_country_name)
+//                .venueLatitude(this.venue_latitude)
+//                .venueLongitude(this.venue_longitude)
+//                .venueCityId(this.venue_city_id)
+//                .venueDistance(this.venue_distance)
+//                .build();
+//    }
 
-    @Property(name = "venue_city_country")
-    private String venue_country;
 
-    @Property(name = "venue_city_state")
-    private String venue_state;
 
-    @Property(name = "venue_city_zip")
-    private String venue_zip;
-
-    @Property(name = "venue_city_localized_country_name")
-    private String venue_localized_country_name;
-
-    @Property(name = "venue_city_latitude")
-    private String venue_latitude;
-
-    @Property(name = "venue_city_longitude")
-    private String venue_longitude;
-
-    @Property(name = "venue_city_city_id")
-    private String venue_city_id;
-
-    @Property(name = "venue_city_distance")
-    private String venue_distance;
-
-    public EventNeo4jDTO toDTO() {
-        return EventNeo4jDTO.builder()
-                .eventId(this.event_id)
-                .eventName(this.event_name)
-                .description(this.description)
-                .eventTime(this.event_time)
-                .eventUrl(this.event_url)
-                .feeDescription(this.fee_description)
-                .feeAccepts(this.fee_accepts)
-                .feeIsRequired(this.fee_isRequired)
-                .feeAmount(this.fee_amount)
-                .venueCity(this.venue_city)
-                .venueCountry(this.venue_country)
-                .venueState(this.venue_state)
-                .venueZip(this.venue_zip)
-                .venueLocalizedCountryName(this.venue_localized_country_name)
-                .venueLatitude(this.venue_latitude)
-                .venueLongitude(this.venue_longitude)
-                .venueCityId(this.venue_city_id)
-                .venueDistance(this.venue_distance)
-                .build();
-    }
 //SEVERE: Servlet.service() for servlet [dispatcherServlet] in context with path [] threw
 // exception [Request processing failed: org.springframework.data.mapping.MappingException:
 // Error mapping Record<{event_Neo4J: {fee_description: "per person",

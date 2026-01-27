@@ -2,6 +2,7 @@ package com.example.joinUs.controller;
 
 import com.example.joinUs.dto.EventDTO;
 import com.example.joinUs.dto.summary.EventSummaryDTO;
+import com.example.joinUs.model.neo4j.Event_Neo4J;
 import com.example.joinUs.service.EventService;
 import com.example.joinUs.service.UserService;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -41,6 +42,8 @@ public class EventController {
     public EventDTO getEventById(@PathVariable String id) {
         return eventService.getEventById(id);
     }
+
+
 
     @PostMapping("")
     public ResponseEntity createEvent(@RequestBody EventDTO eventDTO) {

@@ -46,4 +46,12 @@ public class Group {
     private List<User> organizerMembers;
     private List<Event> upcomingEvents;
 
+    public void removeOrganizerMember(String memberId){
+        for (User user : organizerMembers){
+            if (user.getMemberId().equalsIgnoreCase(memberId)){
+                organizerMembers.remove(user);
+            }
+        }
+    }
+
 }

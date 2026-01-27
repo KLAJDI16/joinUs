@@ -30,14 +30,14 @@ public class Topic_Neo4J {
     private String link;
 
 
-    public TopicNeo4jDTO toDTO() {
-        return TopicNeo4jDTO.builder()
-                .topicId(this.topicId)
-                .topicName(this.topicName)
-                .description(this.description)
-                .link(this.link)
-                .build();
-    }
+//    public TopicNeo4jDTO toDTO() {
+//        return TopicNeo4jDTO.builder()
+//                .topicId(this.topicId)
+//                .topicName(this.topicName)
+//                .description(this.description)
+//                .link(this.link)
+//                .build();
+//    }
 
 }
 

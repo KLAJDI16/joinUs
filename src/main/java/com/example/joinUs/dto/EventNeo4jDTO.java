@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,7 +16,7 @@ public class EventNeo4jDTO {
     private String eventId;
     private String eventName;
     private String description;
-    private String eventTime;
+    private Date eventTime;
     private String eventUrl;
 
     private String feeDescription;
