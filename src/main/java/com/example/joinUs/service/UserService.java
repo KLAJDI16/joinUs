@@ -2,17 +2,14 @@ package com.example.joinUs.service;
 
 import com.example.joinUs.Utils;
 import com.example.joinUs.dto.*;
-import com.example.joinUs.exceptions.ApplicationException;
 import com.example.joinUs.mapping.UserMapper;
 import com.example.joinUs.model.mongodb.City;
 import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.mongodb.User;
-import com.example.joinUs.model.neo4j.User_Neo4J;
-import com.example.joinUs.repository.EventRepository;
-import com.example.joinUs.repository.GroupRepository;
-import com.example.joinUs.repository.UserRepository;
-import com.example.joinUs.repository.User_Neo4J_Repo;
+import com.example.joinUs.repository.*;
+import jakarta.servlet.http.HttpSession;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;
@@ -21,6 +18,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -34,6 +32,9 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CityRepository cityRepository;
 
     @Autowired
     private GroupRepository groupRepository;
@@ -50,6 +51,9 @@ public class UserService {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
 //    public List<UserDTO> getAllUsers() {
 //        return null; // TODO
 //        return userRepository.findAll().stream()
@@ -57,69 +61,40 @@ public class UserService {
 //                .toList();
 //    }
 
-    public List<User_Neo4J> getMembersOfAgroup(String groupId){
-
-        return  userNeo4JRepo.getMembersLinkedToGroup(groupId);
-    }
-
     public UserDTO getUserProfile(){
-        SecurityContext securityContext = SecurityContextHolder.getContext();
-        User user = null;
-
-        Authentication authentication = securityContext.getAuthentication();
-        if (authentication!=null){
-           user= (User) authentication.getPrincipal();
-        }
+        User user = Utils.getUserFromContext();
         return userMapper.toDTO(user);
     }
-    public UserDTO editUserProfile(UserDTO userUpdates){
-        SecurityContext securityContext = SecurityContextHolder.getContext();
-        User member = (User) securityContext.getAuthentication().getPrincipal();
-        String userId = member.getMemberId();
+    public UserDTO editUserProfile(UserDTO userUpdate){
 
-        // Fetch the existing user from DB
-        User existingUser = userRepository.findByMember_id(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User existingUser = Utils.getUserFromContext();
+        String userId = existingUser.getMemberId();
 
-        // Update only the allowed fields
-        if (userUpdates.getBio() != null) existingUser.setBio(userUpdates.getBio());
-        if (userUpdates.getMemberName() != null) existingUser.setMemberName(userUpdates.getMemberName());
-        if (userUpdates.getMemberStatus() != null) existingUser.setMemberStatus(userUpdates.getMemberStatus());
+        userUpdate.setMemberId(userId);
 
-        if (userUpdates.getCity() != null) {
-            CityDTO updatedCity = userUpdates.getCity();
-            City existingCity = existingUser.getCity() != null ? existingUser.getCity() : new City();
 
-            if (updatedCity.getId() != null) existingCity.setId(updatedCity.getId());
-            if (updatedCity.getName() != null) existingCity.setName(updatedCity.getName());
-            if (updatedCity.getCountry() != null) existingCity.setCountry(updatedCity.getCountry());
-            if (updatedCity.getState() != null) existingCity.setState(updatedCity.getState());
-            if (updatedCity.getZip() != null) existingCity.setZip(updatedCity.getZip());
-            if (updatedCity.getLatitude() != null) existingCity.setLatitude(updatedCity.getLatitude());
-            if (updatedCity.getLongitude() != null) existingCity.setLongitude(updatedCity.getLongitude());
-            if (updatedCity.getDistance() != null) existingCity.setDistance(updatedCity.getDistance());
-            if (updatedCity.getLocalizedCountryName() != null)
-                existingCity.setLocalizedCountryName(updatedCity.getLocalizedCountryName());
+        // Update only the allowed fields ,the others remain as they were
+        if (userUpdate.getBio() != null) existingUser.setBio(userUpdate.getBio());
+        if (userUpdate.getMemberName() != null) existingUser.setMemberName(userUpdate.getMemberName());
+        if (userUpdate.getMemberStatus() != null) existingUser.setMemberStatus(userUpdate.getMemberStatus());
 
-            existingUser.setCity(existingCity);
+        if (userUpdate.getCity() != null) {
+            CityDTO updatedCity = userUpdate.getCity();
+            if (!Utils.isNullOrEmpty(updatedCity.getId())) {
+                City city = cityRepository.findByCityId(updatedCity.getId());
+                if (city != null) existingUser.setCity(city);
+            }
+            else if (!Utils.isNullOrEmpty(updatedCity.getName())){
+                City city = cityRepository.findByName(updatedCity.getName());
+                if (city != null) existingUser.setCity(city);
+            }
         }
 
-        // Save the updated user
         userRepository.save(existingUser);
 
-//        return existingUser.toDTO();
-        return null;
+        return userMapper.toDTO(existingUser);
     }
 
-    public List<UserNeo4jDTO> getAllUsersFromGraph() {
-        return userNeo4JRepo.findAll().stream().map(userNeo4J -> userNeo4J.toDTO()).toList();
-    }
-
-//    public User createUser(UserDTO userDTO) {
-//        User user = User.(userDTO);
-//        userRepository.save(user);
-//        return user;
-//    }
 
     public boolean checkUserHasPermissionToEditGroup(String groupId)  {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -163,26 +138,50 @@ public class UserService {
     }
 
     //TODO implement correctly
-    public ResponseMessage registerUser(UserDTO userDTO) {
+    public SecurityContext registerUser(UserDTO userDTO) {
+
+     if (!Utils.isNullOrEmpty(userRepository.findMemberByName(userDTO.getMemberName())))
+         throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"A user with the username "+userDTO.getMemberName()+" is already registered");
+     if (Utils.isNullOrEmpty(userDTO.getPassword())){
+         throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Please provide a password");
+     }
+   try{
+       String password=userDTO.getPassword();
        User user = userMapper.toEntity(userDTO);
        user.setEventCount(0);
        user.setGroupCount(0);
+       user.setIsAdmin(false);
+       user.setPassword(passwordEncoder.encode(password));
 
-        try {
-            Authentication auth = authManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            userDTO.getMemberName(), userDTO.getPassword()
-                    )
-            );
+        if (userDTO.getBio() != null) user.setBio(userDTO.getBio());
+        if (userDTO.getMemberName() != null) user.setMemberName(userDTO.getMemberName());
+        if (userDTO.getMemberStatus() != null) user.setMemberStatus(userDTO.getMemberStatus());
 
-            SecurityContext context = SecurityContextHolder.createEmptyContext();
-            context.setAuthentication(auth);
-            SecurityContextHolder.setContext(context);
+        if (userDTO.getCity() != null) {
+            CityDTO updatedCity = userDTO.getCity();
+            if (!Utils.isNullOrEmpty(updatedCity.getId())) {
+                City city = cityRepository.findByCityId(updatedCity.getId());
+                if (city != null) user.setCity(city);
+            }
+            else if (!Utils.isNullOrEmpty(updatedCity.getName())){
+                City city = cityRepository.findByName(updatedCity.getName());
+                if (city != null) user.setCity(city);
+            }
+        }
+       userRepository.save(user);
+        Authentication auth = authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        user.getMemberName(), password
+                )
+        );
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(auth);
+        SecurityContextHolder.setContext(context);
 
-            return new ResponseMessage("success", "Your registration was succesful");
+            return context;
         } catch (Exception e) {
          throw  new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Your registration failed "+"\n Error : "+e.getMessage().toString());
+                    "Your registration failed "+"\n Error : "+e.getMessage());
         }
     }
 
@@ -199,6 +198,12 @@ public class UserService {
 
         return context;
 
+    }
+
+    public void deleteProfile() {
+
+        User user = Utils.getUserFromContext();
+        userRepository.delete(user);
     }
 }
 

@@ -29,8 +29,6 @@ public class JoinUsApplication implements CommandLineRunner {
 
     @Autowired
     public GroupService groupService;
-    @Autowired
-    public User_Neo4J_Repo userNeo4JRepo;
 
     public static void main(String[] args) {
         SpringApplication.run(JoinUsApplication.class, args);
@@ -38,10 +36,6 @@ public class JoinUsApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-       List<User_Neo4J> userNeo4JS = userService.getMembersOfAgroup("11625832");
 
-       for (User_Neo4J userNeo4J:userNeo4JS){
-           System.out.println(userNeo4J);
-       }
     }
 }

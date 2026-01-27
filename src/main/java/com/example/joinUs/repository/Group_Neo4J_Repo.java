@@ -10,6 +10,4 @@ import java.util.List;
 @Repository
 public interface Group_Neo4J_Repo extends Neo4jRepository<Group_Neo4J, String> {
 
-    List<Group_Neo4J> findByRecommendation(String memberId);
-
 }

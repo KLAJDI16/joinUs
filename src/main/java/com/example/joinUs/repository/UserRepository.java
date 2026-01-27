@@ -13,11 +13,11 @@ public interface UserRepository extends MongoRepository<User,String> {
 
     // Find by exact member name
     @Query("{ 'member_id': ?0 }")
-    Optional<User> findByMember_id(String member_id);
+    Optional<User> findMemberById(String member_id);
 
     // Find by exact member name
     @Query("{ 'member_name': ?0 }")
-    Optional<List<User>> findByMember_name(String member_name);
+    List<User> findMemberByName(String member_name);
 
     // Find by member_id (you could also just use findById inherited from MongoRepository)
 //    Optional<User> findByMember_id(String member_id);

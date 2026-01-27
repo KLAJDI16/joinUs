@@ -42,6 +42,7 @@ public class User implements UserDetails {
     @Field("bio")
     private String bio;
 
+
     @Field("topics")
     private List<Topic> topics;
 

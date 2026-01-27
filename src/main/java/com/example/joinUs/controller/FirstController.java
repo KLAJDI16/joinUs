@@ -87,8 +87,10 @@ public class FirstController {
 
     @PostMapping("/register")
     public ResponseEntity register(HttpServletRequest request,@RequestBody UserDTO userDTO) {
-        return ResponseEntity.ok(userService.registerUser(userDTO));
-           }
+    SecurityContext securityContext = userService.registerUser(userDTO);
+        request.getSession(true).setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
+        return ResponseEntity.ok(new ResponseMessage("success", "Your registration was successful "));
+    }
 
 
 }

@@ -142,15 +142,19 @@ return newEventDTO;
 
         try {
         Event entity = eventMapper.toEntity(eventDTO);
+
+        //Fields that should remain as they were before the update
         entity.setEventId(id);
         entity.setId(event.getId());
         entity.setMemberCount(event.getMemberCount());
         entity.setCreatorGroup(event.getCreatorGroup());
+
+
         setVenueAndCityForUpdate(entity,eventDTO);
         entity.setUpdated(new Date());
 
         Event saved = eventRepository.save(entity);
-        saved.setUpdated(new Date());
+
 
         return eventMapper.toDTO(saved);
         } catch (Exception e) {
@@ -300,8 +304,8 @@ return newEventDTO;
             if (cityDTO != null) {
                 venueDTO.setCity(cityDTO);
             }
-            return venueDTO;
         }
+        return venueDTO;
     }
     private void setVenueAndCityForUpdate(Event newEvent, EventDTO eventDTO){
          VenueDTO venueDTO =    updateVenueForEvent(eventDTO);

@@ -14,7 +14,6 @@ public interface UserMapper {
 
     UserDTO toDTO(User user);
 
-    @Mapping(target = "isAdmin", ignore = true)
 //    @Mapping(target = "roles",ignore = true)
 //    @Mapping(target = "authorities",ignore = true)
     @Mapping(target = "id", ignore = true)

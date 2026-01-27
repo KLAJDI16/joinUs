@@ -89,8 +89,6 @@ public class MongoDbEventOperations {
         groupDocument.append("group_name", document.getString(
                 "group_name"));
 
-        groupDocument.append("link", document.getString("link"));
-
         return groupDocument;
 
     }

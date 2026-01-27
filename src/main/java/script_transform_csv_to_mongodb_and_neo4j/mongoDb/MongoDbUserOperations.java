@@ -301,21 +301,14 @@ public class MongoDbUserOperations {
                     finalDocument.append("city", futures[2].get());
 
 
-
-
                     String finalMemberName1 = memberName;
-//                    futures[4] = parallelExecutor.submit((e) -> extractGroupIdsWhereOrganizer(e),finalMemberName1);
+                    futures[4] = parallelExecutor.submit((e) -> extractGroupIdsWhereOrganizer(e),finalMemberName1);
 
                     finalDocument.append("upcoming_events", futures[3].get());
-                    //TODO: Re-order if needed for Neo4J
                     finalDocument.append("topics", futures[1].get());
 
 
-//                    finalDocument = extractMemberDocument(memberId, membersWithId);
-//                    finalDocument.append("topics", this.extractTopicPerMember(memberId));
-//                    finalDocument.append("city", this.extractCityDocumentToEmbedPerMember(memberId, membersWithId));
-//                    finalDocument.append("event_count", eventCount.get(memberId)!=null ? eventCount.get(memberId):0);
-//                    finalDocument.append("upcoming_events", this.extractFutureEventsPerMember(memberId));
+                    finalDocument.append("event_count", eventCount.get(memberId)!=null ? eventCount.get(memberId):0);
 
 
                     finalDocument.append("password",new BCryptPasswordEncoder().encode(memberName+"_password"));
@@ -325,16 +318,15 @@ public class MongoDbUserOperations {
 //                    if (MongoDbGroupOperations.groups_per_organizer.get(memberId)!=null) {
 //                      groups_organizer = MongoDbGroupOperations.groups_per_organizer.get(memberId);
 //                    }
-//                    List<String> groups_organizer= (List<String>) futures[4].get();
-//                    finalDocument.append("groups_organizer",groups_organizer);
-//                    finalDocument.append("group_count", (groupCount.get(memberId)!=null?groupCount.get(memberId):0)+groups_organizer.size());
-
+                    List<String> groups_organizer= (List<String>) futures[4].get();
+                    finalDocument.append("group_count", (groupCount.get(memberId)!=null?groupCount.get(memberId):0)+groups_organizer.size());
                     Document finalDocument1 = finalDocument;
                     parallelExecutor.submit(() ->  newMemberCollection.insertOne(finalDocument1));
 
                     membersAlreadyEvaluated.add(memberId);
+                    count++;
                 }
-                count++;
+
             }
         }
     }

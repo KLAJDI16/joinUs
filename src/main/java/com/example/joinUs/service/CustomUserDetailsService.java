@@ -1,5 +1,6 @@
 package com.example.joinUs.service;
 
+import com.example.joinUs.Utils;
 import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.mongodb.User;
@@ -35,8 +36,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username)
             throws UsernameNotFoundException {
 
-        List<User> users = userRepository.findByMember_name(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        List<User> users = userRepository.findMemberByName(username);
+
+        if (Utils.isNullOrEmpty(users)) throw  new UsernameNotFoundException("No User is  found with username "+username);
+
         User user = users.getFirst();
 
         return user;

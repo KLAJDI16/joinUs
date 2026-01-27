@@ -22,7 +22,6 @@ import java.util.List;
 public interface EventRepository extends MongoRepository<Event, ObjectId> {
 
     String eventNameNotEmpty=" 'event_name':{$ne:\"\"} ";
-
     String fields= "{'event_id':1,'event_name':1,'venue.city.name':1,'member_count':1,'creator_group':1,'event_time':1,'fee.amount':1}";
 
     String eventProjection= "{ $project:"+fields+" }";
