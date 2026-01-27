@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -77,6 +78,7 @@ public class UserService {
         if (userUpdate.getBio() != null) existingUser.setBio(userUpdate.getBio());
         if (userUpdate.getMemberName() != null) existingUser.setMemberName(userUpdate.getMemberName());
         if (userUpdate.getMemberStatus() != null) existingUser.setMemberStatus(userUpdate.getMemberStatus());
+        if (userUpdate.getPassword()!=null) existingUser.setPassword(passwordEncoder.encode(userUpdate.getPassword()));
 
         if (userUpdate.getCity() != null) {
             CityDTO updatedCity = userUpdate.getCity();
@@ -152,6 +154,7 @@ public class UserService {
        user.setGroupCount(0);
        user.setIsAdmin(false);
        user.setPassword(passwordEncoder.encode(password));
+       user.setUpcomingEvents(new ArrayList<>());
 
         if (userDTO.getBio() != null) user.setBio(userDTO.getBio());
         if (userDTO.getMemberName() != null) user.setMemberName(userDTO.getMemberName());
@@ -201,7 +204,6 @@ public class UserService {
     }
 
     public void deleteProfile() {
-
         User user = Utils.getUserFromContext();
         userRepository.delete(user);
     }

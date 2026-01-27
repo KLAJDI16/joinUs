@@ -4,7 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.security.core.GrantedAuthority;
@@ -25,9 +27,10 @@ public class User implements UserDetails {
 
     @Id
     @Field("_id")
-    private String id;
+    private ObjectId id;
 
-    @Field("member_id")
+    @Field(value = "member_id")
+    @Indexed(unique = true)
     private String memberId;
 
     @Field("member_name")
@@ -70,6 +73,12 @@ public class User implements UserDetails {
 //        }
 //        return roles;
 //    }
+
+    public void removeUpcomingEvent(String eventId){
+        for (Event event : upcomingEvents){
+            if (event.getEventId().equalsIgnoreCase(eventId)) upcomingEvents.remove(event);
+        }
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -53,6 +53,16 @@ public class EventController {
         return ResponseEntity.ok(eventService.updateEvent(eventDTO, id));
     }
 
+    @PatchMapping("/{id}/attend")
+    public ResponseEntity attendEvent(@PathVariable String id) {
+
+        return ResponseEntity.ok(eventService.attendEvent(id));
+    }
+    @PatchMapping("/{id}/dontAttend")
+    public ResponseEntity dontAttend(@PathVariable String id) {
+        return ResponseEntity.ok(eventService.dontAttendEvent(id));
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEvent(@PathVariable String id) {
