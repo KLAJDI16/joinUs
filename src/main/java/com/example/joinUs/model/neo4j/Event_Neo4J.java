@@ -9,6 +9,7 @@ import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Property;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
@@ -29,7 +30,7 @@ public class Event_Neo4J {
     private String description;
 
     @Property(name = "event_time")
-    private ZonedDateTime eventTime;
+    private OffsetDateTime eventTime;
 
     @Property(name = "event_url")
     private String eventUrl;
@@ -44,12 +45,12 @@ public class Event_Neo4J {
 //    @Property(name = "fee_isRequired")
 //    private String fee_isRequired;
 //
-//    @Property(name = "fee_amount")
-//    private String fee_amount;
-//
-//    // Venue/City fields
-//    @Property(name = "venue_city_city")
-//    private String venue_city;
+    @Property(name = "fee_amount")
+    private String feeAmount;
+
+//     Venue/City fields
+    @Property(name = "venue_city")
+    private String venueCity;
 //
 //    @Property(name = "venue_city_country")
 //    private String venue_country;

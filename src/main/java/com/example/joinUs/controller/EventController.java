@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -43,6 +42,10 @@ public class EventController {
         return eventService.getEventById(id);
     }
 
+    @GetMapping("/fromGraph")
+    public List<Event_Neo4J> getEventFromGraph() {
+        return eventService.getEventsFromNeo4j();
+    }
 
 
     @PostMapping("")

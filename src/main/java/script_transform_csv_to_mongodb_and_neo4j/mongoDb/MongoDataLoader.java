@@ -41,7 +41,7 @@ public class MongoDataLoader {
     public void transformCsvDataToMongoDB() throws Exception {
         long startingTime = System.currentTimeMillis();
 
-// Step-1 , import all the csv data to MongoDB as it is (replace '.' with '___' in the fields that contain '.' due to issues with MongoDB)
+// Step-1 , import all the csv data to MongoDB as it is (replace '.' with '_' in the fields that contain '.' due to issues with MongoDB)
 
 
 //
@@ -162,34 +162,34 @@ public class MongoDataLoader {
         return flattenedMap;
     }
 
-//    public  void updateIdsFromMongoDb(){
+    public  void updateIdsFromMongoDb(){
+
+        parallelExecutor.submit( () -> {
+
+            updateIdsForCollection(parallelExecutor,"meta-events.csv", "event_id",
+                    "event_id", "events.csv");
+            System.out.println("UPDATED THE COLLECTION : updateIdsForCollection.events");
+
+        });
+
+        parallelExecutor.submit( () ->{
+            MongoDbUserOperations.updateIdsForMembers();
 //
-//        parallelExecutor.submit( () -> {
+//            updateIdsForCollection("meta-members.csv","member_id","member_id","members.csv");
+            System.out.println("UPDATED THE COLLECTION : updateIdsForMembers.members");
 //
-//            updateIdsForCollection(parallelExecutor,"meta-events.csv", "event_id",
-//                    "event_id", "events.csv");
-//            System.out.println("UPDATED THE COLLECTION : updateIdsForCollection.events");
+        });
+
+
+        parallelExecutor.submit( () -> {
 //
-//        });
-//
-//        parallelExecutor.submit( () ->{
-//            MongoDbUserOperations.updateIdsForMembers();
-////
-////            updateIdsForCollection("meta-members.csv","member_id","member_id","members.csv");
-//            System.out.println("UPDATED THE COLLECTION : updateIdsForMembers.members");
-////
-//        });
-//
-//
-//        parallelExecutor.submit( () -> {
-////
-//            updateIdsForCollection(parallelExecutor,"meta-groups.csv", "group_id",
-//                    "group_id", "groups.csv", "groups_topics.csv", "events.csv","members.csv");//
-//            System.out.println("UPDATED THE COLLECTION : updateIdsForCollection.groups");
-//
-//        });
-//
-//    }
+            updateIdsForCollection(parallelExecutor,"meta-groups.csv", "group_id",
+                    "group_id", "groups.csv", "groups_topics.csv", "events.csv","members.csv");//
+            System.out.println("UPDATED THE COLLECTION : updateIdsForCollection.groups");
+
+        });
+
+    }
 
     /**
      *
@@ -294,8 +294,8 @@ public class MongoDataLoader {
         MongoCollection groupsCollection= MongoDataLoader.csvDocuments.getCollection("groups.csv");
         groupsCollection.createIndex(new Document("group_id",1));
         groupsCollection.createIndex(new Document("group_name",1));
-        groupsCollection.createIndex(new Document("organizer___name",1));
-        groupsCollection.createIndex(new Document("organizer___member_id",1));
+        groupsCollection.createIndex(new Document("organizer_name",1));
+        groupsCollection.createIndex(new Document("organizer_member_id",1));
 
         MongoCollection groupTopicsCollection= MongoDataLoader.csvDocuments.getCollection("groups_topics.csv");
         groupTopicsCollection.createIndex(new Document("group_id",1));
@@ -463,7 +463,7 @@ public class MongoDataLoader {
                     Document doc = new Document();
 
                     for (int i = 0; i < header.length; i++) {
-                        doc.append(header[i].contains(".") ? header[i].replace(".","___") : header[i], row.length > i ? row[i] : null);
+                        doc.append(header[i].contains(".") ? header[i].replace(".","_") : header[i], row.length > i ? row[i] : null);
                     }
 
                     batch.add(doc);

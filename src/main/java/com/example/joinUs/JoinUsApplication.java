@@ -36,6 +36,8 @@ public class JoinUsApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-
+        eventService.getEventsFromNeo4j().stream().forEach(
+                e -> System.out.println(e.getEventName()+" -> "+e.getEventTime())
+        );
     }
 }

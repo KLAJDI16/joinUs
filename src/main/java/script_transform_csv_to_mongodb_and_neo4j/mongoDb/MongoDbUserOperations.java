@@ -150,7 +150,7 @@ public class MongoDbUserOperations {
         List<String> list =new ArrayList<>();
         MongoCollection groupCollection = MongoDataLoader.csvDocuments.getCollection("groups.csv");
 
-       MongoCursor<Document> mongoCursor = groupCollection.find(Filters.eq("organizer___name",memberName)).projection(new Document("group_id",1)).cursor();
+       MongoCursor<Document> mongoCursor = groupCollection.find(Filters.eq("organizer_name",memberName)).projection(new Document("group_id",1)).cursor();
         while (mongoCursor.hasNext()){
             list.add(mongoCursor.next().getString("group_id"));
         }
@@ -219,10 +219,18 @@ public class MongoDbUserOperations {
             cityName = member.getString("city");
         } else {
             MongoCollection memberCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
-            cityName = ((Document) memberCollection.find(Filters.eq("member_id", memberId))
-                    .first()).getString("city");
+            MongoCursor<Document> mongoCursor = memberCollection.find(Filters.eq("member_id", memberId)).cursor();
+
+            if (mongoCursor.hasNext()){
+              cityName =   mongoCursor.next().getString("city");
+                return MongoDbCityOperation.extractCityToEmbedFromCityName(cityName);
+            }
+            else {
+                return null;
+            }
         }
         return MongoDbCityOperation.extractCityToEmbedFromCityName(cityName);
+
     }
 
     /**

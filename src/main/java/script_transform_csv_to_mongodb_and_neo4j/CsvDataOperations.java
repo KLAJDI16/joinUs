@@ -158,15 +158,19 @@ public class CsvDataOperations {
             Map<String, String> mapping
     ) throws Exception {
 
-
-
         try (
                 CSVReader reader = new CSVReader(new FileReader(inputCsv));
 
                 CSVWriter writer = new CSVWriter(new FileWriter(outputCsv))
         ) {
+
             String[] header = reader.readNext();
-            writer.writeNext(header);
+            String[] headerToWrite = new String[header.length];
+
+            for (int i=0;i<header.length;i++)
+                headerToWrite[i] = header[i].replace(".","_"); //Go back here
+
+            writer.writeNext(headerToWrite);
 
             int index = Arrays.asList(header).indexOf(idColumn);
 

@@ -27,8 +27,10 @@ public interface GroupRepository extends MongoRepository<Group, String> {
     @Query("{'organizer_members.member_id' : ?0 }")
     List<Group> findGroupsByOrganizerId(String id);
 
+    //{$or:[{group_id:"5817263"},{group_name:"San Francisco Startup Socials"}]}
 
-
+    @Query("{$or:[{ 'group_id': ?0 },{ 'group_name': ?1 }]}")
+    List<Group> findGroupByGroupIdOrGroupName(String groupId,String groupName);
 
     @Aggregation(pipeline = {
             "{ $skip: ?0} ",

@@ -53,7 +53,7 @@ public class MongoDbGroupOperations {
         List<Document> categories=new ArrayList<>();
 
         category.append("category_id",oldGroupDocument.getString("category_id"))
-                .append("name",oldGroupDocument.getString("category___name"));
+                .append("name",oldGroupDocument.getString("category_name"));
 
         categories.add(category);
 
@@ -243,9 +243,9 @@ public class MongoDbGroupOperations {
         List<Document> organizers=new ArrayList<>();
         String group_id=oldGroupDocument.getString("group_id");
         Document organizer = new Document();
-        String organizerName=oldGroupDocument.getString("organizer___name");
+        String organizerName=oldGroupDocument.getString("organizer_name");
         organizer.append("member_name",organizerName);
-        String organizerId=oldGroupDocument.getString("organizer___member_id");
+        String organizerId=oldGroupDocument.getString("organizer_member_id");
         organizer.append("member_id",organizerId);
 //        if (groups_per_organizer.containsKey(organizerId)){
 //            groups_per_organizer.get(organizerId).add(group_id);
@@ -291,8 +291,8 @@ public class MongoDbGroupOperations {
     public static Document extractGroupPhoto(Document oldGroupDocument){
         Document photo = new Document();
         for (String key : oldGroupDocument.keySet()){
-            if (key.startsWith("group_photo___")){
-                String newKey=key.substring("group_photo___".length());
+            if (key.startsWith("group_photo_")){
+                String newKey=key.substring("group_photo_".length());
                 MongoDataLoader.assignIfFound(photo,newKey,oldGroupDocument.getString(key));
             }
         }

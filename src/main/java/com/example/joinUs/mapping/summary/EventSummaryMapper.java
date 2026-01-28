@@ -11,6 +11,7 @@ import com.example.joinUs.mapping.FeeMapper;
 import com.example.joinUs.mapping.VenueMapper;
 import com.example.joinUs.mapping.embedded.GroupEmbeddedMapper;
 import com.example.joinUs.model.mongodb.Event;
+import com.example.joinUs.model.neo4j.Event_Neo4J;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -25,9 +26,16 @@ public interface EventSummaryMapper { //TODO fix venueCityName and feeAmount bec
     @Mapping(source = "venue.city.name", target = "venueCityName")
     EventSummaryDTO toDTO(Event event);
 
-
     @Mapping(source = "fee.amount", target = "feeAmount")
     @Mapping(source = "venue.city.name", target = "venueCityName")
     List<EventSummaryDTO> toDTOs(List<Event> events);
+
+    @Mapping(source = "feeAmount", target = "feeAmount")
+    @Mapping(source = "venueCity", target = "venueCity")
+    EventSummaryDTO toDTOFromNeo4j(Event_Neo4J event);
+
+    @Mapping(source = "feeAmount", target = "feeAmount")
+    @Mapping(source = "venueCity", target = "venueCity")
+    List<EventSummaryDTO> toDTOsFromNeo4j(List<Event_Neo4J> events);
 
 }

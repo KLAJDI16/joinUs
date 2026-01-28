@@ -36,8 +36,8 @@ public class DataTransformerScript {
                 }
             });
         }
-        future2.get();
         future1.get();
+        future2.get();
 //
         parallelExecutor.close();
         long endTime = System.currentTimeMillis();

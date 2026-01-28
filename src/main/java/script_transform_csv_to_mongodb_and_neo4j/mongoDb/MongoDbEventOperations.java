@@ -51,16 +51,16 @@ public class MongoDbEventOperations {
     public static Document extractFeeFromEvent(Document oldEvent) {
 
         Document feeDocument = new Document();
-        feeDocument.append("accepts", oldEvent.getString("fee___accepts"));
-        feeDocument.append("amount", Double.parseDouble(oldEvent.getString("fee___amount")));
-        String currency = oldEvent.getString("fee___currency");
+        feeDocument.append("accepts", oldEvent.getString("fee_accepts"));
+        feeDocument.append("amount", Double.parseDouble(oldEvent.getString("fee_amount")));
+        String currency = oldEvent.getString("fee_currency");
 
         if (!currency.equalsIgnoreCase("not_found")) {
             feeDocument.append("currency", currency);
         }
-        feeDocument.append("description", oldEvent.getString("fee___description"));
+        feeDocument.append("description", oldEvent.getString("fee_description"));
 
-        String isFeeRequired = oldEvent.getString("fee___required");
+        String isFeeRequired = oldEvent.getString("fee_required");
         if (isFeeRequired.equalsIgnoreCase("0")) feeDocument.append("isRequired", false);
         else feeDocument.append("isRequired", true);
 
@@ -78,7 +78,7 @@ public class MongoDbEventOperations {
         String event_id = oldEvent.getString("event_id");
         MongoCollection groupCollection = MongoDataLoader.csvDocuments.getCollection("groups.csv");
 
-        String groupName = oldEvent.getString("group___name");
+        String groupName = oldEvent.getString("group_name");
 
         Document document = (Document) groupCollection.find(Filters.eq("group_name", groupName)).first();
 
@@ -94,17 +94,17 @@ public class MongoDbEventOperations {
     }
 
     public static Document extractVenueForEvent(Document oldEvent) {
-        String cityName = oldEvent.getString("venue___city");
+        String cityName = oldEvent.getString("venue_city");
         Document venue = new Document();
 
 
         Document city = MongoDbCityOperation.extractCityToEmbedFromCityName(cityName);
         venue.append("city", city);
-        MongoDataLoader.assignIfFound(venue, "address_1", oldEvent.getString("venue___address_1"));
-        MongoDataLoader.assignIfFound(venue, "address_2", oldEvent.getString("venue___address_2"));
-        String phoneNumber = oldEvent.getString("venue___phone");
+        MongoDataLoader.assignIfFound(venue, "address_1", oldEvent.getString("venue_address_1"));
+        MongoDataLoader.assignIfFound(venue, "address_2", oldEvent.getString("venue_address_2"));
+        String phoneNumber = oldEvent.getString("venue_phone");
         if (!phoneNumber.equalsIgnoreCase("-1")) {
-            venue.append("phone_number", oldEvent.getString("venue___phone"));
+            venue.append("phone_number", oldEvent.getString("venue_phone"));
         }
 
         return venue;
@@ -169,7 +169,7 @@ public class MongoDbEventOperations {
 
         MongoCollection groupCollection = MongoDataLoader.csvDocuments.getCollection("groups.csv");
 
-        Document group = (Document) groupCollection.find(Filters.eq("group_name", oldEvent.getString("group___name"))).first();
+        Document group = (Document) groupCollection.find(Filters.eq("group_name", oldEvent.getString("group_name"))).first();
 
 
         return MongoDbGroupOperations.extractCategoriesFromGroup(group);

@@ -17,7 +17,7 @@ public class Neo4JOperations {
     private static  String BATCH_SIZE =ConfigurationFileReader.checkAndGetProp("importBatchSize");
 
     private static final List<String> groupProperties=List.of("group_id", "group_name", "city", "description", "link");
-    private static final List<String> eventProperties=List.of("event_id", "event_name", "event_time", "description", "event_url", "fee");
+    private static final List<String> eventProperties=List.of("event_id", "event_name", "event_time", "description", "event_url","fee_amount","venue_city");
     private static final List<String> topicProperties=List.of("topic_id", "description", "link", "topic_name");
     private static final List<String> memberProperties=List.of("member_id", "bio", "member_name", "member_status", "hometown");
 
@@ -30,15 +30,20 @@ public class Neo4JOperations {
 
     private static void createNode(String fileName, String nodeName,List<String> columnsToInclude){
         StringJoiner columnText=new StringJoiner(",");
-        for (String str:columnsToInclude){
-//            if (str.equalsIgnoreCase("event_time")){
-                //2019-06-01T18:40:32.142+0100
-                //2017-10-30 02:30:00
-//            }
-            //        event_time = Date.from(eventTimeInstant.plus(9 * 365 + 2, ChronoUnit.DAYS));
-//           else{
-               columnText.add(str+": row."+str);
-//           }
+
+        String column=null;
+        for (String str : columnsToInclude) {
+//            column = str.replace("___", "_");
+            column=str;
+
+            if (column.equalsIgnoreCase("event_time")) {
+                columnText.add(
+                        "event_time: datetime(replace(row.event_time,' ','T'))" +
+                                " + duration({days: 3287})"
+                );
+            } else {
+                columnText.add(column + ": row." + column);
+            }
         }
         String txt=   columnText.toString();
 //            .substring(0,columnText.length()-1);

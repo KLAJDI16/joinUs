@@ -11,6 +11,7 @@ import com.example.joinUs.model.mongodb.City;
 import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.mongodb.User;
+import com.example.joinUs.model.neo4j.Event_Neo4J;
 import com.example.joinUs.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -35,6 +36,7 @@ import static java.util.TimeZone.getTimeZone;
 
 @Service
 public class EventService {
+
     @Autowired
     private EventRepository eventRepository;
     @Autowired
@@ -77,8 +79,9 @@ public class EventService {
     private Event_Neo4J_Repo eventNeo4JRepo; // TODO
 
 
-
-
+    public List<Event_Neo4J> getEventsFromNeo4j(){
+     return  eventNeo4JRepo.findAll();
+    }
 
     public Page<EventDTO> getAllEvents(int page, int size) {
         Page<EventDTO> events = eventRepository.findAllEvents(PageRequest.of(page, size + 1));
@@ -109,8 +112,6 @@ public class EventService {
             eventRepository.save(event);
             userRepository.save(user);
 
-//        mongoTemplate.updateFirst(null, BasicUpdate.update().inc("event_count",1))
-
             //TODO complete the part for the Neo4J too
             return userMapper.toDTO(user);
         } catch (Exception e) {
@@ -127,7 +128,6 @@ public class EventService {
         try {
             User user = Utils.getUserFromContext();
             user.removeUpcomingEvent(id);
-            List<EventEmbeddedDTO> eventEmbeddedDTOList;
             user.setEventCount(user.getEventCount() - 1);
             event.setMemberCount(event.getMemberCount() - 1);
             eventRepository.save(event);
@@ -374,34 +374,27 @@ public class EventService {
 
     //TODO require the group_id or throw error and check if the user is organizer of that group
     public void setCreatorGroupForCreate(EventDTO newEventDTO, EventDTO eventDTO) {
+
         User user = Utils.getUserFromContext();
         String memberId = user.getMemberId();
-        List<Group> groups = groupRepository.findGroupsByOrganizerId(memberId);
-        if (!Utils.isNullOrEmpty(groups)) {
-            if (groups.size() == 1) {
-                Group group = groups.getFirst();
-                newEventDTO.setCreatorGroup(groupMapper.toDTO(group)); //TODO replace with GroupEmbeddedDTO ?!
-                return;
-            } else if (eventDTO.getCreatorGroup() != null) {
-                String groupId = eventDTO.getCreatorGroup().getGroupId();
-                String groupName = eventDTO.getCreatorGroup().getGroupName();
+        if (Utils.isNullOrEmpty(eventDTO.getCreatorGroup())){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Please provide a groupId or a groupName that will represent the creatorGroup of the event");
+        }
+        String groupName = eventDTO.getCreatorGroup().getGroupName();
+        String groupId = eventDTO.getCreatorGroup().getGroupId();
 
-                for (Group group : groups) {
-                    if (!Utils.isNullOrEmpty(groupId)) {
-                        if (group.getGroupId().equalsIgnoreCase(groupId)) {
-                            newEventDTO.setCreatorGroup(groupMapper.toDTO(group));
-                            break;
-                        }
-                    } else if (Utils.isNullOrEmpty(groupId) && !Utils.isNullOrEmpty(groupName)) {
-                        if (group.getGroupName().equalsIgnoreCase(groupName)) {
-                            newEventDTO.setCreatorGroup(groupMapper.toDTO(group));
-                            break;
-                        }
-                    }
-                }
-            }
+        List<Group> groups = groupRepository.findGroupByGroupIdOrGroupName(groupId,groupName);
+        if (Utils.isNullOrEmpty(groups)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"No group exists with groupId "+groupId+" or groupName "+groupName);
+        }
+        Group group = groups.getFirst();
+
+        userService.checkUserHasPermissionToEditGroup(group.getGroupId());
+
+        newEventDTO.setCreatorGroup(groupMapper.toDTO(group));
+
         }
 
     }
 
-}
+
