@@ -16,7 +16,7 @@ public class Neo4JOperations {
     private static final String ImportFolder ="file:///";
     private static  String BATCH_SIZE =ConfigurationFileReader.checkAndGetProp("importBatchSize");
 
-    private static final List<String> groupProperties=List.of("group_id", "group_name", "city", "description", "link");
+    private static final List<String> groupProperties=List.of("group_id", "group_name", "city", "description", "link","organizer_member_id","organizer_name");
     private static final List<String> eventProperties=List.of("event_id", "event_name", "event_time", "description", "event_url","fee_amount","venue_city");
     private static final List<String> topicProperties=List.of("topic_id", "description", "link", "topic_name");
     private static final List<String> memberProperties=List.of("member_id", "bio", "member_name", "member_status", "hometown");
