@@ -1,11 +1,7 @@
 package com.example.joinUs.controller;
 
-import com.example.joinUs.dto.GroupCommunityDTO;
-import com.example.joinUs.dto.PathResponseDTO;
-import com.example.joinUs.dto.PopularTopicDTO;
-import com.example.joinUs.service.CommunityAnalyticsService;
-import com.example.joinUs.service.GraphPathService;
-import com.example.joinUs.service.TopicAnalyticsService;
+import com.example.joinUs.dto.*;
+import com.example.joinUs.service.*;
 import org.bson.json.JsonObject;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,16 +14,22 @@ public class AdminController {
     private final TopicAnalyticsService topicAnalyticsService;
     private final GraphPathService graphPathService;
     private final CommunityAnalyticsService communityAnalyticsService;
+    private final GroupAnalyticsService groupAnalyticsService;
+    private final BridgeAnalyticsService bridgeAnalyticsService;
 
-    // ✅ SINGLE constructor – initializes ALL final fields
+    // ✅ ONE constructor – initializes ALL final fields
     public AdminController(
             TopicAnalyticsService topicAnalyticsService,
             GraphPathService graphPathService,
-            CommunityAnalyticsService communityAnalyticsService
+            CommunityAnalyticsService communityAnalyticsService,
+            GroupAnalyticsService groupAnalyticsService,
+            BridgeAnalyticsService bridgeAnalyticsService
     ) {
         this.topicAnalyticsService = topicAnalyticsService;
         this.graphPathService = graphPathService;
         this.communityAnalyticsService = communityAnalyticsService;
+        this.groupAnalyticsService = groupAnalyticsService;
+        this.bridgeAnalyticsService = bridgeAnalyticsService;
     }
 
     // ------------------------
@@ -67,5 +69,21 @@ public class AdminController {
             @RequestParam(defaultValue = "50") long limit
     ) {
         return communityAnalyticsService.getGroupCommunities(minShared, limit);
+    }
+
+    // Top groups by members
+    @GetMapping("/groups/popular")
+    public List<PopularGroupDTO> getPopularGroups(
+            @RequestParam(defaultValue = "20") long limit
+    ) {
+        return groupAnalyticsService.getMostPopularGroups(limit);
+    }
+
+    // Bridge groups
+    @GetMapping("/groups/bridge")
+    public List<BridgeGroupDTO> getBridgeGroups(
+            @RequestParam(defaultValue = "20") long limit
+    ) {
+        return bridgeAnalyticsService.getBridgeGroups(limit);
     }
 }

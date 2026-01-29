@@ -1,6 +1,8 @@
 package com.example.joinUs.repository;
 
 import com.example.joinUs.dto.GroupCommunityDTO;
+import com.example.joinUs.dto.PopularGroupDTO;
+import com.example.joinUs.dto.BridgeGroupDTO;
 import com.example.joinUs.model.neo4j.Group_Neo4J;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
@@ -12,8 +14,16 @@ import java.util.List;
 @Repository
 public interface Group_Neo4J_Repo extends Neo4jRepository<Group_Neo4J, String> {
 
-    // Example derived query (optional)
-    // List<Group_Neo4J> findByCityName(String cityName);
+    @Query("""
+        MATCH (g:Group)<-[:MEMBER_OF]-(m:Member)
+        RETURN
+          g.group_id AS groupId,
+          g.group_name AS groupName,
+          count(DISTINCT m) AS memberCount
+        ORDER BY memberCount DESC
+        LIMIT $limit
+    """)
+    List<PopularGroupDTO> findMostPopularGroups(@Param("limit") long limit);
 
     @Query("""
         MATCH (g1:Group)<-[:MEMBER_OF]-(m:Member)-[:MEMBER_OF]->(g2:Group)
@@ -33,4 +43,16 @@ public interface Group_Neo4J_Repo extends Neo4jRepository<Group_Neo4J, String> {
             @Param("minShared") long minShared,
             @Param("limit") long limit
     );
+
+    @Query("""
+        MATCH (g:Group)<-[:MEMBER_OF]-(m:Member)-[:MEMBER_OF]->(g2:Group)
+        WHERE g <> g2
+        RETURN
+          g.group_id AS groupId,
+          g.group_name AS groupName,
+          count(DISTINCT g2) AS connectedGroups
+        ORDER BY connectedGroups DESC
+        LIMIT $limit
+    """)
+    List<BridgeGroupDTO> findBridgeGroups(@Param("limit") long limit);
 }
