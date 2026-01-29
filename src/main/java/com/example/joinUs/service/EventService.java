@@ -222,6 +222,9 @@ public class EventService {
             throw new ResponseStatusException(NOT_FOUND, "Event not found: " + id);
         }
         userService.checkUserHasPermissionToEditEvent(id);
+        User user = Utils.getUserFromContext();
+        user.removeUpcomingEvent(id);
+        userRepository.save(user);
         eventRepository.deleteByEventId(id);
     }
 
