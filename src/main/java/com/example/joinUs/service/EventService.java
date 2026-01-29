@@ -25,8 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.Date;
 import java.util.List;
 import java.util.SimpleTimeZone;
@@ -107,8 +106,8 @@ public class EventService {
             List<Event> userUpcomingEvents = user.getUpcomingEvents();
             userUpcomingEvents.add(eventEmbeddedMapper.toEntity(eventEmbeddedMapper.toDTO(event)));
             user.setUpcomingEvents(userUpcomingEvents);
-            user.setEventCount(user.getEventCount() + 1);
-            event.setMemberCount(event.getMemberCount() + 1);
+            user.setEventCount(Integer.valueOf(user.getEventCount() + 1));
+            event.setMemberCount(Integer.valueOf(event.getMemberCount() + 1));
             eventRepository.save(event);
             userRepository.save(user);
 
@@ -128,8 +127,8 @@ public class EventService {
         try {
             User user = Utils.getUserFromContext();
             user.removeUpcomingEvent(id);
-            user.setEventCount(user.getEventCount() - 1);
-            event.setMemberCount(event.getMemberCount() - 1);
+            user.setEventCount(Integer.valueOf(user.getEventCount() - 1));
+            event.setMemberCount(Integer.valueOf(event.getMemberCount() - 1));
             eventRepository.save(event);
             userRepository.save(user);
             //TODO complete the part for the Neo4J too
@@ -175,10 +174,10 @@ public class EventService {
         newEventDTO.setEventTime(eventDTO.getEventTime());
         newEventDTO.setCreated(new Date());
         newEventDTO.setUpdated(new Date());
-        newEventDTO.setMemberCount(0);
+        newEventDTO.setMemberCount(Integer.valueOf(0));
         newEventDTO.setEventStatus("upcoming");
-        newEventDTO.setUtcOffset(utcOffset);
-        if (Utils.isNullOrEmpty(eventDTO.getDuration())) newEventDTO.setDuration(86400); //1 day
+        newEventDTO.setUtcOffset(Integer.valueOf(utcOffset));
+        if (Utils.isNullOrEmpty(eventDTO.getDuration())) newEventDTO.setDuration(Integer.valueOf(86400)); //1 day
         if (Utils.isNullOrEmpty(eventDTO.getFee())) newEventDTO.setFee(FeeDTO.getDefaultDTO());
 
         setVenueAndCityForCreate(newEventDTO, eventDTO);
@@ -297,8 +296,8 @@ public class EventService {
             String category,
             Integer minMembers,
             Integer maxMembers,
-            LocalDateTime fromDate,
-            LocalDateTime toDate,
+            OffsetDateTime fromDate,
+            OffsetDateTime toDate,
             Integer maxFee,
             Integer page,
             Integer pageSize
@@ -318,8 +317,18 @@ public class EventService {
         if (maxMembers != null)
             query.addCriteria(Criteria.where("member_count").lte(maxMembers));
 
-        if (fromDate != null)
-            query.addCriteria(Criteria.where("event_time").gte(fromDate));
+        Criteria criteria = Criteria.where("event_time");
+        boolean dateFilter=false;
+        if (fromDate != null) {
+            criteria.gte(fromDate);
+            dateFilter=true;
+        }
+        if (toDate!=null){
+            criteria = criteria.andOperator(Criteria.where("event_time").lte(toDate));
+        dateFilter=true;
+        }
+        if (dateFilter)
+            query.addCriteria(criteria);
 
 //        if (toDate != null)
 //            query.addCriteria(Criteria.where("event_time").lte(toDate));
@@ -387,7 +396,7 @@ public class EventService {
         if (Utils.isNullOrEmpty(groups)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,"No group exists with groupId "+groupId+" or groupName "+groupName);
         }
-        Group group = groups.getFirst();
+        Group group = groups.get(0);
 
         userService.checkUserHasPermissionToEditGroup(group.getGroupId());
 

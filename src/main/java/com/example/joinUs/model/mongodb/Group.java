@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -34,7 +35,7 @@ public class Group {
     private String groupName;
     private String link;
     private String timezone;
-    private Date created;
+    private Date  created;
 
     private City city;
     private List<Category> categories;

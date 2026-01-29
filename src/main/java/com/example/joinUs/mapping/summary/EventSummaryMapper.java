@@ -15,6 +15,7 @@ import com.example.joinUs.model.neo4j.Event_Neo4J;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -31,11 +32,21 @@ public interface EventSummaryMapper { //TODO fix venueCityName and feeAmount bec
     List<EventSummaryDTO> toDTOs(List<Event> events);
 
     @Mapping(source = "feeAmount", target = "feeAmount")
-    @Mapping(source = "venueCity", target = "venueCity")
+    @Mapping(source = "venueCity", target = "venueCityName")
+    @Mapping(target = "updated", ignore = true)
+    @Mapping(target = "memberCount", ignore = true)
+    @Mapping(target = "creatorGroup", ignore = true)
     EventSummaryDTO toDTOFromNeo4j(Event_Neo4J event);
 
     @Mapping(source = "feeAmount", target = "feeAmount")
-    @Mapping(source = "venueCity", target = "venueCity")
+    @Mapping(source = "venueCity", target = "venueCityName")
+    @Mapping(target = "updated", ignore = true)
+    @Mapping(target = "memberCount", ignore = true)
+    @Mapping(target = "creatorGroup", ignore = true)
     List<EventSummaryDTO> toDTOsFromNeo4j(List<Event_Neo4J> events);
+
+    default Date map(OffsetDateTime value) {
+        return value == null ? null : Date.from(value.toInstant());
+    }
 
 }

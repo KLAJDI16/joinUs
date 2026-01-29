@@ -12,6 +12,8 @@ import com.example.joinUs.model.mongodb.Event;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
 
 
@@ -30,6 +32,9 @@ public interface EventMapper {
     @Mapping(target = "id", ignore = true)
     Event toEntity(EventDTO dto);
 
+    default Date map(OffsetDateTime value) {
+        return value == null ? null : Date.from(value.toInstant());
+    }
 //    Unmapped target properties: "id, link, description, urlkey".
 //    Mapping from Collection element "TopicEmbeddedDTO
 //    creatorGroup.organizerMembers[].topics" to "Topic creatorGroup.organizerMembers[].topics".

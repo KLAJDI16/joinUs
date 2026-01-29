@@ -40,7 +40,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         if (Utils.isNullOrEmpty(users)) throw  new UsernameNotFoundException("No User is  found with username "+username);
 
-        User user = users.getFirst();
+        User user = users.get(0);
 
         return user;
     }

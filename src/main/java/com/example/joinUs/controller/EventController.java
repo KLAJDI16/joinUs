@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -82,10 +83,10 @@ public class EventController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) Integer minMembers,
             @RequestParam(required = false) Integer maxMembers,
-            @Parameter(example = "2026-03-25T23:00:00.000")
-            LocalDateTime fromDate,
-            @Parameter(example = "2027-01-25T23:00:00.000")
-            LocalDateTime toDate,
+            @Parameter(example = "2026-12-15T01:45Z")
+            OffsetDateTime fromDate,
+            @Parameter(example = "2026-12-15T01:45Z")
+            OffsetDateTime toDate,
             @RequestParam(required = false) Integer maxFee,
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "100") Integer pageSize

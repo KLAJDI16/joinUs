@@ -11,6 +11,9 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 
