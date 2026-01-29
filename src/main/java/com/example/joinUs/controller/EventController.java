@@ -22,8 +22,7 @@ import java.util.List;
 @RequestMapping("/events")
 public class EventController {
 
-    public static final String currentDate = new Date().toString();
-    public static String defaultDate =currentDate;
+
 
     @Autowired
     private EventService eventService;
@@ -32,7 +31,7 @@ public class EventController {
     private UserService userService;
 
     @GetMapping("")
-    public Page<EventDTO> getAllEvents(
+    public Page<EventSummaryDTO> getAllEvents(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size ) {
         return eventService.getAllEvents(page, size);
@@ -65,9 +64,9 @@ public class EventController {
 
         return ResponseEntity.ok(eventService.attendEvent(id));
     }
-    @PatchMapping("/{id}/dontAttend")
-    public ResponseEntity dontAttend(@PathVariable String id) {
-        return ResponseEntity.ok(eventService.dontAttendEvent(id));
+    @PatchMapping("/{id}/revokeAttendance")
+    public ResponseEntity revokeAttendance(@PathVariable String id) {
+        return ResponseEntity.ok(eventService.revokeAttendance(id));
     }
 
     @DeleteMapping("/{id}")
@@ -107,63 +106,63 @@ public class EventController {
     }
 
 
-    // 🔍 By name
-    @GetMapping("/searchByName")
-    public Page<EventDTO> searchByName(@RequestParam String name,
-                                 @RequestParam(defaultValue = "0") int page,
-                                 @RequestParam(defaultValue = "100") int size ) {
-        return eventService.findByEventNameContainingIgnoreCase(name,page,size);
-    }
-
-    // 🏙 By city
-    @GetMapping("/filterByCity")
-    public Page<EventDTO> filterByCity(@RequestParam String city,
-                                 @RequestParam(defaultValue = "0") int page,
-                                 @RequestParam(defaultValue = "100") int size ) {
-        return eventService.filterByCity(city,page,size);
-    }
-
-    // 🏷 By category
-    @GetMapping("/filterByCategory")
-    public Page<EventDTO> filterByCategory(@RequestParam String category,
-                                     @RequestParam(defaultValue = "0") int page,
-                                     @RequestParam(defaultValue = "100") int size ) {
-        return eventService.filterByCategory(category,page,size);
-    }
-
-    // 👥 By member count range
-    @GetMapping("/filterByMembersCount")
-    public Page<EventDTO> filterByMembersCount(
-            @RequestParam int min,
-            @RequestParam int max,
-            @RequestParam int page,
-            @RequestParam(defaultValue = "100") int size
-    ) {
-        return eventService.filterByMemberCount(min, max,page,size);
-    }
-
-    // 📅 By event date range
-    @GetMapping("/filterByDate")
-    public Page<EventDTO> filterByDate( //TODO Change Date's type to include only the Date and not the hh:mm:ssss
-                                        @RequestParam(required = false)
-                                        @Parameter(example = "2026-03-25T23:00:00.000")
-                                        LocalDateTime from,
-                                        @RequestParam(required = false)
-                                            @Parameter(example = "2027-01-25T23:00:00.000")
-                                            LocalDateTime to,
-                                        @RequestParam(defaultValue = "0") int page,
-                                        @RequestParam(defaultValue = "100") int size
-    ) {
-        return eventService.filterByDateRange(from, to,page,size);
-    }
-
-    // 💰 By max fee
-    @GetMapping("/filterByFee")
-    public Page<EventDTO> filterByFee(@RequestParam int maxFee,
-                                   @RequestParam(defaultValue = "0") int page,
-                                   @RequestParam(defaultValue = "100") int size ) {
-        return eventService.filterByMaxFee(maxFee,page,size);
-    }
+//    // 🔍 By name
+//    @GetMapping("/searchByName")
+//    public Page<EventDTO> searchByName(@RequestParam String name,
+//                                 @RequestParam(defaultValue = "0") int page,
+//                                 @RequestParam(defaultValue = "100") int size ) {
+//        return eventService.findByEventNameContainingIgnoreCase(name,page,size);
+//    }
+//
+//    // 🏙 By city
+//    @GetMapping("/filterByCity")
+//    public Page<EventDTO> filterByCity(@RequestParam String city,
+//                                 @RequestParam(defaultValue = "0") int page,
+//                                 @RequestParam(defaultValue = "100") int size ) {
+//        return eventService.filterByCity(city,page,size);
+//    }
+//
+//    // 🏷 By category
+//    @GetMapping("/filterByCategory")
+//    public Page<EventDTO> filterByCategory(@RequestParam String category,
+//                                     @RequestParam(defaultValue = "0") int page,
+//                                     @RequestParam(defaultValue = "100") int size ) {
+//        return eventService.filterByCategory(category,page,size);
+//    }
+//
+//    // 👥 By member count range
+//    @GetMapping("/filterByMembersCount")
+//    public Page<EventDTO> filterByMembersCount(
+//            @RequestParam int min,
+//            @RequestParam int max,
+//            @RequestParam int page,
+//            @RequestParam(defaultValue = "100") int size
+//    ) {
+//        return eventService.filterByMemberCount(min, max,page,size);
+//    }
+//
+//    // 📅 By event date range
+//    @GetMapping("/filterByDate")
+//    public Page<EventDTO> filterByDate( //TODO Change Date's type to include only the Date and not the hh:mm:ssss
+//                                        @RequestParam(required = false)
+//                                        @Parameter(example = "2026-03-25T23:00:00.000")
+//                                        LocalDateTime from,
+//                                        @RequestParam(required = false)
+//                                            @Parameter(example = "2027-01-25T23:00:00.000")
+//                                            LocalDateTime to,
+//                                        @RequestParam(defaultValue = "0") int page,
+//                                        @RequestParam(defaultValue = "100") int size
+//    ) {
+//        return eventService.filterByDateRange(from, to,page,size);
+//    }
+//
+//    // 💰 By max fee
+//    @GetMapping("/filterByFee")
+//    public Page<EventDTO> filterByFee(@RequestParam int maxFee,
+//                                   @RequestParam(defaultValue = "0") int page,
+//                                   @RequestParam(defaultValue = "100") int size ) {
+//        return eventService.filterByMaxFee(maxFee,page,size);
+//    }
 
 
 }

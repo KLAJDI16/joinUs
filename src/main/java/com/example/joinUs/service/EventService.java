@@ -2,7 +2,6 @@ package com.example.joinUs.service;
 
 import com.example.joinUs.Utils;
 import com.example.joinUs.dto.*;
-import com.example.joinUs.dto.embedded.EventEmbeddedDTO;
 import com.example.joinUs.dto.summary.EventSummaryDTO;
 import com.example.joinUs.mapping.*;
 import com.example.joinUs.mapping.embedded.EventEmbeddedMapper;
@@ -31,6 +30,7 @@ import java.util.List;
 import java.util.SimpleTimeZone;
 
 import static java.util.TimeZone.getTimeZone;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 
 @Service
@@ -82,23 +82,20 @@ public class EventService {
      return  eventNeo4JRepo.findAll();
     }
 
-    public Page<EventDTO> getAllEvents(int page, int size) {
-        Page<EventDTO> events = eventRepository.findAllEvents(PageRequest.of(page, size + 1));
-        return events;
-
+    public Page<EventSummaryDTO> getAllEvents(int page, int size) {
+        Page<Event> events = eventRepository.findAll(PageRequest.of(page, size ));
+        return events.map(e -> eventSummaryMapper.toDTO(e));
     }
 
     public EventDTO getEventById(String id) {
-        Event event = eventRepository.findByEventId(id);
-        if (event == null)
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "There is no event with eventId " + id);
+        Event event = getEventOrThrow(id);
+
         return eventMapper.toDTO(event);
     }
 
-    public UserDTO attendEvent(String id) {
-        Event event = eventRepository.findByEventId(id);
-        if (event == null)
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "There is no event with eventId " + id);
+    public ResponseMessage attendEvent(String id) {
+        Event event = getEventOrThrow(id);
+
         try {
 
             User user = Utils.getUserFromContext();
@@ -110,20 +107,16 @@ public class EventService {
             event.setMemberCount(Integer.valueOf(event.getMemberCount() + 1));
             eventRepository.save(event);
             userRepository.save(user);
-
+            return new ResponseMessage("successful","Your attendance in the event "+event.getEventName()+" is confirmed");
             //TODO complete the part for the Neo4J too
-            return userMapper.toDTO(user);
-        } catch (Exception e) {
+      } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
-    public UserDTO dontAttendEvent(String id) {
+    public ResponseMessage revokeAttendance(String id) {
 
-
-        Event event = eventRepository.findByEventId(id);
-        if (event == null)
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "There is no event with eventId " + id);
+        Event event = getEventOrThrow(id);
         try {
             User user = Utils.getUserFromContext();
             user.removeUpcomingEvent(id);
@@ -132,7 +125,8 @@ public class EventService {
             eventRepository.save(event);
             userRepository.save(user);
             //TODO complete the part for the Neo4J too
-            return userMapper.toDTO(user);
+            return new ResponseMessage("successful","Your attendance in the event "+event.getEventName()+" is revoked ");
+
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -180,7 +174,8 @@ public class EventService {
         if (Utils.isNullOrEmpty(eventDTO.getDuration())) newEventDTO.setDuration(Integer.valueOf(86400)); //1 day
         if (Utils.isNullOrEmpty(eventDTO.getFee())) newEventDTO.setFee(FeeDTO.getDefaultDTO());
 
-        setVenueAndCityForCreate(newEventDTO, eventDTO);
+        VenueDTO venueDTO = updateVenueForEvent(eventDTO);
+        if (venueDTO != null) newEventDTO.setVenue(venueDTO);
 
         setCreatorGroupForCreate(newEventDTO, eventDTO);
 
@@ -190,26 +185,24 @@ public class EventService {
 
 
     public EventDTO updateEvent(EventDTO eventDTO, String id) { // TODO revisit, especially PATCH semantics
-        Event event = eventRepository.findByEventId(id);
-        if (event == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event with eventId : " + eventDTO.getEventId());
-        }
+        Event event = getEventOrThrow(id);
+
         userService.checkUserHasPermissionToEditEvent(id);
 
         try {
-            Event entity = eventMapper.toEntity(eventDTO);
+            Event newEvent = eventMapper.toEntity(eventDTO);
 
             //Fields that should remain as they were before the update
-            entity.setEventId(id);
-            entity.setId(event.getId());
-            entity.setMemberCount(event.getMemberCount());
-            entity.setCreatorGroup(event.getCreatorGroup());
+            newEvent.setEventId(id);
+            newEvent.setId(event.getId());
+            newEvent.setMemberCount(event.getMemberCount());
+            newEvent.setCreatorGroup(event.getCreatorGroup());
 
 
-            setVenueAndCityForUpdate(entity, eventDTO);
-            entity.setUpdated(new Date());
+            setVenueAndCityForUpdate(newEvent, eventDTO);
+            newEvent.setUpdated(new Date());
 
-            Event saved = eventRepository.save(entity);
+            Event saved = eventRepository.save(newEvent);
 
 
             return eventMapper.toDTO(saved);
@@ -218,77 +211,72 @@ public class EventService {
         }
 
     }
+    private Event getEventOrThrow(String id) {
+        return eventRepository.findByEventId(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Event not found: " + id));
+    }
 
 
     public void deleteEvent(String id) {
         if (!eventRepository.existsByEventId(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found: " + id);
+            throw new ResponseStatusException(NOT_FOUND, "Event not found: " + id);
         }
         userService.checkUserHasPermissionToEditEvent(id);
         eventRepository.deleteByEventId(id);
     }
 
-    public Page<EventDTO> filterByCategory(String category, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size + 1);
-        return eventRepository.findByCategoryName(category, pageable);
-    }
-
-    public List<EventDTO> filterByMemberRange(int min,
-                                              int max,
-                                              int page, int size) {
-        long startTime = System.currentTimeMillis();
-        List<EventDTO> list = eventRepository.findSecondWayByMemberCount(min, max, page, size + 1);
-        long endTime = System.currentTimeMillis();
-        System.out.println("PROCESS USING AGGREGATION LASTED : " + (endTime - startTime) + " milliseconds");
-        return list;
-    }
-
-    public Page<EventDTO> filterByMemberCount(
-            int min,
-            int max,
-            int page, int size
-    ) {
-        long startTime = System.currentTimeMillis();
-
-        Pageable pageable =
-                PageRequest.of(page, size + 1);
-
-        Page<EventDTO> page1 = eventRepository.findByMemberCountBetween(min, max, pageable);
-        long endTime = System.currentTimeMillis();
-        System.out.println("PROCESS USING QUERY LASTED : " + (endTime - startTime) + " milliseconds");
-        return page1;
-    }
-
-    public Page<EventDTO> filterByDateRange(LocalDateTime from, LocalDateTime to, int page, int size) {
-
-        try {
-            LocalDateTime date = LocalDateTime.now();
-
-            if (to != null)
-                return eventRepository.findByEventTimeBetween(from != null ? from : date, to, PageRequest.of(page, size + 1));
-            else {
-                return eventRepository.findByEventTimeAfter(from != null ? from : date, PageRequest.of(page, size + 1));
-            }
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        }
-
-
-    }
-
-    public Page<EventDTO> filterByMaxFee(int maxFee, int page, int size) {
-        return eventRepository.findByEventFeeIsLessOrEqual(maxFee, PageRequest.of(page, size + 1));
-    }
-
-    public Page<EventDTO> filterByCity(String city, int page, int size) {
-        return eventRepository.findByCityName(city, PageRequest.of(page, size + 1));
-    }
-
-    public Page<EventDTO> findByEventNameContainingIgnoreCase(String name, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size + 1);
-
-        return eventRepository.searchByEventName(name, pageable);
-    }
+//    public Page<EventDTO> filterByCategory(String category, int page, int size) {
+//        Pageable pageable = PageRequest.of(page, size + 1);
+//        return eventRepository.findByCategoryName(category, pageable);
+//    }
+//
+//
+//    public Page<EventDTO> filterByMemberCount(
+//            int min,
+//            int max,
+//            int page, int size
+//    ) {
+//        long startTime = System.currentTimeMillis();
+//
+//        Pageable pageable =
+//                PageRequest.of(page, size + 1);
+//
+//        Page<EventDTO> page1 = eventRepository.findByMemberCountBetween(min, max, pageable);
+//        long endTime = System.currentTimeMillis();
+//        System.out.println("PROCESS USING QUERY LASTED : " + (endTime - startTime) + " milliseconds");
+//        return page1;
+//    }
+//
+//    public Page<EventDTO> filterByDateRange(LocalDateTime from, LocalDateTime to, int page, int size) {
+//
+//        try {
+//            LocalDateTime date = LocalDateTime.now();
+//
+//            if (to != null)
+//                return eventRepository.findByEventTimeBetween(from != null ? from : date, to, PageRequest.of(page, size + 1));
+//            else {
+//                return eventRepository.findByEventTimeAfter(from != null ? from : date, PageRequest.of(page, size + 1));
+//            }
+//        } catch (Exception e) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+//        }
+//
+//
+//    }
+//
+//    public Page<EventDTO> filterByMaxFee(int maxFee, int page, int size) {
+//        return eventRepository.findByEventFeeIsLessOrEqual(maxFee, PageRequest.of(page, size + 1));
+//    }
+//
+//    public Page<EventDTO> filterByCity(String city, int page, int size) {
+//        return eventRepository.findByCityName(city, PageRequest.of(page, size + 1));
+//    }
+//
+//    public Page<EventDTO> findByEventNameContainingIgnoreCase(String name, int page, int size) {
+//        Pageable pageable = PageRequest.of(page, size + 1);
+//
+//        return eventRepository.searchByEventName(name, pageable);
+//    }
 
     public PageImpl<EventSummaryDTO> search(
             String name,
@@ -299,8 +287,8 @@ public class EventService {
             OffsetDateTime fromDate,
             OffsetDateTime toDate,
             Integer maxFee,
-            Integer page,
-            Integer pageSize
+            int page,
+            int pageSize
     ) {
         Pageable pageable = PageRequest.of(page, pageSize);
         Query query = new Query();
@@ -339,6 +327,9 @@ public class EventService {
         if (maxFee != null)
             query.addCriteria(Criteria.where("fee.amount").lte(maxFee));
 
+        query.skip(page*pageSize);
+        query.limit(pageSize);
+
 
         List<EventSummaryDTO> results = mongoTemplate.find(query, Event.class)
                 .stream()
@@ -349,10 +340,7 @@ public class EventService {
 
     }
 
-    private void setVenueAndCityForCreate(EventDTO newEventDTO, EventDTO eventDTO) {
-        VenueDTO venueDTO = updateVenueForEvent(eventDTO);
-        if (venueDTO != null) newEventDTO.setVenue(venueDTO);
-    }
+
 
     private VenueDTO updateVenueForEvent(EventDTO eventDTO) {
         VenueDTO venueDTO = eventDTO.getVenue();
@@ -394,7 +382,7 @@ public class EventService {
 
         List<Group> groups = groupRepository.findGroupByGroupIdOrGroupName(groupId,groupName);
         if (Utils.isNullOrEmpty(groups)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"No group exists with groupId "+groupId+" or groupName "+groupName);
+            throw new ResponseStatusException(NOT_FOUND,"No group exists with groupId "+groupId+" or groupName "+groupName);
         }
         Group group = groups.get(0);
 

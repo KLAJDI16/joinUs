@@ -14,6 +14,7 @@ import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.neo4j.Event_Neo4J;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.springframework.data.domain.Page;
 
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -30,6 +31,7 @@ public interface EventSummaryMapper { //TODO fix venueCityName and feeAmount bec
     @Mapping(source = "fee.amount", target = "feeAmount")
     @Mapping(source = "venue.city.name", target = "venueCityName")
     List<EventSummaryDTO> toDTOs(List<Event> events);
+
 
     @Mapping(source = "feeAmount", target = "feeAmount")
     @Mapping(source = "venueCity", target = "venueCityName")

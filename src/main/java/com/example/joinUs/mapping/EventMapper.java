@@ -35,7 +35,5 @@ public interface EventMapper {
     default Date map(OffsetDateTime value) {
         return value == null ? null : Date.from(value.toInstant());
     }
-//    Unmapped target properties: "id, link, description, urlkey".
-//    Mapping from Collection element "TopicEmbeddedDTO
-//    creatorGroup.organizerMembers[].topics" to "Topic creatorGroup.organizerMembers[].topics".
+
 }

@@ -17,17 +17,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface EventRepository extends MongoRepository<Event, ObjectId> {
 
-    String eventNameNotEmpty=" 'event_name':{$ne:\"\"} ";
     String fields= "{'event_id':1,'event_name':1,'venue.city.name':1,'member_count':1,'creator_group':1,'event_time':1,'fee.amount':1}";
 
-    String eventProjection= "{ $project:"+fields+" }";
+//    String eventProjection= "{ $project:"+fields+" }";
 
 
-    Event findByEventId(String eventId);
+    Optional<Event> findByEventId(String eventId); //TODO check
 
 
     boolean existsByEventId(String eventId);
@@ -37,8 +37,8 @@ public interface EventRepository extends MongoRepository<Event, ObjectId> {
 
 
 
-    @Query(value = "{"+eventNameNotEmpty+"}",fields = fields)
-    Page<EventDTO> findAllEvents(Pageable pageable);
+//    @Query(value = "{"+eventNameNotEmpty+"}",fields = fields)
+//    Page<Event> findAll(Pageable pageable);
 
     @Query(value = "{'event_name' : { $regex: ?0, $options: 'i' } }",fields = fields)
     Page<EventDTO> searchByEventName(String name,Pageable pageable);
@@ -121,80 +121,80 @@ public interface EventRepository extends MongoRepository<Event, ObjectId> {
 
 
     // USING THE AGGREGATION APPROACH
-
-    @Aggregation( pipeline = {
-            "{$match:{'event_name' : { $regex: ?0, $options: 'i' } }}",
-            "{$skip: ?1}",
-            "{$limit: ?2}",
-            eventProjection
-    }
-    )
-    List<EventDTO> searchByEventNameAggregation(String name,int offset,int limit);
-
-    @Aggregation(pipeline = {
-            "{$match { 'venue.city.name' : ?0 } }",
-            "{$skip: ?1}",
-            "{$limit: ?2}",
-            eventProjection
-    }
-    )
-    List<EventDTO> findByCityNameAggregation(String cityName,int offset,int limit);
-
-
-    @Aggregation(pipeline = {
-            "{$match : { 'categories.name' : { $regex: ?0, $options: 'i' } } }",
-            "{$skip: ?1}",
-            "{$limit: ?2}",
-            eventProjection
-    })
-    List<EventDTO> findByCategoryNameAggregation(String categoryName,int offset,int limit);
-
-//    @Query("""
-//        {
-//          'venue.city.name' : ?0,
-//          'event_name' : { $regex: ?1, $options: 'i' }
-//        }
-//    """)
-//    List<Event> findByCityAndName(String city, String name);
-
-    @Aggregation(pipeline = {
-            "{$match :{ 'member_count' : { $gte: ?0, $lte: ?1 } } }",
-            "{$sort:{ 'member_count':-1 } }",
-            "{$skip: ?2}",
-            "{$limit: ?3}",
-            eventProjection
-    }
-    )
-    List<EventDTO> findByMemberCountBetweenAggregation(int minMemberCount, int maxMemberCount, int offset,int limit);
-
-    @Aggregation(pipeline = {
-            "{$match:  { 'event_time' : { $gte: ?0, $lte: ?1 } } }",
-            "{$sort:{ 'event_time' : 1 }}",
-            "{$skip: ?2}",
-            "{$limit: ?3}",
-            eventProjection}
-    )
-    List<EventDTO> findByEventTimeBetweenAggregation(Date from, Date to, int offset,int limit);
-
-    @Aggregation(pipeline = {
-            "{$match: { 'fee.amount' : {$lte:?0} } }",
-            "{$sort: { 'fee.amount' : 1 } }",
-            "{$skip: ?1}",
-            "{$limit: ?2}",
-            eventProjection
-    }
-    )
-    List<EventDTO> findByEventFeeIsLessOrEqualAggregation(int max, int offset,int limit);
-
-
-
-    @Aggregation(pipeline = {
-            "{$match: { 'member_count' : { $gte: ?0, $lte: ?1 } }}",
-            "{$sort:{'member_count':-1}}",
-            "{$skip: ?2}",
-            "{$limit: ?3}",
-            eventProjection
-    })
-    List<EventDTO> findSecondWayByMemberCount(int minMemberCount,int maxMemberCount,int offset,int limit);
+//
+//    @Aggregation( pipeline = {
+//            "{$match:{'event_name' : { $regex: ?0, $options: 'i' } }}",
+//            "{$skip: ?1}",
+//            "{$limit: ?2}",
+//            eventProjection
+//    }
+//    )
+//    List<EventDTO> searchByEventNameAggregation(String name,int offset,int limit);
+//
+//    @Aggregation(pipeline = {
+//            "{$match { 'venue.city.name' : ?0 } }",
+//            "{$skip: ?1}",
+//            "{$limit: ?2}",
+//            eventProjection
+//    }
+//    )
+//    List<EventDTO> findByCityNameAggregation(String cityName,int offset,int limit);
+//
+//
+//    @Aggregation(pipeline = {
+//            "{$match : { 'categories.name' : { $regex: ?0, $options: 'i' } } }",
+//            "{$skip: ?1}",
+//            "{$limit: ?2}",
+//            eventProjection
+//    })
+//    List<EventDTO> findByCategoryNameAggregation(String categoryName,int offset,int limit);
+//
+////    @Query("""
+////        {
+////          'venue.city.name' : ?0,
+////          'event_name' : { $regex: ?1, $options: 'i' }
+////        }
+////    """)
+////    List<Event> findByCityAndName(String city, String name);
+//
+//    @Aggregation(pipeline = {
+//            "{$match :{ 'member_count' : { $gte: ?0, $lte: ?1 } } }",
+//            "{$sort:{ 'member_count':-1 } }",
+//            "{$skip: ?2}",
+//            "{$limit: ?3}",
+//            eventProjection
+//    }
+//    )
+//    List<EventDTO> findByMemberCountBetweenAggregation(int minMemberCount, int maxMemberCount, int offset,int limit);
+//
+//    @Aggregation(pipeline = {
+//            "{$match:  { 'event_time' : { $gte: ?0, $lte: ?1 } } }",
+//            "{$sort:{ 'event_time' : 1 }}",
+//            "{$skip: ?2}",
+//            "{$limit: ?3}",
+//            eventProjection}
+//    )
+//    List<EventDTO> findByEventTimeBetweenAggregation(Date from, Date to, int offset,int limit);
+//
+//    @Aggregation(pipeline = {
+//            "{$match: { 'fee.amount' : {$lte:?0} } }",
+//            "{$sort: { 'fee.amount' : 1 } }",
+//            "{$skip: ?1}",
+//            "{$limit: ?2}",
+//            eventProjection
+//    }
+//    )
+//    List<EventDTO> findByEventFeeIsLessOrEqualAggregation(int max, int offset,int limit);
+//
+//
+//
+//    @Aggregation(pipeline = {
+//            "{$match: { 'member_count' : { $gte: ?0, $lte: ?1 } }}",
+//            "{$sort:{'member_count':-1}}",
+//            "{$skip: ?2}",
+//            "{$limit: ?3}",
+//            eventProjection
+//    })
+//    List<EventDTO> findSecondWayByMemberCount(int minMemberCount,int maxMemberCount,int offset,int limit);
 
 }
