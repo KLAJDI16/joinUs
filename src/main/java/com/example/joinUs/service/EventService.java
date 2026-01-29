@@ -2,7 +2,6 @@ package com.example.joinUs.service;
 
 import com.example.joinUs.Utils;
 import com.example.joinUs.dto.*;
-import com.example.joinUs.dto.embedded.EventEmbeddedDTO;
 import com.example.joinUs.dto.summary.EventSummaryDTO;
 import com.example.joinUs.mapping.*;
 import com.example.joinUs.mapping.embedded.EventEmbeddedMapper;
@@ -11,7 +10,6 @@ import com.example.joinUs.model.mongodb.City;
 import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.mongodb.User;
-import com.example.joinUs.model.neo4j.Event_Neo4J;
 import com.example.joinUs.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -19,9 +17,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -31,7 +27,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.SimpleTimeZone;
 
-import static java.util.TimeZone.getTimeZone;
+import static com.example.joinUs.Utils.isNullOrEmpty;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+import static org.springframework.http.HttpStatus.*;
 
 
 @Service
@@ -70,61 +68,49 @@ public class EventService {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-//    @Autowired
-//    private Neo4jClient neo4jClient;
-
-
+    //    @Autowired
+    //    private Neo4jClient neo4jClient; // TODO
 
     @Autowired
     private Event_Neo4J_Repo eventNeo4JRepo; // TODO
 
-
-    public List<Event_Neo4J> getEventsFromNeo4j(){
-     return  eventNeo4JRepo.findAll();
-    }
-
     public Page<EventDTO> getAllEvents(int page, int size) {
-        Page<EventDTO> events = eventRepository.findAllEvents(PageRequest.of(page, size + 1));
-        return events;
+        return eventRepository.findAllEvents(PageRequest.of(page, size + 1)); // TODO why +1 here?
 
     }
 
     public EventDTO getEventById(String id) {
-        Event event = eventRepository.findByEventId(id);
-        if (event == null)
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "There is no event with eventId " + id);
+        Event event = getEventOrThrow(id);
         return eventMapper.toDTO(event);
     }
 
-    public UserDTO attendEvent(String id) {
-        Event event = eventRepository.findByEventId(id);
-        if (event == null)
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "There is no event with eventId " + id);
-        try {
+    private Event getEventOrThrow(String id) {
+        return eventRepository.findByEventId(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Event not found: " + id));
+    }
 
-            User user = Utils.getUserFromContext();
+    public UserDTO attendEvent(String id) { // TODO why does this method return a UserDTO?
+        Event event = getEventOrThrow(id);
+        try {
+            User user = Utils.getUserFromContext(); // TODO use injection instead of static method
 
             List<Event> userUpcomingEvents = user.getUpcomingEvents();
             userUpcomingEvents.add(eventEmbeddedMapper.toEntity(eventEmbeddedMapper.toDTO(event)));
             user.setUpcomingEvents(userUpcomingEvents);
             user.setEventCount(user.getEventCount() + 1);
-            event.setMemberCount(event.getMemberCount() + 1);
+            event.setMemberCount(event.getMemberCount() + 1); // TODO what about consistency during synchronous writes?
             eventRepository.save(event);
             userRepository.save(user);
 
             //TODO complete the part for the Neo4J too
             return userMapper.toDTO(user);
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
-    public UserDTO dontAttendEvent(String id) {
-
-
-        Event event = eventRepository.findByEventId(id);
-        if (event == null)
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "There is no event with eventId " + id);
+    public UserDTO revokeAttendance(String id) { // TODO why does this method return a UserDTO?
+        Event event = getEventOrThrow(id);
         try {
             User user = Utils.getUserFromContext();
             user.removeUpcomingEvent(id);
@@ -135,38 +121,39 @@ public class EventService {
             //TODO complete the part for the Neo4J too
             return userMapper.toDTO(user);
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
     public EventDTO createEvent(EventDTO eventDTO) {
 
-        EventDTO eventDTO1 = createEventDTO(eventDTO);
+        EventDTO newEvent = createEventDTO(eventDTO);
         try {
-            Event entity = eventMapper.toEntity(eventDTO1);
+            Event entity = eventMapper.toEntity(newEvent);
             Event saved = eventRepository.save(entity);
             return eventMapper.toDTO(saved);
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, e.getMessage());
         }
 
     }
 
-    private EventDTO createEventDTO(EventDTO eventDTO) {
+    private EventDTO createEventDTO(EventDTO eventDTO) { // TODO: why not just modify the existing dto?
 
-        if (Utils.isNullOrEmpty(eventDTO.getEventId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "eventId must be provided");
+        if (isNullOrEmpty(eventDTO.getEventId())) {
+            throw new ResponseStatusException(BAD_REQUEST, "eventId must be provided");
         }
         if (eventRepository.existsByEventId(eventDTO.getEventId())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Event already exists: " + eventDTO.getEventId());
+            throw new ResponseStatusException(CONFLICT, "Event already exists: " + eventDTO.getEventId());
         }
 
-        if (Utils.isNullOrEmpty(eventDTO.getEventName())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "eventName must be provided");
+        if (isNullOrEmpty(eventDTO.getEventName())) {
+            throw new ResponseStatusException(CONFLICT, "eventName must be provided");
         }
-        if (Utils.isNullOrEmpty(eventDTO.getEventTime())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "eventTime must be provided");
+        if (isNullOrEmpty(eventDTO.getEventTime())) {
+            throw new ResponseStatusException(CONFLICT, "eventTime must be provided");
         }
+        // TODO I think we can't just assume the system's timezone
         int utcOffset = SimpleTimeZone.getTimeZone(ZoneId.systemDefault()).getOffset(System.currentTimeMillis()) / 1000;
 
         EventDTO newEventDTO = new EventDTO();
@@ -178,9 +165,11 @@ public class EventService {
         newEventDTO.setMemberCount(0);
         newEventDTO.setEventStatus("upcoming");
         newEventDTO.setUtcOffset(utcOffset);
-        if (Utils.isNullOrEmpty(eventDTO.getDuration())) newEventDTO.setDuration(86400); //1 day
-        if (Utils.isNullOrEmpty(eventDTO.getFee())) newEventDTO.setFee(FeeDTO.getDefaultDTO());
+        // TODO why not leave it null?
+        if (isNullOrEmpty(eventDTO.getDuration())) newEventDTO.setDuration(86400); //1 day
+        if (isNullOrEmpty(eventDTO.getFee())) newEventDTO.setFee(FeeDTO.getDefaultDTO());
 
+        // TODO why is this a separate method?
         setVenueAndCityForCreate(newEventDTO, eventDTO);
 
         setCreatorGroupForCreate(newEventDTO, eventDTO);
@@ -189,109 +178,42 @@ public class EventService {
 
     }
 
-
     public EventDTO updateEvent(EventDTO eventDTO, String id) { // TODO revisit, especially PATCH semantics
-        Event event = eventRepository.findByEventId(id);
-        if (event == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event with eventId : " + eventDTO.getEventId());
-        }
+        Event event = getEventOrThrow(id);
+
         userService.checkUserHasPermissionToEditEvent(id);
 
         try {
-            Event entity = eventMapper.toEntity(eventDTO);
+            Event newEvent = eventMapper.toEntity(eventDTO);
 
             //Fields that should remain as they were before the update
-            entity.setEventId(id);
-            entity.setId(event.getId());
-            entity.setMemberCount(event.getMemberCount());
-            entity.setCreatorGroup(event.getCreatorGroup());
+            newEvent.setEventId(id);
+            newEvent.setId(event.getId());
+            newEvent.setMemberCount(event.getMemberCount());
+            newEvent.setCreatorGroup(event.getCreatorGroup());
 
+            setVenueAndCityForUpdate(newEvent, eventDTO);
+            newEvent.setUpdated(new Date());
 
-            setVenueAndCityForUpdate(entity, eventDTO);
-            entity.setUpdated(new Date());
-
-            Event saved = eventRepository.save(entity);
-
+            Event saved = eventRepository.save(newEvent);
 
             return eventMapper.toDTO(saved);
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, e.getMessage());
         }
 
     }
-
 
     public void deleteEvent(String id) {
         if (!eventRepository.existsByEventId(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found: " + id);
+            throw new ResponseStatusException(NOT_FOUND, "Event not found: " + id);
         }
         userService.checkUserHasPermissionToEditEvent(id);
         eventRepository.deleteByEventId(id);
+        // TODO delete upcomingEvent embeddings and counts from member and group
     }
 
-    public Page<EventDTO> filterByCategory(String category, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size + 1);
-        return eventRepository.findByCategoryName(category, pageable);
-    }
-
-    public List<EventDTO> filterByMemberRange(int min,
-                                              int max,
-                                              int page, int size) {
-        long startTime = System.currentTimeMillis();
-        List<EventDTO> list = eventRepository.findSecondWayByMemberCount(min, max, page, size + 1);
-        long endTime = System.currentTimeMillis();
-        System.out.println("PROCESS USING AGGREGATION LASTED : " + (endTime - startTime) + " milliseconds");
-        return list;
-    }
-
-    public Page<EventDTO> filterByMemberCount(
-            int min,
-            int max,
-            int page, int size
-    ) {
-        long startTime = System.currentTimeMillis();
-
-        Pageable pageable =
-                PageRequest.of(page, size + 1);
-
-        Page<EventDTO> page1 = eventRepository.findByMemberCountBetween(min, max, pageable);
-        long endTime = System.currentTimeMillis();
-        System.out.println("PROCESS USING QUERY LASTED : " + (endTime - startTime) + " milliseconds");
-        return page1;
-    }
-
-    public Page<EventDTO> filterByDateRange(LocalDateTime from, LocalDateTime to, int page, int size) {
-
-        try {
-            LocalDateTime date = LocalDateTime.now();
-
-            if (to != null)
-                return eventRepository.findByEventTimeBetween(from != null ? from : date, to, PageRequest.of(page, size + 1));
-            else {
-                return eventRepository.findByEventTimeAfter(from != null ? from : date, PageRequest.of(page, size + 1));
-            }
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        }
-
-
-    }
-
-    public Page<EventDTO> filterByMaxFee(int maxFee, int page, int size) {
-        return eventRepository.findByEventFeeIsLessOrEqual(maxFee, PageRequest.of(page, size + 1));
-    }
-
-    public Page<EventDTO> filterByCity(String city, int page, int size) {
-        return eventRepository.findByCityName(city, PageRequest.of(page, size + 1));
-    }
-
-    public Page<EventDTO> findByEventNameContainingIgnoreCase(String name, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size + 1);
-
-        return eventRepository.searchByEventName(name, pageable);
-    }
-
-    public PageImpl<EventSummaryDTO> search(
+    public Page<EventSummaryDTO> search(
             String name,
             String city,
             String category,
@@ -300,43 +222,38 @@ public class EventService {
             LocalDateTime fromDate,
             LocalDateTime toDate,
             Integer maxFee,
-            Integer page,
-            Integer pageSize
+            int page,
+            int pageSize
     ) {
         Pageable pageable = PageRequest.of(page, pageSize);
         Query query = new Query();
 
-        if (name != null)
-            query.addCriteria(Criteria.where("event_name").regex(name, "i"));
+        if (name != null) query.addCriteria(where("event_name").regex(name, "i"));
 
-        if (city != null)
-            query.addCriteria(Criteria.where("venue.city.name").regex(city));
+        // TODO searching for city id or name here?
+        if (city != null) query.addCriteria(where("venue.city.name").regex(city));
 
-        if (minMembers != null)
-            query.addCriteria(Criteria.where("member_count").gte(minMembers));
+        if (minMembers != null) query.addCriteria(where("member_count").gte(minMembers));
 
-        if (maxMembers != null)
-            query.addCriteria(Criteria.where("member_count").lte(maxMembers));
+        if (maxMembers != null) query.addCriteria(where("member_count").lte(maxMembers));
 
-        if (fromDate != null)
-            query.addCriteria(Criteria.where("event_time").gte(fromDate));
+        if (fromDate != null) query.addCriteria(where("event_time").gte(fromDate));
 
-//        if (toDate != null)
-//            query.addCriteria(Criteria.where("event_time").lte(toDate));
+        // TODO include again?
+        //        if (toDate != null)
+        //            query.addCriteria(Criteria.where("event_time").lte(toDate));
 
-        if (category != null)
-            query.addCriteria(Criteria.where("categories.name").is(category));
+        if (category != null) query.addCriteria(where("categories.name").is(category));
 
-        if (maxFee != null)
-            query.addCriteria(Criteria.where("fee.amount").lte(maxFee));
+        if (maxFee != null) query.addCriteria(where("fee.amount").lte(maxFee));
 
-
+        // TODO does this load all matched events into the application?
         List<EventSummaryDTO> results = mongoTemplate.find(query, Event.class)
                 .stream()
-                .map(e -> eventSummaryMapper.toDTO(e))
+                .map(eventSummaryMapper::toDTO)
                 .toList();
 
-        return new PageImpl<EventSummaryDTO>(results, pageable, results.size());
+        return new PageImpl<>(results, pageable, results.size());
 
     }
 
@@ -349,12 +266,12 @@ public class EventService {
         VenueDTO venueDTO = eventDTO.getVenue();
         if (venueDTO != null) {
             CityDTO cityDTO = null;
-            if (!Utils.isNullOrEmpty(venueDTO.getCity())) {
-                if (!Utils.isNullOrEmpty(eventDTO.getVenue().getCity().getId())) {
+            if (!isNullOrEmpty(venueDTO.getCity())) {
+                if (!isNullOrEmpty(eventDTO.getVenue().getCity().getId())) {
                     String cityId = eventDTO.getVenue().getCity().getId();
                     City city = cityRepository.findByCityId(cityId);
                     if (city != null) cityDTO = cityMapper.toDTO(city);
-                } else if (!Utils.isNullOrEmpty(eventDTO.getVenue().getCity().getName())) {
+                } else if (!isNullOrEmpty(eventDTO.getVenue().getCity().getName())) {
                     String cityName = eventDTO.getVenue().getCity().getName();
                     City city = cityRepository.findByName(cityName);
                     if (city != null) cityDTO = cityMapper.toDTO(city);
@@ -377,24 +294,22 @@ public class EventService {
 
         User user = Utils.getUserFromContext();
         String memberId = user.getMemberId();
-        if (Utils.isNullOrEmpty(eventDTO.getCreatorGroup())){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Please provide a groupId or a groupName that will represent the creatorGroup of the event");
+        if (isNullOrEmpty(eventDTO.getCreatorGroup())) {
+            throw new ResponseStatusException(BAD_REQUEST,
+                    "Please provide a groupId or a groupName that will represent the creatorGroup of the event");
         }
         String groupName = eventDTO.getCreatorGroup().getGroupName();
         String groupId = eventDTO.getCreatorGroup().getGroupId();
 
-        List<Group> groups = groupRepository.findGroupByGroupIdOrGroupName(groupId,groupName);
-        if (Utils.isNullOrEmpty(groups)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"No group exists with groupId "+groupId+" or groupName "+groupName);
+        List<Group> groups = groupRepository.findGroupByGroupIdOrGroupName(groupId, groupName);
+        if (isNullOrEmpty(groups)) {
+            throw new ResponseStatusException(NOT_FOUND,
+                    "No group exists with groupId " + groupId + " or groupName " + groupName);
         }
         Group group = groups.getFirst();
 
         userService.checkUserHasPermissionToEditGroup(group.getGroupId());
 
         newEventDTO.setCreatorGroup(groupMapper.toDTO(group));
-
-        }
-
     }
-
-
+}
