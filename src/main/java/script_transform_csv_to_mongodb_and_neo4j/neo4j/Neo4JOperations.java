@@ -18,7 +18,7 @@ public class Neo4JOperations {
 
     public static Driver driver = Neo4JDataLoader.getNeo4jDriver();
     public static String neo4jDatabase= ConfigurationFileReader.getNeo4JDatabase();
-    public static String transferDataToNeo4J="true";
+    public static String transferDataToNeo4J=ConfigurationFileReader.checkAndGetProp("transferDataToNeo4J");
     private static final String ImportFolder ="file:///";
     private static  String BATCH_SIZE =ConfigurationFileReader.checkAndGetProp("importBatchSize");
 

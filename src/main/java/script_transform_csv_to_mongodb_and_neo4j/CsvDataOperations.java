@@ -1,5 +1,8 @@
 package script_transform_csv_to_mongodb_and_neo4j;
 
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Session;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
@@ -214,15 +217,155 @@ public class CsvDataOperations {
     }
 
     public static void copyFilesToNeo4JImportFolder() throws IOException {
-        String importFolder=ConfigurationFileReader.checkAndGetProp("importFolder");
-        for (File file : new File(CsvDataOperations.transformedDatasetFolder).listFiles()){
-            String fileName=file.getName();
-            Files.copy(file.toPath(),new FileOutputStream(importFolder+fileName));
-        }
-        Files.copy(Path.of(topicsPath),new FileOutputStream(importFolder+"topics.csv"));
-        Files.copy(Path.of(CsvDataOperations.secondDatasetFolder+"rsvps.csv"),new FileOutputStream(importFolder+"rsvps.csv"));
+        String transferMode = ConfigurationFileReader.checkAndGetProp("transferMode"); // "local" or "scp"
+        String importFolder = ConfigurationFileReader.checkAndGetProp("importFolder");
 
+        File[] files = new File(CsvDataOperations.transformedDatasetFolder).listFiles();
+        if (files == null) {
+            throw new IOException("Transformed dataset folder is empty or doesn't exist.");
+        }
+
+        if ("local".equalsIgnoreCase(transferMode)) {
+            // Local copying
+            for (File file : files) {
+                String fileName = file.getName();
+                Files.copy(file.toPath(), new FileOutputStream(importFolder + fileName));
+            }
+            Files.copy(Path.of(topicsPath), new FileOutputStream(importFolder + "topics.csv"));
+            Files.copy(Path.of(CsvDataOperations.secondDatasetFolder + "rsvps.csv"),
+                    new FileOutputStream(importFolder + "rsvps.csv"));
+        } else if ("scp".equalsIgnoreCase(transferMode)) {
+            // Remote file uploading via SCP
+            String host = ConfigurationFileReader.checkAndGetProp("scpHost");
+            int port = Integer.parseInt(ConfigurationFileReader.checkAndGetProp("scpPort")); // e.g., 22
+            String username = ConfigurationFileReader.checkAndGetProp("scpUsername");
+            String password = ConfigurationFileReader.checkAndGetProp("scpPassword");
+            String remoteDestination = ConfigurationFileReader.checkAndGetProp("scpDestination"); // Remote destination directory
+
+            JSch jsch = new JSch();
+            Session session = null;
+            ChannelSftp channelSftp = null;
+
+            try {
+                // Set up the session
+                session = jsch.getSession(username, host, port);
+                session.setPassword(password);
+                Properties config = new Properties();
+                config.put("StrictHostKeyChecking", "no");
+                session.setConfig(config);
+                session.connect();
+
+                // Open an SFTP channel
+                channelSftp = (ChannelSftp) session.openChannel("sftp");
+                channelSftp.connect();
+
+                // Upload transformed dataset files
+                for (File file : files) {
+                    String remoteFilePath = remoteDestination + "/" + file.getName();
+                    try (InputStream fileInputStream = new FileInputStream(file)) {
+                        channelSftp.put(fileInputStream, remoteFilePath);
+                    }
+                }
+
+                // Upload topics.csv and rsvps.csv
+                try (InputStream topicsStream = Files.newInputStream(Path.of(topicsPath));
+                        InputStream rsvpsStream = Files.newInputStream(Path.of(CsvDataOperations.secondDatasetFolder + "rsvps.csv"))) {
+                    channelSftp.put(topicsStream, remoteDestination + "/topics.csv");
+                    channelSftp.put(rsvpsStream, remoteDestination + "/rsvps.csv");
+                }
+
+            } catch (Exception e) {
+                throw new IOException("Error occurred during SCP file transfer: " + e.getMessage(), e);
+            } finally {
+                // Cleanup: disconnect the SFTP channel and session
+                if (channelSftp != null && channelSftp.isConnected()) {
+                    channelSftp.disconnect();
+                }
+                if (session != null && session.isConnected()) {
+                    session.disconnect();
+                }
+            }
+        } else {
+            throw new IllegalArgumentException("Invalid transferMode specified in the configuration. Use 'local' or 'scp'.");
+        }
     }
+//    public static void copyFilesToNeo4JImportFolder() throws IOException {
+//        String transferMode = ConfigurationFileReader.checkAndGetProp("transferMode"); // "local" or "ftp"
+//        String importFolder = ConfigurationFileReader.checkAndGetProp("importFolder");
+//
+//        File[] files = new File(CsvDataOperations.transformedDatasetFolder).listFiles();
+//        if (files == null) {
+//            throw new IOException("Transformed dataset folder is empty or doesn't exist.");
+//        }
+//
+//        if ("local".equalsIgnoreCase(transferMode)) {
+//            // Local copying
+//            for (File file : files) {
+//                String fileName = file.getName();
+//                Files.copy(file.toPath(), new FileOutputStream(importFolder + fileName));
+//            }
+//            Files.copy(Path.of(topicsPath), new FileOutputStream(importFolder + "topics.csv"));
+//            Files.copy(Path.of(CsvDataOperations.secondDatasetFolder + "rsvps.csv"),
+//                    new FileOutputStream(importFolder + "rsvps.csv"));
+//        } else if ("ftp".equalsIgnoreCase(transferMode)) {
+//            // FTP file transfer
+//            String host = ConfigurationFileReader.checkAndGetProp("ftpHost");
+//            int port = Integer.parseInt(ConfigurationFileReader.checkAndGetProp("ftpPort")); // Default: 21
+//            String username = ConfigurationFileReader.checkAndGetProp("ftpUsername");
+//            String password = ConfigurationFileReader.checkAndGetProp("ftpPassword");
+//            String remoteDestination = ConfigurationFileReader.checkAndGetProp("ftpDestination");
+//
+//            FTPClient ftpClient = new FTPClient();
+//
+//            try {
+//                // Connect to FTP server
+//                ftpClient.connect(host, port);
+//                ftpClient.login(username, password);
+//
+//                // Set FTP transfer mode
+//                ftpClient.enterLocalPassiveMode();
+//                ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+//
+//                // Upload transformed dataset files
+//                for (File file : files) {
+//                    String remoteFilePath = remoteDestination + "/" + file.getName();
+//                    try (InputStream fileInputStream = new FileInputStream(file)) {
+//                        boolean success = ftpClient.storeFile(remoteFilePath, fileInputStream);
+//                        if (!success) {
+//                            throw new IOException("Failed to upload file: " + file.getName());
+//                        }
+//                    }
+//                }
+//
+//                // Upload topics.csv and rsvps.csv
+//                try (InputStream topicsStream = Files.newInputStream(Path.of(topicsPath));
+//                        InputStream rsvpsStream = Files.newInputStream(Path.of(CsvDataOperations.secondDatasetFolder + "rsvps.csv"))) {
+//                    if (!ftpClient.storeFile(remoteDestination + "/topics.csv", topicsStream)) {
+//                        throw new IOException("Failed to upload topics.csv");
+//                    }
+//                    if (!ftpClient.storeFile(remoteDestination + "/rsvps.csv", rsvpsStream)) {
+//                        throw new IOException("Failed to upload rsvps.csv");
+//                    }
+//                }
+//
+//            } catch (Exception e) {
+//                throw new IOException("Error occurred during FTP file transfer: " + e.getMessage(), e);
+//            } finally {
+//                // Disconnect from FTP server
+//                if (ftpClient.isConnected()) {
+//                    try {
+//                        ftpClient.logout();
+//                        ftpClient.disconnect();
+//                    } catch (IOException ex) {
+//                        System.err.println("Error while disconnecting from FTP server: " + ex.getMessage());
+//                    }
+//                }
+//            }
+//        } else {
+//            throw new IllegalArgumentException("Invalid transferMode specified in the configuration. Use 'local' or 'ftp'.");
+//        }
+//    }
+
 
 
 
