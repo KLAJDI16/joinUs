@@ -1,6 +1,7 @@
 package com.example.joinUs.repository;
 
 import com.example.joinUs.model.mongodb.User;
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -57,5 +58,56 @@ public interface UserRepository extends MongoRepository<User,String> {
 
     // Check existence by member_id
 //    boolean existsByMember_id(String member_id);
+
+
+    //Users who have many topics → broad interests.
+    @Aggregation(pipeline = {
+            "{ $project: { member_id: 1, member_name: 1, topicCount: { $size: { $ifNull: ['$topics', []] } } } }",
+            "{ $sort: { topicCount: -1 } }",
+            "{ $limit: 20 }"
+    })
+    List<Document> findUsersWithMostTopics();
+
+    //Cities with the largest user base.
+    @Aggregation(pipeline = {
+            "{ $group: { _id: '$city.name', usersCount: { $sum: 1 } } }",
+            "{ $sort: { usersCount: -1 } }",
+            "{ $limit: 20 }"
+    })
+    List<Document> countUsersByCity();
+
+    //Distribution of User Status (active / inactive)
+    @Aggregation(pipeline = {
+            "{ $group: { _id: '$member_status', count: { $sum: 1 } } }",
+            "{ $sort: { count: -1 } }"
+    })
+    List<Document> countUsersByStatus();
+
+    //Top Organizers (users who created most groups)
+    @Aggregation(pipeline = {
+            "{ $project: { member_id: 1, member_name: 1, groupsCreated: { $size: { $ifNull: ['$groups_organizer', []] } } } }",
+            "{ $sort: { groupsCreated: -1 } }",
+            "{ $limit: 20 }"
+    })
+    List<Document> topGroupOrganizers();
+
+    //Users With Upcoming Events (high intent users)
+    @Aggregation(pipeline = {
+            "{ $project: { member_id: 1, member_name: 1, upcomingCount: { $size: { $ifNull: ['$upcoming_events', []] } } } }",
+            "{ $match: { upcomingCount: { $gt: 0 } } }",
+            "{ $sort: { upcomingCount: -1 } }",
+            "{ $limit: 20 }"
+    })
+    List<Document> usersWithUpcomingEvents();
+
+    //Topic Popularity Among Users
+    @Aggregation(pipeline = {
+            "{ $unwind: '$topics' }",
+            "{ $group: { _id: '$topics.topic_name', usersCount: { $sum: 1 } } }",
+            "{ $sort: { usersCount: -1 } }",
+            "{ $limit: 30 }"
+    })
+    List<Document> mostPopularUserTopics();
+
 
 }
