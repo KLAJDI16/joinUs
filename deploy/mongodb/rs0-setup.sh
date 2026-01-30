@@ -5,12 +5,8 @@ set -euo pipefail
 RS_NAME="rs0"
 MEMBERS=("10.1.1.18:27017" "10.1.1.19:27017" "10.1.1.20:27017")
 
-ADMIN_USER="admin"
-ADMIN_PASS="admin"
-
-APP_DB="joinUs"
-APP_USER="joinUs"
-APP_PASS="joinUs"
+ADMIN_USER="mongodb"
+ADMIN_PASS="secure_password"
 
 CONTAINER="mongo1" # container name on VM1
 # ---------------------------------------------------------
@@ -63,29 +59,11 @@ sudo docker exec -i "${CONTAINER}" mongosh \
 })();
 "
 
-echo "[*] Creating app user if missing and setting default write concern..."
+echo "[*] Setting default write concern..."
 sudo docker exec -i "${CONTAINER}" mongosh \
   -u "${ADMIN_USER}" -p "${ADMIN_PASS}" --authenticationDatabase admin --quiet --eval "
 (function() {
-  const appDb = '${APP_DB}';
-  const appUser = '${APP_USER}';
-  const appPass = '${APP_PASS}';
-
   const adminDb = db.getSiblingDB('admin');
-
-  // Create user if missing
-  const existing = adminDb.getUser(appUser);
-  if (existing) {
-    print('[+] User ' + appUser + ' already exists; skipping createUser.');
-  } else {
-    print('[*] Creating user ' + appUser + ' with readWrite on db ' + appDb + ' ...');
-    adminDb.createUser({
-      user: appUser,
-      pwd: appPass,
-      roles: [{ role: 'readWrite', db: appDb }]
-    });
-    print('[+] User created.');
-  }
 
   // Set default RW concern (majority writes)
   print('[*] Setting default writeConcern to majority...');
@@ -105,4 +83,4 @@ sudo docker exec -it "${CONTAINER}" mongosh \
 echo
 echo "[+] Done."
 echo "    App connection string example:"
-echo "    mongodb://${APP_USER}:${APP_PASS}@${MEMBERS[0]},${MEMBERS[1]},${MEMBERS[2]}/${APP_DB}?replicaSet=${RS_NAME}&authSource=admin&readPreference=secondaryPreferred"
+echo "    mongodb://${ADMIN_USER}:${ADMIN_PASS}@${MEMBERS[0]},${MEMBERS[1]},${MEMBERS[2]}?replicaSet=${RS_NAME}&authSource=admin&readPreference=nearest"
