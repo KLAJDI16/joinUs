@@ -36,6 +36,7 @@ List<Group> findGroupsWithMinMembers(Double minMembers);
 @Query("{ 'event_count': { $gte: ?0 } }")
 List<Group> findGroupsWithMinEvents(Double minEvents);
 
+
 //Count Groups per City to see “Which cities have the most groups?”
 @Aggregation(pipeline = {
         "{ $group: { _id: '$city.name', groupsCount: { $sum: 1 } } }",
@@ -43,6 +44,8 @@ List<Group> findGroupsWithMinEvents(Double minEvents);
         "{ $limit: 20 }"
 })
 List<Document> countGroupsByCity();
+
+
 
 // Count Groups per Category
 @Aggregation(pipeline = {
@@ -53,6 +56,8 @@ List<Document> countGroupsByCity();
 })
 List<Document> countGroupsByCategory();
 
+
+
 //Top Groups by Member Count to find largest communities
 @Aggregation(pipeline = {
         "{ $sort: { member_count: -1 } }",
@@ -61,8 +66,9 @@ List<Document> countGroupsByCategory();
 })
 List<Document> topGroupsByMembers();
 
-//Top Cities by Groups Created in the Past 10 Years
 
+
+//Top Cities by Groups Created in the Past 10 Years
     @Aggregation(pipeline = {
             "{ $match: { created: { $gte: { $dateSubtract: { startDate: '$$NOW', unit: 'year', amount: 10 } } } } }",
             "{ $group: { _id: '$city.name', groupsCreated: { $sum: 1 } } }",

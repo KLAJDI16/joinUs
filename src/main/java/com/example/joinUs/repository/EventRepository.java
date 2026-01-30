@@ -108,7 +108,6 @@ List<Document> countEventsPerMonth();
 
 
 //Trending Categories (Shows which categories are growing or declining.) See which category people attend most
-
     @Aggregation(pipeline = {
             "{ $match: { event_time: { $gte: ?1 } } }",
             "{ $unwind: '$categories' }",
