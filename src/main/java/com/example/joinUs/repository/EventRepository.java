@@ -103,6 +103,46 @@ List<Document> averageAttendanceByCity();
 })
 List<Document> countEventsPerMonth();
 
+//Trending Categories (Shows which categories are growing or declining.)
+
+    @Aggregation(pipeline = {
+            "{ $match: { event_time: { $gte: { $dateSubtract: { startDate: '$$NOW', unit: 'day', amount: 14 } } } } }",
+            "{ $unwind: '$categories' }",
+
+            "{ $addFields: { " +
+                    "period: { $cond: [ " +
+                    "{ $gte: ['$event_time', { $dateSubtract: { startDate: '$$NOW', unit: 'day', amount: 7 } }] }, " +
+                    "'lastWeek', 'previousWeek' ] }, " +
+                    "attendance: { $ifNull: ['$member_count', 0] } " +
+                    "} }",
+
+            "{ $group: { _id: { category: '$categories.name', period: '$period' }, totalAttendance: { $sum: '$attendance' } } }",
+
+            "{ $group: { _id: '$_id.category', " +
+                    "lastWeek: { $sum: { $cond: [ { $eq: ['$_id.period', 'lastWeek'] }, '$totalAttendance', 0 ] } }, " +
+                    "previousWeek: { $sum: { $cond: [ { $eq: ['$_id.period', 'previousWeek'] }, '$totalAttendance', 0 ] } } " +
+                    "} }",
+
+            "{ $addFields: { delta: { $subtract: ['$lastWeek', '$previousWeek'] } } }",
+            "{ $sort: { delta: -1 } }"
+    })
+    List<Document> trendingCategoriesWeekly();
+
+//Popularity of Paid vs Free Events showing Do people attend paid or free events more?
+@Aggregation(pipeline = {
+        "{ $addFields: { " +
+                "eventType: { $cond: [ " +
+                "{ $or: [ { $eq: ['$fee.amount', 0] }, { $eq: ['$fee', null] }, { $eq: ['$fee.amount', null] } ] }, " +
+                "'FREE', 'PAID' ] }, " +
+                "attendance: { $ifNull: ['$member_count', 0] } " +
+                "} }",
+
+        "{ $group: { _id: '$eventType', eventsCount: { $sum: 1 }, totalAttendance: { $sum: '$attendance' }, avgAttendance: { $avg: '$attendance' } } }",
+
+        "{ $project: { type: '$_id', eventsCount: 1, totalAttendance: 1, avgAttendance: 1, _id: 0 } }",
+        "{ $sort: { totalAttendance: -1 } }"
+})
+List<Document> paidVsFreePopularity();
 
 }
 

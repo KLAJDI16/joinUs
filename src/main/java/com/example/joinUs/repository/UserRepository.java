@@ -109,5 +109,34 @@ public interface UserRepository extends MongoRepository<User,String> {
     })
     List<Document> mostPopularUserTopics();
 
+//Most Active Cities Shows cities where users are most active, not just numerous.
+
+    @Aggregation(pipeline = {
+            // Count registered members per city
+            "{ $group: { _id: '$city.name', registeredMembers: { $sum: 1 } } }",
+
+            // Join with events collection to compute attendance per city
+            "{ $lookup: { " +
+                    "from: 'events', " +
+                    "let: { cityName: '$_id' }, " +
+                    "pipeline: [ " +
+                    "{ $match: { $expr: { $eq: ['$creator_group.city.name', '$$cityName'] } } }, " +
+                    "{ $group: { _id: null, totalAttendance: { $sum: { $ifNull: ['$member_count', 0] } } } } " +
+                    "], " +
+                    "as: 'eventStats' } }",
+
+            "{ $unwind: { path: '$eventStats', preserveNullAndEmptyArrays: true } }",
+
+            // Compute activity ratio
+            "{ $addFields: { " +
+                    "totalAttendance: { $ifNull: ['$eventStats.totalAttendance', 0] }, " +
+                    "attendancePerMember: { $cond: [ { $gt: ['$registeredMembers', 0] }, { $divide: ['$eventStats.totalAttendance', '$registeredMembers'] }, 0 ] } " +
+                    "} }",
+
+            "{ $project: { city: '$_id', registeredMembers: 1, totalAttendance: 1, attendancePerMember: 1, _id: 0 } }",
+            "{ $sort: { attendancePerMember: -1 } }"
+    })
+    List<Document> mostActiveCities();
+
 
 }

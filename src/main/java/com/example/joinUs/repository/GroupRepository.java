@@ -61,5 +61,16 @@ List<Document> countGroupsByCategory();
 })
 List<Document> topGroupsByMembers();
 
+//Top Cities by Groups Created in the Past 10 Years
+
+    @Aggregation(pipeline = {
+            "{ $match: { created: { $gte: { $dateSubtract: { startDate: '$$NOW', unit: 'year', amount: 10 } } } } }",
+            "{ $group: { _id: '$city.name', groupsCreated: { $sum: 1 } } }",
+            "{ $sort: { groupsCreated: -1 } }",
+            "{ $limit: 20 }",
+            "{ $project: { city: '$_id', groupsCreated: 1, _id: 0 } }"
+    })
+    List<Document> topCitiesByGroupsLast10Years();
+
 
 }
