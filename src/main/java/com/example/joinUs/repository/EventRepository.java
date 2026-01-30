@@ -15,10 +15,10 @@ public interface EventRepository extends MongoRepository<Event, ObjectId> {
 
     @Query("{'group_id' : ?0 }")
     Event findEventById(String id);
-
+//Find a
     @Query("{'creator_group.id' : ?0 }")
     List<Event> findEventsByCreator_group(String id);
-//Find event by Meetup event ID
+//Find event by JoinUS event ID
 @Query("{ 'event_id': ?0 }")
 Event findByEventId(String eventId);
 
@@ -80,13 +80,7 @@ List<Event> findRecentlyUpdatedEvents();
 })
 List<Document> countEventsByCity();
 
-//Count Events per Category to see Which categories are most common
-@Aggregation(pipeline = {
-        "{ $unwind: '$categories' }",
-        "{ $group: { _id: '$categories.name', eventsCount: { $sum: 1 } } }",
-        "{ $sort: { eventsCount: -1 } }"
-})
-List<Document> countEventsByCategory();
+
 
 //How active users are in each city (average attendance)
 @Aggregation(pipeline = {
@@ -103,30 +97,33 @@ List<Document> averageAttendanceByCity();
 })
 List<Document> countEventsPerMonth();
 
-//Trending Categories (Shows which categories are growing or declining.)
+
+//Count Events per Category to see Which categories are most common
+    @Aggregation(pipeline = {
+            "{ $unwind: '$categories' }",
+            "{ $group: { _id: '$categories.name', eventsCount: { $sum: 1 } } }",
+            "{ $sort: { eventsCount: -1 } }"
+    })
+    List<Document> countEventsByCategory();
+
+
+//Trending Categories (Shows which categories are growing or declining.) See which category people attend most
 
     @Aggregation(pipeline = {
-            "{ $match: { event_time: { $gte: { $dateSubtract: { startDate: '$$NOW', unit: 'day', amount: 14 } } } } }",
+            "{ $match: { event_time: { $gte: ?1 } } }",
             "{ $unwind: '$categories' }",
-
-            "{ $addFields: { " +
-                    "period: { $cond: [ " +
-                    "{ $gte: ['$event_time', { $dateSubtract: { startDate: '$$NOW', unit: 'day', amount: 7 } }] }, " +
-                    "'lastWeek', 'previousWeek' ] }, " +
-                    "attendance: { $ifNull: ['$member_count', 0] } " +
+            "{ $group: { " +
+                    "_id: '$categories.name', " +
+                    "lastWeek: { $sum: { $cond: [ { $gte: ['$event_time', ?0] }, { $ifNull: ['$member_count', 0] }, 0 ] } }, " +
+                    "previousWeek: { $sum: { $cond: [ { $and: [ { $gte: ['$event_time', ?1] }, { $lt: ['$event_time', ?0] } ] }, { $ifNull: ['$member_count', 0] }, 0 ] } } " +
                     "} }",
-
-            "{ $group: { _id: { category: '$categories.name', period: '$period' }, totalAttendance: { $sum: '$attendance' } } }",
-
-            "{ $group: { _id: '$_id.category', " +
-                    "lastWeek: { $sum: { $cond: [ { $eq: ['$_id.period', 'lastWeek'] }, '$totalAttendance', 0 ] } }, " +
-                    "previousWeek: { $sum: { $cond: [ { $eq: ['$_id.period', 'previousWeek'] }, '$totalAttendance', 0 ] } } " +
-                    "} }",
-
             "{ $addFields: { delta: { $subtract: ['$lastWeek', '$previousWeek'] } } }",
             "{ $sort: { delta: -1 } }"
     })
-    List<Document> trendingCategoriesWeekly();
+    List<Document> trendingCategoriesWeekly(Date lastWeekStart, Date prevWeekStart);
+    })
+
+
 
 //Popularity of Paid vs Free Events showing Do people attend paid or free events more?
 @Aggregation(pipeline = {
