@@ -1,6 +1,6 @@
 package com.example.joinUs.mapping.embedded;
 
-import com.example.joinUs.dto.embedded.EventEmbeddedDTO;
+import com.example.joinUs.model.embedded.EventEmbedded;
 import com.example.joinUs.mapping.CentralMappingConfig;
 import com.example.joinUs.model.mongodb.Event;
 import org.mapstruct.Mapper;
@@ -15,7 +15,7 @@ public interface EventEmbeddedMapper {
     @Mapping(target = "id", source = "id")
     @Mapping(source = "eventName", target = "eventName")
     @Mapping(source = "eventTime", target = "eventTime")
-    EventEmbeddedDTO toDTO(Event event);
+    EventEmbedded toDTO(Event event);
 
 
     @Mapping(target = "description", ignore = true)
@@ -30,11 +30,11 @@ public interface EventEmbeddedMapper {
     @Mapping(target = "memberCount", ignore = true)
     @Mapping(target = "creatorGroup", ignore = true)
     @Mapping(target = "id", source = "id")
-    Event toEntity(EventEmbeddedDTO eventEmbeddedDTO);
+    Event toEntity(EventEmbedded eventEmbedded);
 
     @Mapping(source = "id", target = "id")
     @Mapping(source = "eventName", target = "eventName")
     @Mapping(source = "eventTime", target = "eventTime")
-    List<EventEmbeddedDTO> toDTOs(List<Event> events);
+    List<EventEmbedded> toDTOs(List<Event> events);
 
 }

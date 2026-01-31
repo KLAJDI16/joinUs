@@ -1,20 +1,16 @@
 package com.example.joinUs.model.mongodb;
 
-import com.example.joinUs.dto.embedded.GroupEmbeddedDTO;
+import com.example.joinUs.model.embedded.GroupEmbedded;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -53,7 +49,7 @@ public class Event {
     private Integer memberCount;
 
     @Field("creator_group")
-    private GroupEmbeddedDTO creatorGroup;
+    private GroupEmbedded creatorGroup;
 
 }
 

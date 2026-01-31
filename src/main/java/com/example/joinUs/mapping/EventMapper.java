@@ -5,18 +5,14 @@ package com.example.joinUs.mapping;
 
 //package com.example.joinUs.dto;
 import com.example.joinUs.dto.EventDTO;
-import com.example.joinUs.dto.embedded.GroupEmbeddedDTO;
-import com.example.joinUs.dto.summary.EventSummaryDTO;
 import com.example.joinUs.mapping.embedded.GroupEmbeddedMapper;
 import com.example.joinUs.mapping.embedded.TopicEmbeddedMapper;
 import com.example.joinUs.model.mongodb.Event;
-import com.example.joinUs.model.mongodb.Group;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.time.OffsetDateTime;
 import java.util.Date;
-import java.util.List;
 
 
 @Mapper(config = CentralMappingConfig.class, uses = {
@@ -40,19 +36,19 @@ public interface EventMapper {
 //    @Mapping(source = "creatorGroup.groupName", target = "creatorGroup.groupName")
     Event toEntity(EventDTO dto);
 //Unmapped target properties: "description, link, timezone, created, city, categories,
-// groupPhoto, memberCount, eventCount, organizerMembers, upcomingEvents".
-// Mapping from property "GroupEmbeddedDTO creatorGroup" to "Group creatorGroup".
+// groupPhoto, memberCount, eventCount, organizers, upcomingEvents".
+// Mapping from property "GroupEmbedded creatorGroup" to "Group creatorGroup".
     default Date map(OffsetDateTime value) {
         return value == null ? null : Date.from(value.toInstant());
     }
-//    default GroupEmbeddedDTO map(Group group) {
+//    default GroupEmbedded map(Group group) {
 //        if (group == null) return null;
-//        return GroupEmbeddedDTO.builder()
+//        return GroupEmbedded.builder()
 //                .id(group.getId())
 //                .groupName(group.getGroupName())
 //                .build();
 //    }
-//    default Group map(GroupEmbeddedDTO groupEmbeddedDTO) {
+//    default Group map(GroupEmbedded groupEmbeddedDTO) {
 //        if (groupEmbeddedDTO == null) return null;
 //        return Group.builder()
 //                .id(groupEmbeddedDTO.getId())

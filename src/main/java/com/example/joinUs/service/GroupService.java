@@ -7,7 +7,6 @@ import com.example.joinUs.dto.summary.GroupSummaryDTO;
 import com.example.joinUs.mapping.*;
 import com.example.joinUs.mapping.embedded.UserEmbeddedMapper;
 import com.example.joinUs.mapping.summary.GroupSummaryMapper;
-import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.mongodb.User;
 import com.example.joinUs.repository.GroupRepository;
@@ -109,7 +108,7 @@ public class GroupService {
     public ResponseMessage addOrganizer(String groupId,String organizerId){
         Group group = geGroupOrThrow(groupId);
 
-        if(group.getOrganizerMembers()
+        if(group.getOrganizers()
                 .stream()
                 .anyMatch(u -> u.getId().equals(organizerId))) {
             throw new ResponseStatusException(
@@ -120,7 +119,7 @@ public class GroupService {
         User user = userService.findUserById(organizerId).orElseThrow(
                 () ->    new ResponseStatusException(NOT_FOUND,"No user exists with id "+organizerId)
         );
-        group.getOrganizerMembers().add(userEmbeddedMapper.toEntity(userEmbeddedMapper.toDTO(user)));
+        group.getOrganizers().add(userEmbeddedMapper.toEntity(userEmbeddedMapper.toDTO(user)));
         groupRepository.save(group);
     return new ResponseMessage("successful","Organizer with id"+organizerId+" was added successfully");
     }
@@ -200,7 +199,7 @@ public class GroupService {
         groupDTO.setUpcomingEvents(new ArrayList<>());
         groupDTO.setMemberCount(1);
         groupDTO.setEventCount(0);
-        groupDTO.getOrganizerMembers().add(userEmbeddedMapper.toDTO(user));
+        groupDTO.getOrganizers().add(userEmbeddedMapper.toDTO(user));
         cityService.parseCityDTO(groupDTO.getCity());
         Group entity = groupMapper.toEntity(groupDTO);
         Group saved = groupRepository.save(entity);
@@ -209,7 +208,7 @@ public class GroupService {
 
     public GroupDTO updateGroup(String id, GroupDTO groupDTO) { // TODO revisit, especially PATCH semantics
 
-        Group existing =geGroupOrThrow(id);
+        Group existing = geGroupOrThrow(id);
 
         userService.checkUserHasPermissionToEditGroup(id);
         // Minimal patch semantics:
@@ -234,7 +233,7 @@ public class GroupService {
         patch.setMemberCount(existing.getMemberCount());
         patch.setCreated(existing.getCreated());
         patch.setUpcomingEvents(existing.getUpcomingEvents());
-        patch.setOrganizerMembers(existing.getOrganizerMembers());
+        patch.setOrganizers(existing.getOrganizers());
 
 
         // Preserve Mongo internal id if you use it

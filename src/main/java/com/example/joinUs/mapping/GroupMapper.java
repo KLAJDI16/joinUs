@@ -36,5 +36,5 @@ List<GroupDTO> toDTOs(List<Group> groups);
     //Unmapped target properties: "id, city, memberStatus, bio, topics,
     // eventCount, groupCount, upcomingEvents, password, isAdmin".
     // Mapping from Collection element
-    // "UserEmbeddedDTO organizerMembers" to "User organizerMembers".
+    // "UserEmbeddedDTO organizers" to "User organizers".
 }

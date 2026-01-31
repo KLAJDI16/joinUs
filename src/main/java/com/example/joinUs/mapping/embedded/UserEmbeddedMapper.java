@@ -1,10 +1,8 @@
 package com.example.joinUs.mapping.embedded;
 
-import com.example.joinUs.dto.embedded.GroupEmbeddedDTO;
-import com.example.joinUs.dto.embedded.UserEmbeddedDTO;
+import com.example.joinUs.model.embedded.UserEmbeddedDTO;
 import com.example.joinUs.mapping.CentralMappingConfig;
 import com.example.joinUs.mapping.UserMapper;
-import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.mongodb.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

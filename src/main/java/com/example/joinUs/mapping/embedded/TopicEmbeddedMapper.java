@@ -1,10 +1,7 @@
 package com.example.joinUs.mapping.embedded;
 
-import com.example.joinUs.dto.TopicDTO;
-import com.example.joinUs.dto.embedded.EventEmbeddedDTO;
-import com.example.joinUs.dto.embedded.TopicEmbeddedDTO;
+import com.example.joinUs.model.embedded.TopicEmbedded;
 import com.example.joinUs.mapping.CentralMappingConfig;
-import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Topic;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -21,14 +18,14 @@ public interface TopicEmbeddedMapper {
 //    @Mapping(target = "link", ignore = true)
 //    @Mapping(target = "description", ignore = true)
 //    @Mapping(target = "urlkey", ignore = true)
-    TopicEmbeddedDTO toDTO(Topic topic);
+    TopicEmbedded toDTO(Topic topic);
 
-    List<TopicEmbeddedDTO> toDTOs(List<Topic> topics);
+    List<TopicEmbedded> toDTOs(List<Topic> topics);
 
 //    @Mapping(target = "id", ignore = true)
      @Mapping(target = "link", ignore = true)
     @Mapping(target = "description", ignore = true)
     @Mapping(target = "urlkey", ignore = true)
-    Topic toEntity(TopicEmbeddedDTO dto);
+    Topic toEntity(TopicEmbedded dto);
 
 }

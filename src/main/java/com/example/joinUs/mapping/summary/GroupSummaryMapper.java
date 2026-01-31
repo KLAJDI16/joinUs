@@ -1,25 +1,18 @@
 package com.example.joinUs.mapping.summary;
 
 import com.example.joinUs.dto.CategoryDTO;
-import com.example.joinUs.dto.embedded.UserEmbeddedDTO;
-import com.example.joinUs.dto.summary.EventSummaryDTO;
+import com.example.joinUs.model.embedded.UserEmbeddedDTO;
 import com.example.joinUs.dto.summary.GroupSummaryDTO;
 import com.example.joinUs.mapping.CentralMappingConfig;
-import com.example.joinUs.mapping.FeeMapper;
 import com.example.joinUs.mapping.UserMapper;
-import com.example.joinUs.mapping.VenueMapper;
 import com.example.joinUs.mapping.embedded.EventEmbeddedMapper;
 import com.example.joinUs.mapping.embedded.GroupEmbeddedMapper;
 import com.example.joinUs.mapping.embedded.UserEmbeddedMapper;
-import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
-import com.example.joinUs.model.neo4j.Event_Neo4J;
 import com.example.joinUs.model.neo4j.Group_Neo4J;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import java.time.OffsetDateTime;
-import java.util.Date;
 import java.util.List;
 
 @Mapper(config = CentralMappingConfig.class, uses = {
@@ -30,12 +23,12 @@ public interface GroupSummaryMapper {
 
     @Mapping(source = "city.name", target = "cityName")
     @Mapping(source = "id", target = "id")
-    @Mapping(source = "organizerMembers",target = "organizerMembers")
+    @Mapping(source = "organizers",target = "organizers")
     GroupSummaryDTO toDTO(Group group);
 //groupId
     @Mapping(source = "city.name", target = "cityName")
     @Mapping(source = "id", target = "id")
-    @Mapping(source = "organizerMembers",target = "organizerMembers")
+    @Mapping(source = "organizers",target = "organizers")
     List<GroupSummaryDTO> toDTOs(List<Group> group);
 
 
@@ -43,7 +36,7 @@ public interface GroupSummaryMapper {
     @Mapping(source = "groupName", target = "groupName")
     @Mapping(source = "cityName", target = "cityName")
 
-    @Mapping(source = "organizerId", target = "organizerMembers")
+    @Mapping(source = "organizerId", target = "organizers")
     @Mapping(source = "categoryName", target = "categories")
 
     @Mapping(target = "upcomingEvents", ignore = true)

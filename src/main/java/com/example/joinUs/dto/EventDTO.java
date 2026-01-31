@@ -1,15 +1,12 @@
 package com.example.joinUs.dto;
 
-import com.example.joinUs.dto.embedded.GroupEmbeddedDTO;
+import com.example.joinUs.model.embedded.GroupEmbedded;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -39,7 +36,7 @@ public class EventDTO {
 
     private Integer memberCount;
 
-    private GroupEmbeddedDTO creatorGroup;
+    private GroupEmbedded creatorGroup;
 
 
 

@@ -1,7 +1,7 @@
 package com.example.joinUs.dto;
 
-import com.example.joinUs.dto.embedded.EventEmbeddedDTO;
-import com.example.joinUs.dto.embedded.TopicEmbeddedDTO;
+import com.example.joinUs.model.embedded.EventEmbedded;
+import com.example.joinUs.model.embedded.TopicEmbedded;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,12 +27,12 @@ public class UserDTO {
     private String memberStatus;
     private String bio;
 
-    private List<TopicEmbeddedDTO> topics;
+    private List<TopicEmbedded> topics;
 
     private Integer eventCount;
     private Integer groupCount;
 
-    private List<EventEmbeddedDTO> upcomingEvents;
+    private List<EventEmbedded> upcomingEvents;
 
 
 }

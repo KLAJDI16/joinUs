@@ -1,21 +1,15 @@
 package com.example.joinUs.mapping.summary;
 
 
-import com.example.joinUs.dto.FeeDTO;
-import com.example.joinUs.dto.embedded.EventEmbeddedDTO;
-import com.example.joinUs.dto.embedded.GroupEmbeddedDTO;
 import com.example.joinUs.dto.summary.EventSummaryDTO;
-import com.example.joinUs.mapping.CategoryMapper;
 import com.example.joinUs.mapping.CentralMappingConfig;
 import com.example.joinUs.mapping.FeeMapper;
 import com.example.joinUs.mapping.VenueMapper;
 import com.example.joinUs.mapping.embedded.GroupEmbeddedMapper;
 import com.example.joinUs.model.mongodb.Event;
-import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.neo4j.Event_Neo4J;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.springframework.data.domain.Page;
 
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -60,9 +54,9 @@ public interface EventSummaryMapper {
     default Date map(OffsetDateTime value) {
         return value == null ? null : Date.from(value.toInstant());
     }
-//    default GroupEmbeddedDTO map(Group group) {
+//    default GroupEmbedded map(Group group) {
 //        if (group == null) return null;
-//        return GroupEmbeddedDTO.builder()
+//        return GroupEmbedded.builder()
 //                .groupId(group.getId())
 //                .groupName(group.getGroupName())
 //                .build();

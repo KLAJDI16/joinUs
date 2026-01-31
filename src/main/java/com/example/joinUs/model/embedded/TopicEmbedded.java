@@ -1,7 +1,5 @@
-package com.example.joinUs.dto.embedded;
+package com.example.joinUs.model.embedded;
 
-
-import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,10 +8,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-//@Builder
+@Builder
 //@JsonInclude(JsonInclude.Include.NON_NULL)
-public class GroupEmbeddedDTO {
-
-    private String groupId;
-    private String groupName;
+public class TopicEmbedded {
+    private String topicId;
+    private String topicName;
 }

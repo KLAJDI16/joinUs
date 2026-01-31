@@ -299,7 +299,7 @@ public class MongoDbGroupOperations {
                 String newKey = key.substring("group_photo_".length());
                 if (!newKey.equalsIgnoreCase("type")
                         && !newKey.equalsIgnoreCase("base_url")
-                        && !newKey.equalsIgnoreCase("photo_link")) {
+                        && !newKey.equalsIgnoreCase("photo_id")) {
 //group_photo type, base_url and photo
                     MongoDataLoader.assignIfFound(photo, newKey, oldGroupDocument.getString(key));
                 }

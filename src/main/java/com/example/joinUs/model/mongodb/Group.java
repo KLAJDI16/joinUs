@@ -1,17 +1,17 @@
 package com.example.joinUs.model.mongodb;
 
+import com.example.joinUs.model.embedded.CityEmbedded;
+import com.example.joinUs.model.embedded.EventEmbedded;
+import com.example.joinUs.model.embedded.UserEmbedded;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -22,11 +22,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Document(collection = "groups")
-public class Group {  //TODO set locking
-
-//    @Id
-//    @Field("_id")
-//    private ObjectId id;
+public class Group {
 
     @Id
     @Indexed(unique = true)
@@ -34,25 +30,29 @@ public class Group {  //TODO set locking
 
     private String description;
     private String groupName;
-    private String link;
-    private String timezone;
     private Date  created;
 
-    private City city;
-    private List<Category> categories;
+    private CityEmbedded city;
+    private Category category;
     private GroupPhoto groupPhoto;
 
     private Integer memberCount;
     private Integer eventCount;
 
-    private List<User> organizerMembers;
-    private List<Event> upcomingEvents;
+    private List<UserEmbedded> organizers;
+    private List<EventEmbedded> upcomingEvents;
 
     public void removeOrganizerMember(String memberId){
-        organizerMembers.removeIf(e -> e.getId().equalsIgnoreCase(memberId));
+        organizers.removeIf(e -> e.getMemberId().equalsIgnoreCase(memberId));
     }
     public void removeUpcomingEvent(String eventId){
-       upcomingEvents.removeIf(e -> e.getId().equalsIgnoreCase(eventId));
+       upcomingEvents.removeIf(e -> e.getEventId().equalsIgnoreCase(eventId));
+    }
+    public void addUpcomingEvent(EventEmbedded eventEmbedded){
+        upcomingEvents.add(eventEmbedded);
+    }
+    public void addOrganizer(UserEmbedded userEmbedded){
+        organizers.add(userEmbedded);
     }
 
 }

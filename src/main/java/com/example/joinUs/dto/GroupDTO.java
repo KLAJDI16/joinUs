@@ -1,14 +1,14 @@
 package com.example.joinUs.dto;
 
-import com.example.joinUs.dto.embedded.EventEmbeddedDTO;
-import com.example.joinUs.dto.embedded.UserEmbeddedDTO;
+import com.example.joinUs.model.embedded.EventEmbedded;
+import com.example.joinUs.model.embedded.UserEmbedded;
+import com.example.joinUs.model.embedded.UserEmbeddedDTO;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -33,9 +33,9 @@ public class GroupDTO {
     private Integer memberCount;
     private Integer eventCount;
 
-    private List<UserEmbeddedDTO> organizerMembers;
+    private List<UserEmbedded> organizers;
 
-    private List<EventEmbeddedDTO> upcomingEvents;
+    private List<EventEmbedded> upcomingEvents;
 
     private GroupPhotoDTO groupPhoto;
 
