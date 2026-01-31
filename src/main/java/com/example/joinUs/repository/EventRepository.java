@@ -73,6 +73,8 @@ List<Event> findEventsBetweenDates(Date start, Date end);
 )
 List<Event> findRecentlyUpdatedEvents();
 
+
+
 //Count Events per City to see Which cities host the most events
 @Aggregation(pipeline = {
         "{ $group: { _id: '$creator_group.city.name', eventsCount: { $sum: 1 } } }",
@@ -89,6 +91,8 @@ List<Document> countEventsByCity();
 })
 List<Document> averageAttendanceByCity();
 
+
+
 //How many events are created each month.
 @Aggregation(pipeline = {
         "{ $match: { event_time: { $ne: null } } }",
@@ -98,6 +102,8 @@ List<Document> averageAttendanceByCity();
 List<Document> countEventsPerMonth();
 
 
+
+
 //Count Events per Category to see Which categories are most common
     @Aggregation(pipeline = {
             "{ $unwind: '$categories' }",
@@ -105,6 +111,8 @@ List<Document> countEventsPerMonth();
             "{ $sort: { eventsCount: -1 } }"
     })
     List<Document> countEventsByCategory();
+
+
 
 
 //Trending Categories (Shows which categories are growing or declining.) See which category people attend most
