@@ -5,6 +5,7 @@ import com.example.joinUs.dto.*;
 import com.example.joinUs.dto.summary.EventSummaryDTO;
 import com.example.joinUs.mapping.*;
 import com.example.joinUs.mapping.embedded.EventEmbeddedMapper;
+import com.example.joinUs.mapping.embedded.GroupEmbeddedMapper;
 import com.example.joinUs.mapping.summary.EventSummaryMapper;
 import com.example.joinUs.model.mongodb.City;
 import com.example.joinUs.model.mongodb.Event;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -45,16 +47,23 @@ public class EventService {
     private GroupRepository groupRepository;
 
     @Autowired
-    private CityRepository cityRepository;
+    private CityService cityService;
     @Autowired
     private CityMapper cityMapper;
 
     @Autowired
+    private CategoryMapper categoryMapper;
+
+
+    @Autowired
     private EventMapper eventMapper;
+    @Autowired
+    private FeeMapper feeMapper;
+
     @Autowired
     private EventEmbeddedMapper eventEmbeddedMapper;
     @Autowired
-    private GroupMapper groupMapper;
+    private GroupEmbeddedMapper groupEmbeddedMapper;
     @Autowired
     private VenueMapper venueMapper;
     @Autowired
@@ -78,19 +87,24 @@ public class EventService {
     private Event_Neo4J_Repo eventNeo4JRepo; // TODO
 
 
+
     public List<Event_Neo4J> getEventsFromNeo4j(){
      return  eventNeo4JRepo.findAll();
     }
 
-    public Page<EventSummaryDTO> getAllEvents(int page, int size) {
-        Page<Event> events = eventRepository.findAll(PageRequest.of(page, size ));
-        return events.map(e -> eventSummaryMapper.toDTO(e));
+    public Page<EventDTO> getAllEvents(int page, int size) {
+        Page<EventDTO> events = eventRepository.findAllEvents(PageRequest.of(page, size));
+        return events;
     }
 
     public EventDTO getEventById(String id) {
-        Event event = getEventOrThrow(id);
 
-        return eventMapper.toDTO(event);
+//     return    eventRepository.findEventWithId(id);
+
+        Event event = getEventOrThrow(id);
+        EventDTO eventDTO =  eventMapper.toDTO(event);
+//
+        return eventDTO;
     }
 
     public ResponseMessage attendEvent(String id) {
@@ -103,9 +117,13 @@ public class EventService {
             List<Event> userUpcomingEvents = user.getUpcomingEvents();
             userUpcomingEvents.add(eventEmbeddedMapper.toEntity(eventEmbeddedMapper.toDTO(event)));
             user.setUpcomingEvents(userUpcomingEvents);
-            user.setEventCount(Integer.valueOf(user.getEventCount() + 1));
-            event.setMemberCount(Integer.valueOf(event.getMemberCount() + 1));
-            eventRepository.save(event);
+            user.setEventCount(user.getEventCount() + 1);
+            mongoTemplate.updateFirst(
+                    Query.query(Criteria.where("_id").is(id)),
+                    new Update().inc( "member_count", 1),
+                    Event.class
+            );// This is atomic  operation per document ,so it is thread safe if 2 users attend the same event simultaneously
+
             userRepository.save(user);
             return new ResponseMessage("successful","Your attendance in the event "+event.getEventName()+" is confirmed");
             //TODO complete the part for the Neo4J too
@@ -116,20 +134,24 @@ public class EventService {
 
     public ResponseMessage revokeAttendance(String id) {
 
-        Event event = getEventOrThrow(id);
-        try {
+//        try {
             User user = Utils.getUserFromContext();
             user.removeUpcomingEvent(id);
-            user.setEventCount(Integer.valueOf(user.getEventCount() - 1));
-            event.setMemberCount(Integer.valueOf(event.getMemberCount() - 1));
-            eventRepository.save(event);
+            user.setEventCount(user.getEventCount() - 1);
             userRepository.save(user);
-            //TODO complete the part for the Neo4J too
-            return new ResponseMessage("successful","Your attendance in the event "+event.getEventName()+" is revoked ");
+            mongoTemplate.updateFirst(
+                    Query.query(Criteria.where("_id").is(id)),
+                    new Update().inc( "member_count", -1),
+                    Event.class
+            ); // This is atomic  operation per document ,so it is thread safe if 2 users attend the same event simultaneously
 
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-        }
+
+            //TODO complete the part for the Neo4J too
+            return new ResponseMessage("successful","Your attendance in the event  is revoked ");
+
+//        } catch (Exception e) {
+//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+//        }
     }
 
     public EventDTO createEvent(EventDTO eventDTO) {
@@ -147,11 +169,11 @@ public class EventService {
 
     private EventDTO createEventDTO(EventDTO eventDTO) {
 
-        if (Utils.isNullOrEmpty(eventDTO.getEventId())) {
+        if (Utils.isNullOrEmpty(eventDTO.getId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "eventId must be provided");
         }
-        if (eventRepository.existsByEventId(eventDTO.getEventId())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Event already exists: " + eventDTO.getEventId());
+        if (eventRepository.existsById(eventDTO.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Event already exists: " + eventDTO.getId());
         }
 
         if (Utils.isNullOrEmpty(eventDTO.getEventName())) {
@@ -160,72 +182,180 @@ public class EventService {
         if (Utils.isNullOrEmpty(eventDTO.getEventTime())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "eventTime must be provided");
         }
-        int utcOffset = SimpleTimeZone.getTimeZone(ZoneId.systemDefault()).getOffset(System.currentTimeMillis()) / 1000;
 
-        EventDTO newEventDTO = new EventDTO();
-        newEventDTO.setEventId(eventDTO.getEventId());
-        newEventDTO.setEventName(eventDTO.getEventName());
-        newEventDTO.setEventTime(eventDTO.getEventTime());
-        newEventDTO.setCreated(new Date());
-        newEventDTO.setUpdated(new Date());
-        newEventDTO.setMemberCount(Integer.valueOf(0));
-        newEventDTO.setEventStatus("upcoming");
-        newEventDTO.setUtcOffset(Integer.valueOf(utcOffset));
-        if (Utils.isNullOrEmpty(eventDTO.getDuration())) newEventDTO.setDuration(Integer.valueOf(86400)); //1 day
-        if (Utils.isNullOrEmpty(eventDTO.getFee())) newEventDTO.setFee(FeeDTO.getDefaultDTO());
+        eventDTO.setCreated(new Date());
+        eventDTO.setUpdated(new Date());
+        eventDTO.setMemberCount(0);
+        eventDTO.setEventStatus("upcoming");
+
+        if (Utils.isNullOrEmpty(eventDTO.getFee())) eventDTO.setFee(FeeDTO.getDefaultDTO());
 
         VenueDTO venueDTO = updateVenueForEvent(eventDTO);
-        if (venueDTO != null) newEventDTO.setVenue(venueDTO);
+        if (venueDTO != null) eventDTO.setVenue(venueDTO);
 
-        setCreatorGroupForCreate(newEventDTO, eventDTO);
+        setCreatorGroupForCreate(eventDTO);
 
-        return newEventDTO;
+        return eventDTO;
 
     }
 
 
     public EventDTO updateEvent(EventDTO eventDTO, String id) { // TODO revisit, especially PATCH semantics
-        Event event = getEventOrThrow(id);
 
         userService.checkUserHasPermissionToEditEvent(id);
 
+        Event event = getEventOrThrow(id);
+
         try {
-            Event newEvent = eventMapper.toEntity(eventDTO);
 
-            //Fields that should remain as they were before the update
-            newEvent.setEventId(id);
-            newEvent.setId(event.getId());
-            newEvent.setMemberCount(event.getMemberCount());
-            newEvent.setCreatorGroup(event.getCreatorGroup());
+//            eventDTO.setCreatorGroup(groupEmbeddedMapper.toDTO(event.getCreatorGroup()));
+            eventDTO.setCreatorGroup(event.getCreatorGroup());
+            if (Utils.isNullOrEmpty(eventDTO.getEventName())) eventDTO.setEventName(event.getEventName());
+            if (Utils.isNullOrEmpty(eventDTO.getEventTime())) eventDTO.setEventTime(event.getEventTime());
+            if (Utils.isNullOrEmpty(eventDTO.getEventUrl())) eventDTO.setEventUrl(event.getEventUrl());
+            if (Utils.isNullOrEmpty(eventDTO.getDescription())) eventDTO.setDescription(event.getDescription());
+            if (Utils.isNullOrEmpty(eventDTO.getFee())) eventDTO.setFee(FeeDTO.getDefaultDTO());
 
+            if (Utils.isNullOrEmpty(eventDTO.getVenue())){
+                eventDTO.setVenue(venueMapper.toDTO(event.getVenue()));
+            }else cityService.parseCityDTO(eventDTO.getVenue().getCity());
 
-            setVenueAndCityForUpdate(newEvent, eventDTO);
-            newEvent.setUpdated(new Date());
-
-            Event saved = eventRepository.save(newEvent);
-
-
-            return eventMapper.toDTO(saved);
+            eventDTO.setUpdated(new Date());
+//            eventDTO.getCreatorGroup().setId(event.getCreatorGroup().getId());
+//            eventDTO.getCreatorGroup().setGroupName(event.getEventName());
+            eventDTO.setId(event.getId());
+            eventRepository.save(eventMapper.toEntity(eventDTO));
+            return eventDTO;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
 
     }
     private Event getEventOrThrow(String id) {
-        return eventRepository.findByEventId(id)
+        return eventRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Event not found: " + id));
     }
 
 
     public void deleteEvent(String id) {
-        if (!eventRepository.existsByEventId(id)) {
-            throw new ResponseStatusException(NOT_FOUND, "Event not found: " + id);
-        }
+        Event event = getEventOrThrow(id);
         userService.checkUserHasPermissionToEditEvent(id);
-        User user = Utils.getUserFromContext();
+
+       try {
+           User user = Utils.getUserFromContext();
+
         user.removeUpcomingEvent(id);
+
+//        Group group = event.getCreatorGroup();
+//        group.removeUpcomingEvent(id);
+        eventRepository.deleteById(id);
         userRepository.save(user);
-        eventRepository.deleteByEventId(id);
+//        groupRepository.save(group);
+       }catch (Exception exception){
+           throw new ResponseStatusException(HttpStatus.BAD_REQUEST,exception.getMessage());
+       }
+
+    }
+    public Page<EventSummaryDTO> search(
+            String name,
+            String city,
+            String category,
+            Integer minMembers,
+            Integer maxMembers,
+            OffsetDateTime fromDate,
+            OffsetDateTime toDate,
+            Integer maxFee,
+            int page,
+            int pageSize
+    ) {
+        Pageable pageable = PageRequest.of(page, pageSize);
+        Query query = new Query();
+
+        if (name != null)
+            query.addCriteria(Criteria.where("event_name").regex(name, "i"));
+
+        if (city != null)
+            query.addCriteria(Criteria.where("venue.city.name").regex(city,"i"));
+
+        if (minMembers != null)
+            query.addCriteria(Criteria.where("member_count").gte(minMembers));
+
+        if (maxMembers != null)
+            query.addCriteria(Criteria.where("member_count").lte(maxMembers));
+
+
+        if (fromDate != null || toDate != null) {
+            Criteria dateCriteria = Criteria.where("event_time");
+
+            if (fromDate != null)
+                dateCriteria.gte(fromDate);
+
+            if (toDate != null)
+                dateCriteria.lte(toDate);
+
+            query.addCriteria(dateCriteria);
+        }
+
+
+        if (category != null)
+            query.addCriteria(Criteria.where("categories.name").is(category));
+
+        if (maxFee != null)
+            query.addCriteria(Criteria.where("fee.amount").lte(maxFee));
+        query.with(pageable);
+
+
+        List<EventSummaryDTO> results = mongoTemplate.find(query, Event.class)
+                .stream()
+                .map(e -> eventSummaryMapper.toDTO(e))
+                .toList();
+
+        return new PageImpl<EventSummaryDTO>(results, pageable, -1);
+//        return results;
+
+    }
+
+
+
+    private VenueDTO updateVenueForEvent(EventDTO eventDTO) {
+        VenueDTO venueDTO = eventDTO.getVenue();
+        if (venueDTO != null) {
+            cityService.parseCityDTO(venueDTO.getCity());
+        }
+        return venueDTO;
+    }
+
+    private void setVenueAndCityForUpdate(Event newEvent, EventDTO eventDTO) {
+        VenueDTO venueDTO = updateVenueForEvent(eventDTO);
+        if (venueDTO != null) newEvent.setVenue(venueMapper.toEntity(venueDTO));
+    }
+
+    public void setCreatorGroupForCreate(EventDTO eventDTO) {
+
+//        User user = Utils.getUserFromContext();
+
+        if (Utils.isNullOrEmpty(eventDTO.getCreatorGroup())){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Please provide a groupId or a groupName that will represent the creatorGroup of the event");
+        }
+        String groupName = eventDTO.getCreatorGroup().getGroupName();
+        String groupId = eventDTO.getCreatorGroup().getGroupId();
+
+        List<Group> groups = groupRepository.findGroupByGroupIdOrGroupName(groupId,groupName);
+        if (Utils.isNullOrEmpty(groups)) {
+            throw new ResponseStatusException(NOT_FOUND,"No group exists with groupId "+groupId+" or groupName "+groupName);
+        }
+
+        Group group = groups.get(0);
+
+   mongoTemplate.updateFirst(Query.query(Criteria.where("_id").is(group.getId())),
+                new Update().push("organizer_members",
+                        eventEmbeddedMapper.toDTO(eventMapper.toEntity(eventDTO)))
+                        .inc("event_count",1), Group.class); //To ensure atomicity if from the same groups are being created events simultaneously
+
+        userService.checkUserHasPermissionToEditGroup(group.getId());
+
+        eventDTO.setCreatorGroup(groupEmbeddedMapper.toDTO(group));
+
     }
 
 //    public Page<EventDTO> filterByCategory(String category, int page, int size) {
@@ -281,119 +411,7 @@ public class EventService {
 //        return eventRepository.searchByEventName(name, pageable);
 //    }
 
-    public PageImpl<EventSummaryDTO> search(
-            String name,
-            String city,
-            String category,
-            Integer minMembers,
-            Integer maxMembers,
-            OffsetDateTime fromDate,
-            OffsetDateTime toDate,
-            Integer maxFee,
-            int page,
-            int pageSize
-    ) {
-        Pageable pageable = PageRequest.of(page, pageSize);
-        Query query = new Query();
 
-        if (name != null)
-            query.addCriteria(Criteria.where("event_name").regex(name, "i"));
-
-        if (city != null)
-            query.addCriteria(Criteria.where("venue.city.name").regex(city));
-
-        if (minMembers != null)
-            query.addCriteria(Criteria.where("member_count").gte(minMembers));
-
-        if (maxMembers != null)
-            query.addCriteria(Criteria.where("member_count").lte(maxMembers));
-
-        Criteria criteria = Criteria.where("event_time");
-        boolean dateFilter=false;
-        if (fromDate != null) {
-            criteria.gte(fromDate);
-            dateFilter=true;
-        }
-        if (toDate!=null){
-            criteria = criteria.andOperator(Criteria.where("event_time").lte(toDate));
-        dateFilter=true;
-        }
-        if (dateFilter)
-            query.addCriteria(criteria);
-
-//        if (toDate != null)
-//            query.addCriteria(Criteria.where("event_time").lte(toDate));
-
-        if (category != null)
-            query.addCriteria(Criteria.where("categories.name").is(category));
-
-        if (maxFee != null)
-            query.addCriteria(Criteria.where("fee.amount").lte(maxFee));
-
-        query.skip(page*pageSize);
-        query.limit(pageSize);
-
-
-        List<EventSummaryDTO> results = mongoTemplate.find(query, Event.class)
-                .stream()
-                .map(e -> eventSummaryMapper.toDTO(e))
-                .toList();
-
-        return new PageImpl<EventSummaryDTO>(results, pageable, results.size());
-
-    }
-
-
-
-    private VenueDTO updateVenueForEvent(EventDTO eventDTO) {
-        VenueDTO venueDTO = eventDTO.getVenue();
-        if (venueDTO != null) {
-            CityDTO cityDTO = null;
-            if (!Utils.isNullOrEmpty(venueDTO.getCity())) {
-                if (!Utils.isNullOrEmpty(eventDTO.getVenue().getCity().getId())) {
-                    String cityId = eventDTO.getVenue().getCity().getId();
-                    City city = cityRepository.findByCityId(cityId);
-                    if (city != null) cityDTO = cityMapper.toDTO(city);
-                } else if (!Utils.isNullOrEmpty(eventDTO.getVenue().getCity().getName())) {
-                    String cityName = eventDTO.getVenue().getCity().getName();
-                    City city = cityRepository.findByName(cityName);
-                    if (city != null) cityDTO = cityMapper.toDTO(city);
-                }
-            }
-            if (cityDTO != null) {
-                venueDTO.setCity(cityDTO);
-            }
-        }
-        return venueDTO;
-    }
-
-    private void setVenueAndCityForUpdate(Event newEvent, EventDTO eventDTO) {
-        VenueDTO venueDTO = updateVenueForEvent(eventDTO);
-        if (venueDTO != null) newEvent.setVenue(venueMapper.toEntity(venueDTO));
-    }
-
-    //TODO require the group_id or throw error and check if the user is organizer of that group
-    public void setCreatorGroupForCreate(EventDTO newEventDTO, EventDTO eventDTO) {
-
-        User user = Utils.getUserFromContext();
-        String memberId = user.getMemberId();
-        if (Utils.isNullOrEmpty(eventDTO.getCreatorGroup())){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Please provide a groupId or a groupName that will represent the creatorGroup of the event");
-        }
-        String groupName = eventDTO.getCreatorGroup().getGroupName();
-        String groupId = eventDTO.getCreatorGroup().getGroupId();
-
-        List<Group> groups = groupRepository.findGroupByGroupIdOrGroupName(groupId,groupName);
-        if (Utils.isNullOrEmpty(groups)) {
-            throw new ResponseStatusException(NOT_FOUND,"No group exists with groupId "+groupId+" or groupName "+groupName);
-        }
-        Group group = groups.get(0);
-
-        userService.checkUserHasPermissionToEditGroup(group.getGroupId());
-
-        newEventDTO.setCreatorGroup(groupMapper.toDTO(group));
-
-        }
 
     }
 

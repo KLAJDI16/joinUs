@@ -25,12 +25,10 @@ public interface TopicEmbeddedMapper {
 
     List<TopicEmbeddedDTO> toDTOs(List<Topic> topics);
 
-    @Mapping(target = "id", ignore = true)
+//    @Mapping(target = "id", ignore = true)
      @Mapping(target = "link", ignore = true)
     @Mapping(target = "description", ignore = true)
     @Mapping(target = "urlkey", ignore = true)
     Topic toEntity(TopicEmbeddedDTO dto);
-
-
 
 }

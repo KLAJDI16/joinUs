@@ -3,6 +3,7 @@ package script_transform_csv_to_mongodb_and_neo4j.mongoDb;
 import com.mongodb.client.*;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import script_transform_csv_to_mongodb_and_neo4j.ParallelExecutor;
 
@@ -53,11 +54,14 @@ public class MongoDbUserOperations {
         List<Document> userTopics = new ArrayList<>();
         try (MongoCursor<Document> cursor = topicCollection
                 .find(new Document("member_id", memberId))
-                .projection(new Document("topic_id", 1).append("topic_name", 1).append("_id",0))
+//                .projection(new Document("topic_id", 1).append("topic_name", 1).append("_id",0))
                 .cursor()) {
             while (cursor.hasNext()) {
                 Document document = cursor.next();
-                userTopics.add(document);
+                Document documentToAdd = new Document();
+                documentToAdd.append("topic_id",document.getString("topic_id"));
+                documentToAdd.append("topic_name",document.getString("topic_name"));
+                userTopics.add(documentToAdd);
             }
         }
 
@@ -182,7 +186,7 @@ public class MongoDbUserOperations {
                 MongoCursor eventCursor = eventCollection.find
                         (
                                 Filters.and(
-                                        Filters.in("event_id", eventIdsFromRsvps)
+                                        Filters.in("_id", eventIdsFromRsvps)
                                         , Filters.gt("event_time", new Date()
                                         )
                                 )
@@ -197,7 +201,7 @@ public class MongoDbUserOperations {
 
     //                    if (event_time.after(new Date())) {
 
-                            documentToEmbed.append("event_id", eventDocument.getString("event_id"));
+                            documentToEmbed.append("event_id", eventDocument.getString("_id"));
                             documentToEmbed.append("event_name", eventDocument.getString("event_name"));
                             documentToEmbed.append("event_time", event_time);
 
@@ -242,23 +246,24 @@ public class MongoDbUserOperations {
      */
     public static Document extractMemberDocument(String memberId, List<Document> members) {
 
-        Document document;
+        Document document = new Document();
         if (members != null && !members.isEmpty()) {
             document = new Document();
             Document member = members.get(0);
-            document.append("member_id", member.getString("member_id"));
+            document.append("_id", member.getString("member_id"));
             document.append("member_name", member.getString("member_name"));
-            document.append("member_status", member.getString("member_status"));
             MongoDataLoader.assignIfFound(document,"hometown",member.getString("hometown"));
-            document.append("link", member.getString("link"));
             MongoDataLoader.assignIfFound(document,"bio",member.getString("bio"));
 
         } else {
             MongoCollection memberCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
-            document = ((Document) memberCollection.find(Filters.eq("member_id", memberId))
-                    .projection(new Document("member_id", 1).append("member_name", 1)
-                            .append("member_status", 1).append("_id", 0).append("bio", 1).append("hometown", 1).append("link", 1))
+          Document  document2 = ((Document) memberCollection.find(Filters.eq("member_id", memberId))
                     .first());
+            document.append("_id", document2.getString("member_id"));
+            document.append("member_name", document2.getString("member_name"));
+            MongoDataLoader.assignIfFound(document,"hometown",document2.getString("hometown"));
+            MongoDataLoader.assignIfFound(document,"bio",document2.getString("bio"));
+
         }
         return document;
     }
@@ -270,6 +275,7 @@ public class MongoDbUserOperations {
 
         MongoCollection oldMemberCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
         MongoCollection newMemberCollection = getNewUserCollection();
+
         Document finalDocument;
 
         Future[] futures = new Future[5];

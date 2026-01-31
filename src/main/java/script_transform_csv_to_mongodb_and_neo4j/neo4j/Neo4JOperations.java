@@ -16,10 +16,10 @@ public class Neo4JOperations {
     private static final String ImportFolder ="file:///";
     private static  String BATCH_SIZE =ConfigurationFileReader.checkAndGetProp("importBatchSize");
 
-    private static final List<String> groupProperties=List.of("group_id", "group_name", "city", "description", "link","organizer_member_id","organizer_name");
-    private static final List<String> eventProperties=List.of("event_id", "event_name", "event_time", "description", "event_url","fee_amount","venue_city");
-    private static final List<String> topicProperties=List.of("topic_id", "description", "link", "topic_name");
-    private static final List<String> memberProperties=List.of("member_id", "bio", "member_name", "member_status", "hometown");
+    private static final List<String> groupProperties=List.of("group_id", "group_name", "city", "description","category_name");
+    private static final List<String> eventProperties=List.of("event_id", "event_name", "event_time", "description","fee_amount","venue_city","group_name","group_id","venue_address_1");
+    private static final List<String> topicProperties=List.of("topic_id", "topic_name");
+    private static final List<String> memberProperties=List.of("member_id", "city", "member_name");
 
     public Neo4JOperations(Driver driver, String neo4jDatabase, ParallelExecutor parallelExecutor) {
         this.driver = driver;
@@ -32,6 +32,7 @@ public class Neo4JOperations {
         StringJoiner columnText=new StringJoiner(",");
 
         String column=null;
+
         for (String str : columnsToInclude) {
 //            column = str.replace("___", "_");
             column=str;

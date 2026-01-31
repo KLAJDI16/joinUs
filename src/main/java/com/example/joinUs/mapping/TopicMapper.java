@@ -15,7 +15,7 @@ public interface TopicMapper {
 
     TopicDTO toDTO(Topic topic);
 
-    @Mapping(target = "id", ignore = true)
+//    @Mapping(target = "id", ignore = true)
     Topic toEntity(TopicDTO dto);
 
     List<TopicDTO> toDTOs(List<Topic> topics);

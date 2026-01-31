@@ -12,12 +12,14 @@ import org.mapstruct.Mapping;
         EventEmbeddedMapper.class, TopicEmbeddedMapper.class })
 public interface UserMapper {
 
+    @Mapping(target = "id", source = "id")
     UserDTO toDTO(User user);
 
 //    @Mapping(target = "roles",ignore = true)
 //    @Mapping(target = "authorities",ignore = true)
-    @Mapping(target = "id", ignore = true)
+//    @Mapping(target = "id", ignore = true)
     @Mapping(target = "isAdmin",ignore = true)
+    @Mapping(target = "id", source = "id")
     User toEntity(UserDTO dto);
 
     //roles, authorities

@@ -26,6 +26,16 @@ public class Group_Neo4J {
     @Property("link")
     private String link;
 
+    @Property("organizer_member_id")
+    private String organizerId;
+
+    @Property("city")
+    private String cityName;
+
+    @Property("category_shortname")
+    private String categoryName;
+
+
     // City fields
 //    @Property(name = "city_country")
 //    private String city_country;
@@ -54,23 +64,5 @@ public class Group_Neo4J {
 //    @Property(name = "city_distance")
 //    private String city_distance;
 //
-//
-//    public GroupNeo4jDTO toDTO() {
-//        return GroupNeo4jDTO.builder()
-//                .groupId(this.groupId)
-//                .groupName(this.groupId)
-//                .description(this.description)
-//                .link(this.link)
-//                .cityCountry(this.city_country)
-//                .cityState(this.city_state)
-//                .cityZip(this.city_zip)
-//                .cityLocalizedCountryName(this.city_localized_country_name)
-//                .cityName(this.city_name)
-//                .cityCityId(this.city_city_id)
-//                .cityLatitude(this.city_latitude)
-//                .cityLongitude(this.city_longitude)
-//                .cityDistance(this.city_distance)
-//                .build();
-//    }
 }
 

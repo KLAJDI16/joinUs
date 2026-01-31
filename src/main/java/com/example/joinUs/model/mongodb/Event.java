@@ -1,5 +1,6 @@
 package com.example.joinUs.model.mongodb;
 
+import com.example.joinUs.dto.embedded.GroupEmbeddedDTO;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,12 +27,13 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Event {
 
-    @Id
-    @Field("_id")
-    private ObjectId id;
+//    @Id
+//    @Field("_id")
+//    private ObjectId id;
 
+    @Id
     @Indexed(unique = true)
-    private String eventId;
+    private String id;
 
     private String description;
     private String eventUrl;
@@ -43,7 +45,6 @@ public class Event {
     private Date updated;
 
     private Integer duration;
-    private Integer utcOffset;
 
     private Fee fee;
     private Venue venue;
@@ -51,7 +52,8 @@ public class Event {
 
     private Integer memberCount;
 
-    private Group creatorGroup;
+    @Field("creator_group")
+    private GroupEmbeddedDTO creatorGroup;
 
 }
 

@@ -21,15 +21,15 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-//@JsonInclude(JsonInclude.Include.NON_NULL)
-public class EventSummaryDTO { //TODO if used needs to be fixed cause venueCityName and feeAmount show as null
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class EventSummaryDTO {
 
-    private String eventId;
+    private String id;
     private String eventName;
     private Date eventTime;
     private Date updated;
     private Integer memberCount;
     private Integer feeAmount;
-    private String venueCityName;
+    private String venueCityName;//TODO add venueAddress1
     private GroupEmbeddedDTO creatorGroup;
 }

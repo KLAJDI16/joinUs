@@ -85,9 +85,9 @@ public class MongoDbEventOperations {
         if (document == null) return null;
 
         groupDocument.append("group_id", document.getString("group_id"));
+        groupDocument.append("group_name", document.getString("group_name"));
+        groupDocument.append("thumb_link", document.getString("group_photo_thumb_link"));
 
-        groupDocument.append("group_name", document.getString(
-                "group_name"));
 
         return groupDocument;
 
@@ -102,10 +102,6 @@ public class MongoDbEventOperations {
         venue.append("city", city);
         MongoDataLoader.assignIfFound(venue, "address_1", oldEvent.getString("venue_address_1"));
         MongoDataLoader.assignIfFound(venue, "address_2", oldEvent.getString("venue_address_2"));
-        String phoneNumber = oldEvent.getString("venue_phone");
-        if (!phoneNumber.equalsIgnoreCase("-1")) {
-            venue.append("phone_number", oldEvent.getString("venue_phone"));
-        }
 
         return venue;
 
@@ -115,9 +111,10 @@ public class MongoDbEventOperations {
 
         Document event = new Document();
 
-        List<String> fieldsToIncludeDirectly = List.of("event_id",
-                "description", "event_url", "event_name", "event_status", "event_status");
+        List<String> fieldsToIncludeDirectly = List.of(
+                "description",  "event_name");
 
+        event.append("_id",oldEvent.getString("event_id"));
         for (String key : oldEvent.keySet()) {
             if (fieldsToIncludeDirectly.contains(key)) {
                 event.append(key, oldEvent.getString(key));
@@ -138,22 +135,22 @@ public class MongoDbEventOperations {
 
         Instant eventTimeInstant = event_time.toInstant();
         Instant updatedInstant = updated.toInstant();
+        Instant createdInstant = created.toInstant();
 
         //Adding 9 years to simulate "upcoming events" since currently the latest date in the data is 2018
         //TODO modify accordingly
         event_time = Date.from(eventTimeInstant.plus(9 * 365 + 2, ChronoUnit.DAYS));
         updated = Date.from(updatedInstant.plus(9 * 365 + 2, ChronoUnit.DAYS));
+        created = Date.from(createdInstant.plus(9 * 365 + 2, ChronoUnit.DAYS));
+
 
         event.append("created", created);
         event.append("event_time", event_time);
         event.append("updated", updated);
 
         Long duration = Long.parseLong(oldEvent.getString("duration"));
-        Long utcOffset = Long.parseLong(oldEvent.getString("utc_offset"));
 
-        event.append("duration", duration);
-        event.append("utc_offset", utcOffset);
-
+        event.append("duration", duration/60);
 
         return event;
     }
@@ -164,7 +161,7 @@ public class MongoDbEventOperations {
      * @param oldEvent
      * @return
      */
-    public static List<Document> extractCategoryForEvent(Document oldEvent) {
+    public static Document extractCategoryForEvent(Document oldEvent) {
         Document eventDocument = new Document();
 
         MongoCollection groupCollection = MongoDataLoader.csvDocuments.getCollection("groups.csv");
@@ -172,7 +169,7 @@ public class MongoDbEventOperations {
         Document group = (Document) groupCollection.find(Filters.eq("group_name", oldEvent.getString("group_name"))).first();
 
 
-        return MongoDbGroupOperations.extractCategoriesFromGroup(group);
+        return MongoDbGroupOperations.extractCategoryFromGroup(group);
     }
 
     public HashMap<String, Double> extractMemberCountForEvent() {
@@ -226,7 +223,7 @@ public class MongoDbEventOperations {
 
                 newEvent = (Document) futures[0].get();
 
-                newEvent.append("categories", futures[1].get());
+                newEvent.append("category", futures[1].get());
                 newEvent.append("fee", futures[2].get());
                 newEvent.append("venue", futures[3].get());
 
@@ -258,7 +255,7 @@ public class MongoDbEventOperations {
 
         try (MongoCursor<Document> eventCursor = eventCollection.find(
                 Filters.and(
-                        Filters.in("event_id", event_ids)
+                        Filters.in("_id", event_ids)
                         , Filters.gt("event_time", new Date())
                 )
         ).cursor()) {
@@ -270,7 +267,7 @@ public class MongoDbEventOperations {
                 Date event_time = eventDocument.getDate("event_time");
 
                 //            if (event_time.after(new Date())) {
-                documentToEmbed.append("event_id", eventDocument.getString("event_id"));
+                documentToEmbed.append("event_id", eventDocument.getString("_id"));
                 documentToEmbed.append("event_name", eventDocument.getString("event_name"));
                 documentToEmbed.append("event_time", event_time);
                 upcomingEvents.add(documentToEmbed);

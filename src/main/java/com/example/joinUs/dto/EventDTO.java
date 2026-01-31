@@ -21,7 +21,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class EventDTO {
 
-    private String eventId;
+    private String id;
     private String eventName;
     private String eventUrl;
     private String description;
@@ -32,7 +32,6 @@ public class EventDTO {
     private Date updated;
 
     private Integer duration;
-    private Integer utcOffset;
 
     private FeeDTO fee;
     private VenueDTO venue;
@@ -40,7 +39,7 @@ public class EventDTO {
 
     private Integer memberCount;
 
-    private GroupDTO creatorGroup;
+    private GroupEmbeddedDTO creatorGroup;
 
 
 

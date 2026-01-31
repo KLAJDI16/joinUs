@@ -26,18 +26,18 @@ public class DataTransformerScript {
             }
         });
         Future future2 = null;
-        if (Neo4JOperations.transferDataToNeo4J.equalsIgnoreCase("true")) {
-        CsvDataOperations.copyFilesToNeo4JImportFolder();
-            future2 = parallelExecutor.submit(() -> {
-                try {
-                    new Neo4JDataLoader(parallelExecutor).transformCsvDataToNeo4j();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
+//        if (Neo4JOperations.transferDataToNeo4J.equalsIgnoreCase("true")) {
+//        CsvDataOperations.copyFilesToNeo4JImportFolder();
+//            future2 = parallelExecutor.submit(() -> {
+//                try {
+//                    new Neo4JDataLoader(parallelExecutor).transformCsvDataToNeo4j();
+//                } catch (Exception e) {
+//                    throw new RuntimeException(e);
+//                }
+//            });
+//        }
         future1.get();
-        future2.get();
+//        future2.get();
 //
         parallelExecutor.close();
         long endTime = System.currentTimeMillis();

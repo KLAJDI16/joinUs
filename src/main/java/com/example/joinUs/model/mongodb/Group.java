@@ -22,14 +22,15 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Document(collection = "groups")
-public class Group {
+public class Group {  //TODO set locking
+
+//    @Id
+//    @Field("_id")
+//    private ObjectId id;
 
     @Id
-    @Field("_id")
-    private ObjectId id;
-
     @Indexed(unique = true)
-    private String groupId;
+    private String id;
 
     private String description;
     private String groupName;
@@ -48,11 +49,10 @@ public class Group {
     private List<Event> upcomingEvents;
 
     public void removeOrganizerMember(String memberId){
-        for (User user : organizerMembers){
-            if (user.getMemberId().equalsIgnoreCase(memberId)){
-                organizerMembers.remove(user);
-            }
-        }
+        organizerMembers.removeIf(e -> e.getId().equalsIgnoreCase(memberId));
+    }
+    public void removeUpcomingEvent(String eventId){
+       upcomingEvents.removeIf(e -> e.getId().equalsIgnoreCase(eventId));
     }
 
 }

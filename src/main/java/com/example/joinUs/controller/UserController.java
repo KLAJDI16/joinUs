@@ -21,26 +21,6 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-//
-//    @GetMapping("")
-//    public List<UserDTO> getAllUsers() {
-//        return userService.getAllUsers();
-//    }
-//    @GetMapping("/fromGraph")
-//    public List<UserNeo4jDTO> getAllUsersFromGraph() {
-//        return userService.getAllUsersFromGraph();
-//    }
-
-    @GetMapping("")
-    public JsonObject getAllUsers() {
-        JsonObject jsonObject = new JsonObject("{\"result\":\"Successfully hit GET /users \"}");
-        return jsonObject;
-    }
-    @PostMapping("")
-    public JsonObject createUser() {
-        JsonObject jsonObject = new JsonObject("{\"result\":\"Successfully hit POST /users \"}");
-        return jsonObject;
-    }
 
     @GetMapping("/profile")
     public ResponseEntity getUserProfile(){
@@ -62,21 +42,4 @@ public class UserController {
         SecurityContextHolder.clearContext();
     }
 
-
-
-
-
-
-
-//    // Example: get user by id
-//    @GetMapping("/{id}")
-//    public UserDTO getUserById(@PathVariable String id) {
-//        return userService.getUserById(id);
-//    }
-
-    // Example: create a new user
-//    @PostMapping("")
-//    public UserDTO createUser(@RequestBody UserDTO userDTO) {
-//        return userService.createUser(userDTO);
-//    }
 }

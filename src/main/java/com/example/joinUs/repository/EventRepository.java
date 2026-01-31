@@ -20,25 +20,31 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface EventRepository extends MongoRepository<Event, ObjectId> {
+public interface EventRepository extends MongoRepository<Event, String> {
 
-    String fields= "{'event_id':1,'event_name':1,'venue.city.name':1,'member_count':1,'creator_group':1,'event_time':1,'fee.amount':1}";
+    String fields= "{'_id':1,'event_name':1,'venue.city.name':1,'member_count':1,'creator_group':1,'event_time':1,'fee.amount':1}";
 
 //    String eventProjection= "{ $project:"+fields+" }";
 
 
-    Optional<Event> findByEventId(String eventId); //TODO check
+    Optional<Event> findById(String id); //TODO check
 
 
-    boolean existsByEventId(String eventId);
+    boolean existsById(String id);
 
-    void deleteByEventId(String eventId);
-
-
+    void deleteById(String id);
 
 
-//    @Query(value = "{"+eventNameNotEmpty+"}",fields = fields)
-//    Page<Event> findAll(Pageable pageable);
+
+
+    @Query(value = "{_id:{$ne:null}}",fields = fields)
+    Page<EventDTO> findAllEvents(Pageable pageable);
+
+    @Query(value = "{ _id: ?0 }",fields = fields)
+    EventDTO findEventWithId(String id);
+
+//    @Query(value = "{_id:{$ne:null}}",fields = fields,count = true)
+//    Page<EventDTO> findAll(Pageable pageable);
 
     @Query(value = "{'event_name' : { $regex: ?0, $options: 'i' } }",fields = fields)
     Page<EventDTO> searchByEventName(String name,Pageable pageable);

@@ -7,11 +7,10 @@ import com.example.joinUs.model.mongodb.Group;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(config = CentralMappingConfig.class,uses = {UserMapper.class})
+@Mapper(config = CentralMappingConfig.class)
 public interface GroupEmbeddedMapper {
 
 
-//    @Mapping(source = "groupId", target = "groupId")
 //    @Mapping(source = "groupName", target = "groupName")
 //    // Explicitly ignored fields
 //    @Mapping(target = "link", ignore = true)
@@ -21,6 +20,9 @@ public interface GroupEmbeddedMapper {
 //    @Mapping(target = "categories", ignore = true)
 //    @Mapping(target = "memberCount", ignore = true)
 //    @Mapping(target = "eventCount", ignore = true)
+
+    @Mapping(source = "id", target = "groupId")
+    @Mapping(target = "groupName", source = "groupName")
     GroupEmbeddedDTO toDTO(Group group);
 
 
@@ -35,7 +37,8 @@ public interface GroupEmbeddedMapper {
     @Mapping(target = "groupPhoto", ignore = true)
     @Mapping(target = "organizerMembers", ignore = true)
     @Mapping(target = "upcomingEvents", ignore = true)
-    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "id", source = "groupId")
+    @Mapping(target = "groupName", source = "groupName")
     Group toEntity(GroupEmbeddedDTO groupEmbeddedDTO);
 
 

@@ -15,21 +15,23 @@ import java.util.Optional;
 
 @Repository
 public interface GroupRepository extends MongoRepository<Group, String> {
-    String fields= "{'group_id':1,'group_name':1,'upcoming_events':1,'city.name':1','category.name':1,'member_count':1,'event_count':1}";
+    String fields= "{'_id':1,'group_name':1,'upcoming_events':1,'city.name':1','category.name':1,'member_count':1,'event_count':1}";
     String projection="{$project:"+fields+"}";
 
-    Optional<Group> findByGroupId(String groupId);
+    Optional<Group> findById(String id);
 
-    boolean existsByGroupId(String groupId);
+    Page<Group> findAll(Pageable pageable);
 
-    void deleteByGroupId(String groupId);
+    boolean existsById(String id);
 
-    @Query("{'organizer_members.member_id' : ?0 }")
+    void deleteById(String id);
+
+    @Query("{'organizer_members.id' : ?0 }")
     List<Group> findGroupsByOrganizerId(String id);
 
     //{$or:[{group_id:"5817263"},{group_name:"San Francisco Startup Socials"}]}
 
-    @Query("{$or:[{ 'group_id': ?0 },{ 'group_name': ?1 }]}")
+    @Query("{$or:[{ '_id': ?0 },{ 'group_name': ?1 }]}")
     List<Group> findGroupByGroupIdOrGroupName(String groupId,String groupName);
 
     @Aggregation(pipeline = {

@@ -70,15 +70,15 @@ public class MongoDataLoader {
 
         startingTime = System.currentTimeMillis();
 
-        futureArrayList.add( parallelExecutor.submit(() ->   {
-            try {
+//        futureArrayList.add( parallelExecutor.submit(() ->   {
+//            try {
                 new MongoDbEventOperations(client,newMongoDatabase,parallelExecutor).createEventCollection();
       createIndexesForEventsCollection();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+//            } catch (Exception e) {
+//                throw new RuntimeException(e);
+//            }
             System.out.println("Finished creating Events Collection");
-        }));
+//        }));
 
 
         futureArrayList.add( parallelExecutor.submit(() ->   {
@@ -127,6 +127,19 @@ public class MongoDataLoader {
 
         System.out.println("THE  PROCESS TOOK "+(endingTime-startingTime)/1000 +" seconds ");
 
+    }
+    public static Document renameField(Document document,String oldField,String newField){
+        if (document == null || document.isEmpty()) return document;
+        Document newDocument = new Document();
+        for (String key:document.keySet()){
+            if (key.equalsIgnoreCase(oldField)){
+                newDocument.append(newField,document.get(key));
+            }
+            else {
+                newDocument.append(key,document.get(key));
+            }
+        }
+        return newDocument;
     }
 
 

@@ -192,6 +192,7 @@ public class CsvDataOperations {
     public static void updateMemberIdsAtCSV() throws Exception {
         CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaMembersPath,"member_id","member_id",-1, CsvDataOperations.membersPath, CsvDataOperations.memberTopicsPath);
         CsvDataOperations.updateIdsFromCsv(CsvDataOperations.transformedMembers,"member_id","organizer.member_id",-1, CsvDataOperations.groupsPath);
+//        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.transformedMembers,"member_name","organizer.name",-1, CsvDataOperations.transformedGroups);
 
     }
     public static void updateEventIdsAtCSV() throws Exception {

@@ -15,10 +15,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-//@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDTO {
 
-    private String memberId;
+    private String id;
     private String memberName;
     private String password; // TODO discuss
 

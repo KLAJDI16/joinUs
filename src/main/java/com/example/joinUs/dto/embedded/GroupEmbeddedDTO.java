@@ -10,9 +10,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class GroupEmbeddedDTO { //TODO Replace in EventDTO
+//@Builder
+//@JsonInclude(JsonInclude.Include.NON_NULL)
+public class GroupEmbeddedDTO {
+
     private String groupId;
     private String groupName;
 }

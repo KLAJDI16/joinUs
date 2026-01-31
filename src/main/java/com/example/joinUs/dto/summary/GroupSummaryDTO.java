@@ -1,5 +1,9 @@
-package com.example.joinUs.dto;
+package com.example.joinUs.dto.summary;
 
+
+import com.example.joinUs.dto.CategoryDTO;
+import com.example.joinUs.dto.EventDTO;
+import com.example.joinUs.dto.UserDTO;
 import com.example.joinUs.dto.embedded.EventEmbeddedDTO;
 import com.example.joinUs.dto.embedded.UserEmbeddedDTO;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -8,36 +12,20 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
-import java.util.Date;
 import java.util.List;
-
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class GroupDTO {
-
+public class GroupSummaryDTO {
     private String id;
-    private String description;
     private String groupName;
-    private String link;
-    private String timezone;
-    private Date created;
-
-    private CityDTO city;
     private List<CategoryDTO> categories;
-
+    private String cityName;
+    private List<UserEmbeddedDTO> organizerMembers;
+    private List<EventEmbeddedDTO> upcomingEvents;
     private Integer memberCount;
     private Integer eventCount;
-
-    private List<UserEmbeddedDTO> organizerMembers;
-
-    private List<EventEmbeddedDTO> upcomingEvents;
-
-    private GroupPhotoDTO groupPhoto;
-
 }
-

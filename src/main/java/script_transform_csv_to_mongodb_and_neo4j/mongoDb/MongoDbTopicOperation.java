@@ -5,6 +5,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import script_transform_csv_to_mongodb_and_neo4j.ParallelExecutor;
 
 import java.util.List;
@@ -36,18 +37,16 @@ public class MongoDbTopicOperation {
 
 
 
-    public Document extractTopicDocument(Document oldDocument){
+    public Document extractTopicDocument(Document oldDocument,String idField){
         if (oldDocument==null || oldDocument.isEmpty()) return new Document();
         Document documentToReturn = new Document();
-        List<String> keysToIncludeDirectly=List.of("topic_id", "description",
-                "link","topic_name","urlkey");
+        List<String> keysToIncludeDirectly=List.of( "description","topic_name");
+
+        documentToReturn.append(idField, oldDocument.getString("topic_id"));
         for (String key:oldDocument.keySet()){
             if (keysToIncludeDirectly.contains(key))
              documentToReturn.append(key,oldDocument.getString(key));
         }
-//        long member_count=Long.parseLong(oldDocument.getString("members"));
-//        documentToReturn.append("member_count",member_count);
-
 
         return documentToReturn;
     }
@@ -58,7 +57,6 @@ public class MongoDbTopicOperation {
         try (MongoCursor<Document> mongoCursor = oldCollection.find().cursor()) {
 
             Document oldDocument;
-            final boolean[] neo4jIndexCreated = {false};
 
             while (mongoCursor.hasNext()) {
                 oldDocument =  mongoCursor.next();
@@ -66,7 +64,7 @@ public class MongoDbTopicOperation {
                 Document finalOldDocument1 = oldDocument;
 
                 Document finalOldDocument = oldDocument;
-                parallelExecutor.submit( () ->  newCollection.insertOne(extractTopicDocument(finalOldDocument)) );
+                parallelExecutor.submit( () ->  newCollection.insertOne(extractTopicDocument(finalOldDocument,"_id")) );
             }
         }
     }

@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TopicDTO {
 
-    private String topicId;
+    private String id;
     private String topicName;
     private String link;
     private String description;

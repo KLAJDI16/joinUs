@@ -4,6 +4,7 @@ import com.example.joinUs.dto.GroupDTO;
 import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.neo4j.User_Neo4J;
+import com.example.joinUs.repository.UserRepository;
 import com.example.joinUs.repository.User_Neo4J_Repo;
 import com.example.joinUs.service.EventService;
 import com.example.joinUs.service.GroupService;
@@ -26,6 +27,8 @@ public class JoinUsApplication implements CommandLineRunner {
 
     @Autowired
     public UserService userService;
+    @Autowired
+    public UserRepository userRepository;
 
     @Autowired
     public GroupService groupService;
@@ -36,8 +39,6 @@ public class JoinUsApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        eventService.getEventsFromNeo4j().stream().forEach(
-                e -> System.out.println(e.getEventName()+" -> "+e.getEventTime())
-        );
+   userRepository.findById("2609").stream().forEach(e -> System.out.println(e.getMemberName()+" " +e.getId()));
     }
 }

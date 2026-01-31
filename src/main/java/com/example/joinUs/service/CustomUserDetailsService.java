@@ -36,7 +36,8 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username)
             throws UsernameNotFoundException {
 
-        List<User> users = userRepository.findMemberByName(username);
+        List<User> users = userRepository.findMemberById(username);
+        //TODO need to change this later in order to guarantee uniqueness by username , (for now best I can think of is just using member_id)
 
         if (Utils.isNullOrEmpty(users)) throw  new UsernameNotFoundException("No User is  found with username "+username);
 

@@ -12,18 +12,17 @@ import java.util.Optional;
 public interface UserRepository extends MongoRepository<User,String> {
 
     // Find by exact member name
-    @Query("{ 'member_id': ?0 }")
-    Optional<User> findMemberById(String member_id);
+    @Query("{ '_id': ?0 }")
+    List<User> findMemberById(String member_id);
 
     // Find by exact member name
     @Query("{ 'member_name': ?0 }")
     List<User> findMemberByName(String member_name);
-
     // Find by member_id (you could also just use findById inherited from MongoRepository)
 //    Optional<User> findByMember_id(String member_id);
 
     // Find all users in a specific city
-    @Query("{ 'city.city_name': ?0 }")
+    @Query("{ 'city.name': ?0 }")
     List<User> findByCity(String cityName);
 
     // Find all users who are admins
@@ -52,7 +51,7 @@ public interface UserRepository extends MongoRepository<User,String> {
     List<User> findByStatusSortedByName(String status);
 
     // Count users in a specific city
-    @Query(value = "{ 'city.city_name': ?0 }", count = true)
+    @Query(value = "{ 'city.name': ?0 }", count = true)
     long countByCity(String cityName);
 
     // Check existence by member_id

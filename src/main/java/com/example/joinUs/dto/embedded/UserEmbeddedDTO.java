@@ -7,17 +7,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
-import java.util.Date;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 //@JsonInclude(JsonInclude.Include.NON_NULL)
-public class EventEmbeddedDTO {
-
+public class UserEmbeddedDTO {
     private String id;
-    private String eventName;
-    private Date eventTime;
+    private String memberName;
 }

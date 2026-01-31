@@ -5,10 +5,12 @@ package com.example.joinUs.mapping;
 
 //package com.example.joinUs.dto;
 import com.example.joinUs.dto.EventDTO;
+import com.example.joinUs.dto.embedded.GroupEmbeddedDTO;
 import com.example.joinUs.dto.summary.EventSummaryDTO;
 import com.example.joinUs.mapping.embedded.GroupEmbeddedMapper;
 import com.example.joinUs.mapping.embedded.TopicEmbeddedMapper;
 import com.example.joinUs.model.mongodb.Event;
+import com.example.joinUs.model.mongodb.Group;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -18,22 +20,44 @@ import java.util.List;
 
 
 @Mapper(config = CentralMappingConfig.class, uses = {
-        CategoryMapper.class, GroupMapper.class
+        CategoryMapper.class
+        , GroupEmbeddedMapper.class
         , VenueMapper.class, TopicEmbeddedMapper.class}
         // TODO
 )
 public interface EventMapper {
 
+    @Mapping(target = "id", source = "id")
+//    @Mapping(source = "creatorGroup.id", target = "creatorGroup.groupId")
+//    @Mapping(source = "creatorGroup.groupName", target = "creatorGroup.groupName")
+    @Mapping(source = "creatorGroup", target = "creatorGroup")
     EventDTO toDTO(Event event);
 
-    List<EventDTO> toDTOs(List<Event> events);
-
     // Ignore Mongo internal id because the DTO doesn't carry it.
-    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "id", source = "id")
+    @Mapping(source = "creatorGroup", target = "creatorGroup")
+//    @Mapping(source = "creatorGroup.groupId", target = "creatorGroup.id")
+//    @Mapping(source = "creatorGroup.groupName", target = "creatorGroup.groupName")
     Event toEntity(EventDTO dto);
-
+//Unmapped target properties: "description, link, timezone, created, city, categories,
+// groupPhoto, memberCount, eventCount, organizerMembers, upcomingEvents".
+// Mapping from property "GroupEmbeddedDTO creatorGroup" to "Group creatorGroup".
     default Date map(OffsetDateTime value) {
         return value == null ? null : Date.from(value.toInstant());
     }
+//    default GroupEmbeddedDTO map(Group group) {
+//        if (group == null) return null;
+//        return GroupEmbeddedDTO.builder()
+//                .id(group.getId())
+//                .groupName(group.getGroupName())
+//                .build();
+//    }
+//    default Group map(GroupEmbeddedDTO groupEmbeddedDTO) {
+//        if (groupEmbeddedDTO == null) return null;
+//        return Group.builder()
+//                .id(groupEmbeddedDTO.getId())
+//                .groupName(groupEmbeddedDTO.getGroupName())
+//                .build();
+//    }
 
 }

@@ -26,12 +26,8 @@ import java.util.List;
 public class User implements UserDetails {
 
     @Id
-    @Field("_id")
-    private ObjectId id;
-
-    @Field(value = "member_id")
     @Indexed(unique = true)
-    private String memberId;
+    private String id;
 
     @Field("member_name")
     private String memberName;
@@ -75,9 +71,7 @@ public class User implements UserDetails {
 //    }
 
     public void removeUpcomingEvent(String eventId){
-        for (Event event : upcomingEvents){
-            if (event.getEventId().equalsIgnoreCase(eventId)) upcomingEvents.remove(event);
-        }
+      upcomingEvents.removeIf(e -> e.getId().equalsIgnoreCase(eventId));
     }
 
     @Override

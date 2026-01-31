@@ -8,8 +8,6 @@ import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.mongodb.User;
 import com.example.joinUs.repository.*;
-import jakarta.servlet.http.HttpSession;
-import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;
@@ -24,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -55,13 +54,6 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-//    public List<UserDTO> getAllUsers() {
-//        return null; // TODO
-//        return userRepository.findAll().stream()
-//                .map(user -> user.toDTO())
-//                .toList();
-//    }
-
     public UserDTO getUserProfile(){
         User user = Utils.getUserFromContext();
         return userMapper.toDTO(user);
@@ -69,9 +61,9 @@ public class UserService {
     public UserDTO editUserProfile(UserDTO userUpdate){
 
         User existingUser = Utils.getUserFromContext();
-        String userId = existingUser.getMemberId();
+        String userId = existingUser.getId();
 
-        userUpdate.setMemberId(userId);
+        userUpdate.setId(userId);
 
 
         // Update only the allowed fields ,the others remain as they were
@@ -104,13 +96,13 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"User is not authenticated in the application");
         }
         User user = (User) authentication.getPrincipal();
-        String userId=user.getMemberId();
+        String userId=user.getId();
         List<Group> groups = groupRepository.findGroupsByOrganizerId(userId);
         if (groups==null|| groups.isEmpty())
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this group");
 
         for (Group group : groups){
-            if (group.getGroupId().equalsIgnoreCase(groupId)) return true;
+            if (group.getId().equalsIgnoreCase(groupId)) return true;
         }
 
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this group");
@@ -125,15 +117,15 @@ public class UserService {
 //        }
 //        User user = (User) authentication.getPrincipal();
         User user = Utils.getUserFromContext();
-        String userId=user.getMemberId();
+        String userId=user.getId();
         List<Group> groups = groupRepository.findGroupsByOrganizerId(userId);
         if (groups==null)  throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this event");
 
 //        boolean foundEvent;
         for (Group group : groups){
-            List<Event> events = eventRepository.findEventsByCreatorGroup(group.getGroupId());
+            List<Event> events = eventRepository.findEventsByCreatorGroup(group.getId());
             for (Event event : events) {
-                if (event.getEventId().equalsIgnoreCase(eventId)) return true;
+                if (event.getId().equalsIgnoreCase(eventId)) return true;
             }
         }
            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this event");
@@ -159,6 +151,7 @@ public class UserService {
         if (userDTO.getBio() != null) user.setBio(userDTO.getBio());
         if (userDTO.getMemberName() != null) user.setMemberName(userDTO.getMemberName());
         if (userDTO.getMemberStatus() != null) user.setMemberStatus(userDTO.getMemberStatus());
+
 
         if (userDTO.getCity() != null) {
             CityDTO updatedCity = userDTO.getCity();
@@ -201,6 +194,12 @@ public class UserService {
 
         return context;
 
+    }
+    public User saveUser(User user){
+     return userRepository.save(user);
+    }
+    public Optional<User> findUserById(String id){
+        return userRepository.findById(id);
     }
 
     public void deleteProfile() {

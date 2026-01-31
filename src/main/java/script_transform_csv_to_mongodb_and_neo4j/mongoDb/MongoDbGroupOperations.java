@@ -43,21 +43,16 @@ public class MongoDbGroupOperations {
         this.parallelExecutor = parallelExecutor;
     }
 
-    public static List<Document> extractCategoriesFromGroup(Document oldGroupDocument){
+    public static Document extractCategoryFromGroup(Document oldGroupDocument){
         if (oldGroupDocument==null){
-//            System.out.println("PAUSE HERE");
-            return new ArrayList<>();
+            return new Document();
         }
         Document category = new Document();
-
-        List<Document> categories=new ArrayList<>();
 
         category.append("category_id",oldGroupDocument.getString("category_id"))
                 .append("name",oldGroupDocument.getString("category_name"));
 
-        categories.add(category);
-
-        return categories;
+        return category;
     }
 
 
@@ -181,7 +176,7 @@ public class MongoDbGroupOperations {
     }
 
     public static Document extractCityForGroup(Document oldGroupDocument)  {
-        String group_id=oldGroupDocument.getString("group_id");
+//        String group_id=oldGroupDocument.getString("group_id");
         String cityName=oldGroupDocument.getString("city");
         return MongoDbCityOperation.extractCityToEmbedFromCityName(cityName);
     }
@@ -243,10 +238,18 @@ public class MongoDbGroupOperations {
         List<Document> organizers=new ArrayList<>();
         String group_id=oldGroupDocument.getString("group_id");
         Document organizer = new Document();
-        String organizerName=oldGroupDocument.getString("organizer_name");
-        organizer.append("member_name",organizerName);
+//        String organizerName=oldGroupDocument.getString("organizer_name");
+//        organizer.append("member_name",organizerName);
         String organizerId=oldGroupDocument.getString("organizer_member_id");
-        organizer.append("member_id",organizerId);
+
+        MongoCollection mongoCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
+        MongoCursor<Document> mongoCursor = mongoCollection.find(Filters.eq("member_id",organizerId)).cursor();
+
+        if (mongoCursor.hasNext())
+        {
+            organizer.append("member_id",organizerId);
+            organizer.append("member_name",mongoCursor.next().getString("member_name"));
+        }
 //        if (groups_per_organizer.containsKey(organizerId)){
 //            groups_per_organizer.get(organizerId).add(group_id);
 //        }
@@ -261,13 +264,14 @@ public class MongoDbGroupOperations {
 
     public static Document extractGroupDocument(Document oldGroupDocument)  {
         List<String> directKeysToInclude=Arrays.asList(
-                "group_id","group_name","timezone","link");
+                "group_name");
         Document newGroupDocument=new Document();
         for (String key : oldGroupDocument.keySet()){
             if (directKeysToInclude.contains(key)){
                 newGroupDocument.append(key,oldGroupDocument.getString(key));
             }
         }
+        newGroupDocument.append("_id",oldGroupDocument.getString("group_id"));
         MongoDataLoader.assignIfFound(newGroupDocument,"description",oldGroupDocument.getString("description"));
 
         SimpleDateFormat simpleDateFormat =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -281,9 +285,9 @@ public class MongoDbGroupOperations {
         newGroupDocument.append("created",created);
 
 //        Double rating = Double.parseDouble(oldGroupDocument.getString("rating"));
-        Long utcOffset = Long.parseLong(oldGroupDocument.getString("utc_offset"));
+//        Long utcOffset = Long.parseLong(oldGroupDocument.getString("utc_offset"));
 //        newGroupDocument.append("rating",rating);
-        newGroupDocument.append("utc_offset",utcOffset);
+//        newGroupDocument.append("utc_offset",utcOffset);
 
         return newGroupDocument;
     }
@@ -291,9 +295,14 @@ public class MongoDbGroupOperations {
     public static Document extractGroupPhoto(Document oldGroupDocument){
         Document photo = new Document();
         for (String key : oldGroupDocument.keySet()){
-            if (key.startsWith("group_photo_")){
-                String newKey=key.substring("group_photo_".length());
-                MongoDataLoader.assignIfFound(photo,newKey,oldGroupDocument.getString(key));
+            if (key.startsWith("group_photo_")) {
+                String newKey = key.substring("group_photo_".length());
+                if (!newKey.equalsIgnoreCase("type")
+                        && !newKey.equalsIgnoreCase("base_url")
+                        && !newKey.equalsIgnoreCase("photo_link")) {
+//group_photo type, base_url and photo
+                    MongoDataLoader.assignIfFound(photo, newKey, oldGroupDocument.getString(key));
+                }
             }
         }
         return photo;
@@ -302,7 +311,9 @@ public class MongoDbGroupOperations {
     public  void createGroupCollection() throws Exception {
 
         MongoCollection groupCollection = getNewGroupsCollection();
+        MongoCollection categoryNewCollection = MongoDataLoader.newMongoDatabase.getCollection("categories");
 
+        List<String> categoriesIncluded = new ArrayList<>();
 
         try (MongoCursor<Document> mongoCursor = MongoDataLoader.csvDocuments.getCollection("groups.csv").find().cursor()) {
 
@@ -311,15 +322,31 @@ public class MongoDbGroupOperations {
 
 
             while (mongoCursor.hasNext()) {
+
+
                 Document oldGroupDocument =  mongoCursor.next();
                 Future[] futures = new Future[8];
                 Document newGroupDocument = new Document();
 
               String group_id=oldGroupDocument.getString("group_id");
 
+              String category_id = oldGroupDocument.getString("category_id");
+
+                if (!categoriesIncluded.contains(category_id)) {
+                    String name = oldGroupDocument.getString("category_name");
+                    Document categoryDocument = new Document();
+                    categoryDocument.append("_id", category_id);
+                    categoryDocument.append("name", name);
+
+                    parallelExecutor.submit(() -> categoryNewCollection.insertOne(categoryDocument));
+                    categoriesIncluded.add(category_id);
+                }
+
+
+
                 futures[0] = parallelExecutor.submit(MongoDbGroupOperations::extractGroupDocument,oldGroupDocument);
                 futures[1] = parallelExecutor.submit(MongoDbGroupOperations::extractCityForGroup,oldGroupDocument);
-                futures[2] = parallelExecutor.submit(MongoDbGroupOperations::extractCategoriesFromGroup,oldGroupDocument);
+                futures[2] = parallelExecutor.submit(MongoDbGroupOperations::extractCategoryFromGroup,oldGroupDocument);
 
                 futures[3] = parallelExecutor.submit(e -> extractOrganizer(e),oldGroupDocument);
                 futures[4] = parallelExecutor.submit(e ->extractUpcomingEvents(e),oldGroupDocument);
@@ -332,7 +359,7 @@ public class MongoDbGroupOperations {
 
                 Document finalNewGroupDocument1 = newGroupDocument;
 
-                newGroupDocument.append("organizer_members", futures[3].get());
+                newGroupDocument.append("organizers", futures[3].get());
                 newGroupDocument.append("upcoming_events", futures[4].get());
                 newGroupDocument.append("group_photo", futures[5].get());
                 newGroupDocument.append("event_count", eventCount.get(group_id)!=null? eventCount.get(group_id):0);
@@ -342,7 +369,7 @@ public class MongoDbGroupOperations {
 
 //                newGroupDocument = extractGroupDocument(oldGroupDocument);
 //                newGroupDocument.append("city", extractCityForGroup(oldGroupDocument));
-//                newGroupDocument.append("categories", extractCategoriesFromGroup(oldGroupDocument));
+//                newGroupDocument.append("categories", extractCategoryFromGroup(oldGroupDocument));
 //                newGroupDocument.append("event_count", eventCount.get(group_id));
 //                newGroupDocument.append("member_count", memberCount.get(group_id));
 //                newGroupDocument.append("organizer_members", extractOrganizer(oldGroupDocument));

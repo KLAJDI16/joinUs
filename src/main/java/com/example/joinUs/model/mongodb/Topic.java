@@ -19,11 +19,9 @@ import org.springframework.data.mongodb.core.mapping.Field;
 public class Topic {
 
     @Id
-    @Field("_id")
-    private ObjectId id;
-
     @Indexed(unique = true)
-    private String topicId;
+    @Field("_id")
+    private String id;
 
     private String topicName;
     private String link;

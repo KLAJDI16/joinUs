@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 
 @Data
@@ -16,8 +17,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "cities")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class City {
+//Create a city Embedding
 
     @Id
+    @Field("_id")
     private String id;
     private String name;
 

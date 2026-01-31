@@ -31,7 +31,7 @@ public class EventController {
     private UserService userService;
 
     @GetMapping("")
-    public Page<EventSummaryDTO> getAllEvents(
+    public Page<EventDTO> getAllEvents(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size ) {
         return eventService.getAllEvents(page, size);
@@ -82,9 +82,9 @@ public class EventController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) Integer minMembers,
             @RequestParam(required = false) Integer maxMembers,
-            @Parameter(example = "2026-12-15T01:45Z")
+            @Parameter(example = "2026-12-15T01:45:30Z")
             OffsetDateTime fromDate,
-            @Parameter(example = "2026-12-15T01:45Z")
+            @Parameter(example = "2026-12-15T01:45:30Z")
             OffsetDateTime toDate,
             @RequestParam(required = false) Integer maxFee,
             @RequestParam(defaultValue = "0") Integer page,
