@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends MongoRepository<User,String> {
 
-    // Find by exact member name
+    // Find by exact member id
     @Query("{ 'member_id': ?0 }")
     Optional<User> findByMember_id(String member_id);
 
@@ -52,12 +52,14 @@ public interface UserRepository extends MongoRepository<User,String> {
     @Query(value = "{ 'member_status': ?0 }", sort = "{ 'member_name': 1 }")
     List<User> findByStatusSortedByName(String status);
 
-    // Count users in a specific city
+    // Count users in a specific city (countByCity("Paris") “How many users are in this one city?)
+    // That’s filtering + counting
+    //    //but aggregate $group  shows “How many users per city?”
     @Query(value = "{ 'city.city_name': ?0 }", count = true)
     long countByCity(String cityName);
 
     // Check existence by member_id
-//    boolean existsByMember_id(String member_id);
+//  boolean existsByMember_id(String member_id);
 
 
     //Users who have many topics → broad interests.
@@ -68,6 +70,7 @@ public interface UserRepository extends MongoRepository<User,String> {
     })
     List<Document> findUsersWithMostTopics();
 
+
     //Cities with the largest user base.
     @Aggregation(pipeline = {
             "{ $group: { _id: '$city.name', usersCount: { $sum: 1 } } }",
@@ -76,12 +79,14 @@ public interface UserRepository extends MongoRepository<User,String> {
     })
     List<Document> countUsersByCity();
 
+
     //Distribution of User Status (active / inactive)
     @Aggregation(pipeline = {
             "{ $group: { _id: '$member_status', count: { $sum: 1 } } }",
             "{ $sort: { count: -1 } }"
     })
     List<Document> countUsersByStatus();
+
 
     //Top Organizers (users who created most groups)
     @Aggregation(pipeline = {
@@ -91,6 +96,7 @@ public interface UserRepository extends MongoRepository<User,String> {
     })
     List<Document> topGroupOrganizers();
 
+
     //Users With Upcoming Events (high intent users)
     @Aggregation(pipeline = {
             "{ $project: { member_id: 1, member_name: 1, upcomingCount: { $size: { $ifNull: ['$upcoming_events', []] } } } }",
@@ -99,6 +105,8 @@ public interface UserRepository extends MongoRepository<User,String> {
             "{ $limit: 20 }"
     })
     List<Document> usersWithUpcomingEvents();
+
+
 
     //Topic Popularity Among Users
     @Aggregation(pipeline = {

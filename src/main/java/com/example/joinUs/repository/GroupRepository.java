@@ -67,8 +67,40 @@ List<Document> countGroupsByCategory();
 List<Document> topGroupsByMembers();
 
 
+//Groups created per year (trend) showing Growth of groups over time.
+@Aggregation(pipeline = {
+        "{ $match: { created: { $ne: null } } }",
+        "{ $group: { _id: { $year: '$created' }, groupsCreated: { $sum: 1 } } }",
+        "{ $sort: { _id: 1 } }",
+        "{ $project: { year: '$_id', groupsCreated: 1, _id: 0 } }"
+})
+List<Document> groupsCreatedPerYear();
 
-//Top Cities by Groups Created in the Past 10 Years
+
+//Organizer leaderboard (top organizers by number of groups)
+@Aggregation(pipeline = {
+        "{ $unwind: '$organizer_members' }",
+        "{ $group: { _id: '$organizer_members.member_id', organizerName: { $first: '$organizer_members.member_name' }, groupsOrganized: { $sum: 1 } } }",
+        "{ $sort: { groupsOrganized: -1 } }",
+        "{ $limit: 20 }",
+        "{ $project: { memberId: '$_id', organizerName: 1, groupsOrganized: 1, _id: 0 } }"
+})
+List<Document> topOrganizersByGroups();
+
+
+//Top cities by upcoming events count (overall activity)
+@Aggregation(pipeline = {
+        "{ $project: { cityName: '$city.name', upcomingCount: { $size: { $ifNull: ['$upcoming_events', []] } } } }",
+        "{ $group: { _id: '$cityName', totalUpcomingEvents: { $sum: '$upcomingCount' } } }",
+        "{ $sort: { totalUpcomingEvents: -1 } }",
+        "{ $limit: 20 }",
+        "{ $project: { city: '$_id', totalUpcomingEvents: 1, _id: 0 } }"
+})
+List<Document> topCitiesByUpcomingEvents();
+
+
+
+    //Top Cities by Groups Created in the Past 10 Years
     @Aggregation(pipeline = {
             "{ $match: { created: { $gte: { $dateSubtract: { startDate: '$$NOW', unit: 'year', amount: 10 } } } } }",
             "{ $group: { _id: '$city.name', groupsCreated: { $sum: 1 } } }",
