@@ -62,13 +62,6 @@ public interface UserRepository extends MongoRepository<User,String> {
 //  boolean existsByMember_id(String member_id);
 
 
-    //Users who have many topics → broad interests.
-    @Aggregation(pipeline = {
-            "{ $project: { member_id: 1, member_name: 1, topicCount: { $size: { $ifNull: ['$topics', []] } } } }",
-            "{ $sort: { topicCount: -1 } }",
-            "{ $limit: 20 }"
-    })
-    List<Document> findUsersWithMostTopics();
 
 
     //Cities with the largest user base.
@@ -88,14 +81,6 @@ public interface UserRepository extends MongoRepository<User,String> {
     List<Document> countUsersByStatus();
 
 
-    //Top Organizers (users who created most groups)
-    @Aggregation(pipeline = {
-            "{ $project: { member_id: 1, member_name: 1, groupsCreated: { $size: { $ifNull: ['$groups_organizer', []] } } } }",
-            "{ $sort: { groupsCreated: -1 } }",
-            "{ $limit: 20 }"
-    })
-    List<Document> topGroupOrganizers();
-
 
     //Users With Upcoming Events (high intent users)
     @Aggregation(pipeline = {
@@ -107,6 +92,34 @@ public interface UserRepository extends MongoRepository<User,String> {
     List<Document> usersWithUpcomingEvents();
 
 
+    //Users by “activity score (Simple scoring using:
+    //event_count + group_count)
+    @Aggregation(pipeline = {
+            "{ $project: { member_id: 1, member_name: 1, " +
+                    "activityScore: { $add: [ { $ifNull: ['$event_count', 0] }, { $ifNull: ['$group_count', 0] } ] } } }",
+            "{ $sort: { activityScore: -1 } }",
+            "{ $limit: 20 }"
+    })
+    List<Document> topUsersByActivityScore();
+
+
+    //Users who have many topics → broad interests.
+    @Aggregation(pipeline = {
+            "{ $project: { member_id: 1, member_name: 1, topicCount: { $size: { $ifNull: ['$topics', []] } } } }",
+            "{ $sort: { topicCount: -1 } }",
+            "{ $limit: 20 }"
+    })
+    List<Document> findUsersWithMostTopics();
+
+
+    //Topic diversity (how many unique topics exist among users)
+    @Aggregation(pipeline = {
+            "{ $unwind: '$topics' }",
+            "{ $group: { _id: '$topics.topic_id' } }",
+            "{ $count: 'uniqueTopicsCount' }"
+    })
+    List<Document> countUniqueTopicsInUsers();
+
 
     //Topic Popularity Among Users
     @Aggregation(pipeline = {
@@ -116,6 +129,43 @@ public interface UserRepository extends MongoRepository<User,String> {
             "{ $limit: 30 }"
     })
     List<Document> mostPopularUserTopics();
+
+
+
+    //Topic popularity per city (top topics inside each city) showing shows for each city, which topics appear most.
+    @Aggregation(pipeline = {
+            "{ $unwind: '$topics' }",
+            "{ $group: { _id: { city: '$city.name', topic: '$topics.topic_name' }, usersCount: { $sum: 1 } } }",
+            "{ $sort: { usersCount: -1 } }",
+            "{ $group: { _id: '$_id.city', topTopics: { $push: { topic: '$_id.topic', usersCount: '$usersCount' } } } }",
+            "{ $project: { city: '$_id', topTopics: { $slice: ['$topTopics', 10] }, _id: 0 } }",
+            "{ $limit: 20 }"
+    })
+    List<Document> topTopicsPerCity();
+
+
+
+
+    //Top Organizers (users who created most groups)
+    @Aggregation(pipeline = {
+            "{ $project: { member_id: 1, member_name: 1, groupsCreated: { $size: { $ifNull: ['$groups_organizer', []] } } } }",
+            "{ $sort: { groupsCreated: -1 } }",
+            "{ $limit: 20 }"
+    })
+    List<Document> topGroupOrganizers();
+
+
+    //Average activity by city (avg event_count + group_count)
+    @Aggregation(pipeline = {
+            "{ $project: { city: '$city.name', activity: { $add: [ { $ifNull: ['$event_count', 0] }, { $ifNull: ['$group_count', 0] } ] } } }",
+            "{ $group: { _id: '$city', avgActivity: { $avg: '$activity' }, users: { $sum: 1 } } }",
+            "{ $sort: { avgActivity: -1 } }",
+            "{ $limit: 20 }",
+            "{ $project: { city: '$_id', avgActivity: 1, users: 1, _id: 0 } }"
+    })
+    List<Document> avgActivityByCity();
+
+
 
 //Most Active Cities Shows cities where users are most active, not just numerous.
 
