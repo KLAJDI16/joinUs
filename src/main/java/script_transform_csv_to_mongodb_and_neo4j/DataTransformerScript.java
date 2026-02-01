@@ -39,6 +39,7 @@ public class DataTransformerScript {
         future2.get();
         future1.get();
 //
+        System.out.println("STARTING TIME "+new Date());
         parallelExecutor.close();
         long endTime = System.currentTimeMillis();
 //        System.out.println("THE PROCESS TOOK " + (endTime - startTime) / 1000 + " seconds");
