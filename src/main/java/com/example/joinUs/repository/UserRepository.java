@@ -48,9 +48,7 @@ public interface UserRepository extends MongoRepository<User,String> {
     // Delete by member_id
 //    void deleteByMember_id(String member_id);
 
-    // Optional custom query: find by status and sort by name
-    @Query(value = "{ 'member_status': ?0 }", sort = "{ 'member_name': 1 }")
-    List<User> findByStatusSortedByName(String status);
+
 
     // Count users in a specific city (countByCity("Paris") “How many users are in this one city?)
     // That’s filtering + counting
@@ -63,7 +61,6 @@ public interface UserRepository extends MongoRepository<User,String> {
 
 
 
-
     //Cities with the largest user base.
     @Aggregation(pipeline = {
             "{ $group: { _id: '$city.name', usersCount: { $sum: 1 } } }",
@@ -71,14 +68,6 @@ public interface UserRepository extends MongoRepository<User,String> {
             "{ $limit: 20 }"
     })
     List<Document> countUsersByCity();
-
-
-    //Distribution of User Status (active / inactive)
-    @Aggregation(pipeline = {
-            "{ $group: { _id: '$member_status', count: { $sum: 1 } } }",
-            "{ $sort: { count: -1 } }"
-    })
-    List<Document> countUsersByStatus();
 
 
 

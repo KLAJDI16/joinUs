@@ -84,15 +84,6 @@ List<Document> countEventsByCity();
 
 
 
-//How active users are in each city (average attendance)
-@Aggregation(pipeline = {
-        "{ $group: { _id: '$creator_group.city.name', avgAttendance: { $avg: '$member_count' } } }",
-        "{ $sort: { avgAttendance: -1 } }"
-})
-List<Document> averageAttendanceByCity();
-
-
-
 //How many events are created each month.
 @Aggregation(pipeline = {
         "{ $match: { event_time: { $ne: null } } }",

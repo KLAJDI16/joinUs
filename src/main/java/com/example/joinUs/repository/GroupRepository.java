@@ -72,13 +72,13 @@ List<Document> countGroupsByCity();
 
     //Top cities by upcoming events count (overall activity)
     @Aggregation(pipeline = {
-            "{ $project: { cityName: '$city.name', upcomingCount: { $size: { $ifNull: ['$upcoming_events', []] } } } }",
-            "{ $group: { _id: '$cityName', totalUpcomingEvents: { $sum: '$upcomingCount' } } }",
+            "{ $match: { event_time: { $gte: ?0 } } }",
+            "{ $group: { _id: '$creator_group.city.name', totalUpcomingEvents: { $sum: 1 } } }",
             "{ $sort: { totalUpcomingEvents: -1 } }",
             "{ $limit: 20 }",
             "{ $project: { city: '$_id', totalUpcomingEvents: 1, _id: 0 } }"
     })
-    List<Document> topCitiesByUpcomingEvents();
+    List<Document> topCitiesByUpcomingEvents(Date now);
 
 
 
