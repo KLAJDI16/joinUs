@@ -34,8 +34,8 @@ public interface UserRepository extends MongoRepository<User,String> {
     List<User> findByCreated_groupsContaining(String groupId);
 
     // Find users by topic key
-    @Query("{ 'topics.topic_key': ?0 }")
-    List<User> findByTopic(String topicKey);
+    @Query("{ 'topics.topic_name': ?0 }")
+    List<User> findByTopicName(String topic_name);
 
     // Update operations via repository usually use save(entity)
     // Example usage:
@@ -46,15 +46,8 @@ public interface UserRepository extends MongoRepository<User,String> {
     // Delete by member_id
 //    void deleteByMember_id(String member_id);
 
-    // Optional custom query: find by status and sort by name
-    @Query(value = "{ 'member_status': ?0 }", sort = "{ 'member_name': 1 }")
-    List<User> findByStatusSortedByName(String status);
-
     // Count users in a specific city
     @Query(value = "{ 'city.name': ?0 }", count = true)
     long countByCity(String cityName);
-
-    // Check existence by member_id
-//    boolean existsByMember_id(String member_id);
 
 }

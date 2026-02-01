@@ -31,7 +31,7 @@ public class EventController {
     private UserService userService;
 
     @GetMapping("")
-    public Page<EventDTO> getAllEvents(
+    public Page<EventSummaryDTO> getAllEvents(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size ) {
         return eventService.getAllEvents(page, size);

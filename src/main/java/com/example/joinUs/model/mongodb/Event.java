@@ -23,18 +23,12 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Event {
 
-//    @Id
-//    @Field("_id")
-//    private ObjectId id;
-
     @Id
     @Indexed(unique = true)
     private String id;
 
     private String description;
-    private String eventUrl;
     private String eventName;
-    private String eventStatus;
 
     private Date created;
     private Date eventTime;
@@ -44,7 +38,7 @@ public class Event {
 
     private Fee fee;
     private Venue venue;
-    private List<Category> categories;
+    private Category categories;
 
     private Integer memberCount;
 

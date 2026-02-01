@@ -17,7 +17,6 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Document(collection = "cities")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class City {
-//Create a city Embedding
 
     @Id
     @Field("_id")
@@ -25,9 +24,7 @@ public class City {
     private String name;
 
     private String country;
-    private String zip;
     private String state;
-    private String localizedCountryName;
 
     private String latitude;
     private String longitude;

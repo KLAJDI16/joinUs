@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CityRepository extends MongoRepository<City,String> {
 
-    @Query(value = "{id: ?0}")
+    @Query(value = "{_id: ?0}")
     City findByCityId(String id);
 
     City findByName(String name);

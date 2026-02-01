@@ -55,7 +55,7 @@ public interface EventRepository extends MongoRepository<Event, String> {
     Page<EventDTO> findByCityName(String cityName,Pageable pageable);
 
     //{ 'id': 1, 'artists': 1, 'coverURL': 1, 'title': 1 }
-    @Query(value = "{ 'categories.name' : { $regex: ?0, $options: 'i' } }",fields = fields)
+    @Query(value = "{ 'category.name' : { $regex: ?0, $options: 'i' } }",fields = fields)
     Page<EventDTO> findByCategoryName(String categoryName,Pageable pageable);
 
 //    @Query("""

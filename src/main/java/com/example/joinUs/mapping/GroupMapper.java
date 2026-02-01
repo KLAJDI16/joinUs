@@ -31,10 +31,4 @@ List<GroupDTO> toDTOs(List<Group> groups);
 //    @Mapping(target = "id", ignore = true)
     Group toEntity(GroupDTO dto);
 
-
-
-    //Unmapped target properties: "id, city, memberStatus, bio, topics,
-    // eventCount, groupCount, upcomingEvents, password, isAdmin".
-    // Mapping from Collection element
-    // "UserEmbeddedDTO organizers" to "User organizers".
 }

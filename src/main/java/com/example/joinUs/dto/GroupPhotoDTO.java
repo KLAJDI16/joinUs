@@ -13,12 +13,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GroupPhotoDTO {
-
-    private String baseUrl;
     private String highresLink;
-    private String photoId;
     private String photoLink;
     private String thumbLink;
-    private String type;
 
 }

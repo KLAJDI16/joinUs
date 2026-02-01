@@ -1,5 +1,8 @@
 package com.example.joinUs.model.mongodb;
 
+import com.example.joinUs.model.embedded.CityEmbedded;
+import com.example.joinUs.model.embedded.EventEmbedded;
+import com.example.joinUs.model.embedded.TopicEmbedded;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,17 +36,13 @@ public class User implements UserDetails {
     private String memberName;
 
     @Field("city")
-    private City city;
-
-    @Field("member_status")
-    private String memberStatus;
+    private CityEmbedded city;
 
     @Field("bio")
     private String bio;
 
-
     @Field("topics")
-    private List<Topic> topics;
+    private List<TopicEmbedded> topics;
 
     @Field("event_count")
     private Integer eventCount;
@@ -52,7 +51,7 @@ public class User implements UserDetails {
     private Integer groupCount;
 
     @Field("upcoming_events")
-    private List<Event> upcomingEvents;
+    private List<EventEmbedded> upcomingEvents;
 
     @Field("password")
     private String password;
@@ -71,7 +70,7 @@ public class User implements UserDetails {
 //    }
 
     public void removeUpcomingEvent(String eventId){
-      upcomingEvents.removeIf(e -> e.getId().equalsIgnoreCase(eventId));
+      upcomingEvents.removeIf(e -> e.getEventId().equalsIgnoreCase(eventId));
     }
 
     @Override

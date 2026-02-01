@@ -1,7 +1,6 @@
 package com.example.joinUs.mapping.summary;
 
 import com.example.joinUs.dto.CategoryDTO;
-import com.example.joinUs.model.embedded.UserEmbeddedDTO;
 import com.example.joinUs.dto.summary.GroupSummaryDTO;
 import com.example.joinUs.mapping.CentralMappingConfig;
 import com.example.joinUs.mapping.UserMapper;
@@ -35,26 +34,16 @@ public interface GroupSummaryMapper {
     @Mapping(source = "groupId", target = "id")
     @Mapping(source = "groupName", target = "groupName")
     @Mapping(source = "cityName", target = "cityName")
-
-    @Mapping(source = "organizerId", target = "organizers")
-    @Mapping(source = "categoryName", target = "categories")
-
+    @Mapping(source = "categoryName", target = "category.name")
     @Mapping(target = "upcomingEvents", ignore = true)
     @Mapping(target = "memberCount", ignore = true)
     @Mapping(target = "eventCount", ignore = true)
+    @Mapping(target = "organizers", ignore = true)
     GroupSummaryDTO toDTOFromNeo4j(Group_Neo4J group);
 
     List<GroupSummaryDTO> toDTOsFromNeo4j(List<Group_Neo4J> groupNeo4JS);
 
-    default List<UserEmbeddedDTO> mapOrganizer(String organizerId) {
-        if (organizerId == null) return null;
 
-        return List.of(
-                UserEmbeddedDTO.builder()
-                        .id(organizerId)
-                        .build()
-        );
-    }
 
     default List<CategoryDTO> mapCategory(String categoryName) {
         if (categoryName == null) return null;

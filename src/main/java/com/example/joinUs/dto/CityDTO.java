@@ -18,9 +18,7 @@ public class CityDTO {
     private String name;
 
     private String country;
-    private String zip;
     private String state;
-    private String localizedCountryName;
 
     private String latitude;
     private String longitude;

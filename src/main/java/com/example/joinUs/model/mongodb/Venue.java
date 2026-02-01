@@ -1,5 +1,6 @@
 package com.example.joinUs.model.mongodb;
 
+import com.example.joinUs.model.embedded.CityEmbedded;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +15,7 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Venue {
 
-    private City city;
+    private CityEmbedded city;
     private String address1;
     private String address2;
 

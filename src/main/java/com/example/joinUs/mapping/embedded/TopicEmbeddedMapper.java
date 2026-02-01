@@ -11,21 +11,18 @@ import java.util.List;
 @Mapper(config = CentralMappingConfig.class)
 public interface TopicEmbeddedMapper {
 
-//    @Mapping(source = "topicId", target = "topicId")
-//    @Mapping(source = "topicName", target = "topicName")
-//
-//    // Ignore the rest
-//    @Mapping(target = "link", ignore = true)
-//    @Mapping(target = "description", ignore = true)
-//    @Mapping(target = "urlkey", ignore = true)
+    @Mapping(source = "id", target = "topicId")
+    @Mapping(source = "topicName", target = "topicName")
     TopicEmbedded toDTO(Topic topic);
 
+    @Mapping(source = "id", target = "topicId")
+    @Mapping(source = "topicName", target = "topicName")
     List<TopicEmbedded> toDTOs(List<Topic> topics);
 
 //    @Mapping(target = "id", ignore = true)
-     @Mapping(target = "link", ignore = true)
-    @Mapping(target = "description", ignore = true)
-    @Mapping(target = "urlkey", ignore = true)
-    Topic toEntity(TopicEmbedded dto);
+//     @Mapping(target = "link", ignore = true)
+//    @Mapping(target = "description", ignore = true)
+//    @Mapping(target = "urlkey", ignore = true)
+//    Topic toEntity(TopicEmbedded dto);
 
 }

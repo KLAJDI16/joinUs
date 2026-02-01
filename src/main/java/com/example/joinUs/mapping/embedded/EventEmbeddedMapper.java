@@ -12,27 +12,13 @@ import java.util.List;
 public interface EventEmbeddedMapper {
 
 
-    @Mapping(target = "id", source = "id")
+    @Mapping(target = "eventId", source = "id")
     @Mapping(source = "eventName", target = "eventName")
     @Mapping(source = "eventTime", target = "eventTime")
     EventEmbedded toDTO(Event event);
 
 
-    @Mapping(target = "description", ignore = true)
-    @Mapping(target = "eventUrl", ignore = true)
-    @Mapping(target = "eventStatus", ignore = true)
-    @Mapping(target = "created", ignore = true)
-    @Mapping(target = "updated", ignore = true)
-    @Mapping(target = "duration", ignore = true)
-    @Mapping(target = "fee", ignore = true)
-    @Mapping(target = "venue", ignore = true)
-    @Mapping(target = "categories", ignore = true)
-    @Mapping(target = "memberCount", ignore = true)
-    @Mapping(target = "creatorGroup", ignore = true)
-    @Mapping(target = "id", source = "id")
-    Event toEntity(EventEmbedded eventEmbedded);
-
-    @Mapping(source = "id", target = "id")
+    @Mapping(target = "eventId", source = "id")
     @Mapping(source = "eventName", target = "eventName")
     @Mapping(source = "eventTime", target = "eventTime")
     List<EventEmbedded> toDTOs(List<Event> events);

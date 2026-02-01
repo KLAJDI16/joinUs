@@ -1,5 +1,6 @@
 package com.example.joinUs.dto;
 
+import com.example.joinUs.model.embedded.CityEmbedded;
 import com.example.joinUs.model.embedded.EventEmbedded;
 import com.example.joinUs.model.embedded.TopicEmbedded;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -22,9 +23,8 @@ public class UserDTO {
     private String memberName;
     private String password; // TODO discuss
 
-    private CityDTO city;
+    private CityEmbedded city;
 
-    private String memberStatus;
     private String bio;
 
     private List<TopicEmbedded> topics;

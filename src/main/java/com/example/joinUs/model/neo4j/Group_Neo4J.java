@@ -15,7 +15,6 @@ import org.springframework.data.neo4j.core.schema.Property;
 @Builder
 @Node("Group")
 public class Group_Neo4J {
-
     @Id
     @Property("group_id")
     private String groupId;
@@ -23,46 +22,13 @@ public class Group_Neo4J {
     private String groupName;
     @Property("description")
     private String description;
-    @Property("link")
-    private String link;
-
-    @Property("organizer_member_id")
-    private String organizerId;
-
     @Property("city")
     private String cityName;
-
-    @Property("category_shortname")
+    @Property("category_name")
     private String categoryName;
 
+    //    private static final List<String> groupProperties=List.of("group_id", "group_name",
+//    "city", "description","category_name");
 
-    // City fields
-//    @Property(name = "city_country")
-//    private String city_country;
-//
-//    @Property(name = "city_state")
-//    private String city_state;
-//
-//    @Property(name = "city_zip")
-//    private String city_zip;
-//
-//    @Property(name = "city_localized_country_name")
-//    private String city_localized_country_name;
-//
-//    @Property(name = "city_city")
-//    private String city_name;
-//
-//    @Property(name = "city_city_id")
-//    private String city_city_id;
-//
-//    @Property(name = "city_latitude")
-//    private String city_latitude;
-//
-//    @Property(name = "city_longitude")
-//    private String city_longitude;
-//
-//    @Property(name = "city_distance")
-//    private String city_distance;
-//
 }
 

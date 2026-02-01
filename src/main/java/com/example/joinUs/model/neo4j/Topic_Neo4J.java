@@ -25,19 +25,5 @@ public class Topic_Neo4J {
     @Property(name = "topic_name")
     private String topicName;
 
-    private String description;
-
-    private String link;
-
-
-//    public TopicNeo4jDTO toDTO() {
-//        return TopicNeo4jDTO.builder()
-//                .topicId(this.topicId)
-//                .topicName(this.topicName)
-//                .description(this.description)
-//                .link(this.link)
-//                .build();
-//    }
-
 }
 

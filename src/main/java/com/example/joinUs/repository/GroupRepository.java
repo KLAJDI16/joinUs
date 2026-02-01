@@ -26,7 +26,7 @@ public interface GroupRepository extends MongoRepository<Group, String> {
 
     void deleteById(String id);
 
-    @Query("{'organizer_members.id' : ?0 }")
+    @Query("{'organizers.member_id' : ?0 }")
     List<Group> findGroupsByOrganizerId(String id);
 
     //{$or:[{group_id:"5817263"},{group_name:"San Francisco Startup Socials"}]}

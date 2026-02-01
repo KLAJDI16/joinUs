@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CityEmbedded {
-    private String id;
+    private String cityId;
     private String name;
     private String country;
     private String state;

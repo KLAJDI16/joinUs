@@ -1,6 +1,9 @@
 package com.example.joinUs.dto;
 
 import com.example.joinUs.model.embedded.GroupEmbedded;
+import com.example.joinUs.model.mongodb.Category;
+import com.example.joinUs.model.mongodb.Fee;
+import com.example.joinUs.model.mongodb.Venue;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,9 +23,7 @@ public class EventDTO {
 
     private String id;
     private String eventName;
-    private String eventUrl;
     private String description;
-    private String eventStatus;
 
     private Date created;
     private Date eventTime;
@@ -30,14 +31,12 @@ public class EventDTO {
 
     private Integer duration;
 
-    private FeeDTO fee;
-    private VenueDTO venue;
-    private List<CategoryDTO> categories;
+    private Fee fee;
+    private Venue venue;
+    private Category categories;
 
     private Integer memberCount;
 
     private GroupEmbedded creatorGroup;
-
-
 
 }

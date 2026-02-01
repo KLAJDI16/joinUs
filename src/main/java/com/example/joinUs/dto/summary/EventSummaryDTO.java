@@ -25,6 +25,8 @@ public class EventSummaryDTO {
     private Date updated;
     private Integer memberCount;
     private Integer feeAmount;
-    private String venueCityName;//TODO add venueAddress1
+    private String venueCityName;
+    private String venueAddress1;
+    //TODO add venueAddress1 in the mapper
     private GroupEmbedded creatorGroup;
 }

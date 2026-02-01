@@ -3,6 +3,7 @@ package com.example.joinUs.service;
 import com.example.joinUs.Utils;
 import com.example.joinUs.dto.*;
 import com.example.joinUs.mapping.UserMapper;
+import com.example.joinUs.model.embedded.CityEmbedded;
 import com.example.joinUs.model.mongodb.City;
 import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
@@ -34,7 +35,7 @@ public class UserService {
     private UserRepository userRepository;
 
     @Autowired
-    private CityRepository cityRepository;
+    private CityService cityService;
 
     @Autowired
     private GroupRepository groupRepository;
@@ -69,20 +70,11 @@ public class UserService {
         // Update only the allowed fields ,the others remain as they were
         if (userUpdate.getBio() != null) existingUser.setBio(userUpdate.getBio());
         if (userUpdate.getMemberName() != null) existingUser.setMemberName(userUpdate.getMemberName());
-        if (userUpdate.getMemberStatus() != null) existingUser.setMemberStatus(userUpdate.getMemberStatus());
         if (userUpdate.getPassword()!=null) existingUser.setPassword(passwordEncoder.encode(userUpdate.getPassword()));
 
         if (userUpdate.getCity() != null) {
-            CityDTO updatedCity = userUpdate.getCity();
-            if (!Utils.isNullOrEmpty(updatedCity.getId())) {
-                City city = cityRepository.findByCityId(updatedCity.getId());
-                if (city != null) existingUser.setCity(city);
-            }
-            else if (!Utils.isNullOrEmpty(updatedCity.getName())){
-                City city = cityRepository.findByName(updatedCity.getName());
-                if (city != null) existingUser.setCity(city);
-            }
-        }
+            existingUser.setCity(userUpdate.getCity());
+        }else cityService.parseCity(existingUser.getCity());
 
         userRepository.save(existingUser);
 
@@ -150,19 +142,10 @@ public class UserService {
 
         if (userDTO.getBio() != null) user.setBio(userDTO.getBio());
         if (userDTO.getMemberName() != null) user.setMemberName(userDTO.getMemberName());
-        if (userDTO.getMemberStatus() != null) user.setMemberStatus(userDTO.getMemberStatus());
 
 
         if (userDTO.getCity() != null) {
-            CityDTO updatedCity = userDTO.getCity();
-            if (!Utils.isNullOrEmpty(updatedCity.getId())) {
-                City city = cityRepository.findByCityId(updatedCity.getId());
-                if (city != null) user.setCity(city);
-            }
-            else if (!Utils.isNullOrEmpty(updatedCity.getName())){
-                City city = cityRepository.findByName(updatedCity.getName());
-                if (city != null) user.setCity(city);
-            }
+            cityService.parseCity(userDTO.getCity());
         }
        userRepository.save(user);
         Authentication auth = authManager.authenticate(
@@ -184,7 +167,7 @@ public class UserService {
     public SecurityContext loginUser(LoginForm loginForm){
         Authentication auth = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginForm.username, loginForm.password
+                        loginForm.userid, loginForm.password
                 )
         );
 

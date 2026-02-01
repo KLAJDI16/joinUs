@@ -21,6 +21,7 @@ import java.util.List;
 public interface EventSummaryMapper {
     @Mapping(source = "fee.amount", target = "feeAmount")
     @Mapping(source = "venue.city.name", target = "venueCityName")
+    @Mapping(source = "venue.address1", target = "venueAddress1")
     @Mapping(source = "id", target = "id")
 //    @Mapping(source = "creatorGroup.id", target = "creatorGroup.groupId")
 //    @Mapping(source = "creatorGroup.groupName", target = "creatorGroup.groupName")
@@ -28,6 +29,7 @@ public interface EventSummaryMapper {
 
     @Mapping(source = "fee.amount", target = "feeAmount")
     @Mapping(source = "venue.city.name", target = "venueCityName")
+    @Mapping(source = "venue.address1", target = "venueAddress1")
     @Mapping(source = "id", target = "id")
 //    @Mapping(source = "creatorGroup.id", target = "creatorGroup.groupId")
 //    @Mapping(source = "creatorGroup.groupName", target = "creatorGroup.groupName")
@@ -35,7 +37,7 @@ public interface EventSummaryMapper {
 
 
     @Mapping(source = "feeAmount", target = "feeAmount")
-    @Mapping(source = "venueCity", target = "venueCityName")
+    @Mapping(source = "cityName", target = "venueCityName")
     @Mapping(source = "eventId", target = "id")
     @Mapping(target = "updated", ignore = true)
     @Mapping(target = "memberCount", ignore = true)
@@ -43,7 +45,7 @@ public interface EventSummaryMapper {
     EventSummaryDTO toDTOFromNeo4j(Event_Neo4J event);
 
     @Mapping(source = "feeAmount", target = "feeAmount")
-    @Mapping(source = "venueCity", target = "venueCityName")
+    @Mapping(source = "cityName", target = "venueCityName")
     @Mapping(target = "updated", ignore = true)
     @Mapping(target = "memberCount", ignore = true)
     @Mapping(target = "creatorGroup", ignore = true)
@@ -54,12 +56,5 @@ public interface EventSummaryMapper {
     default Date map(OffsetDateTime value) {
         return value == null ? null : Date.from(value.toInstant());
     }
-//    default GroupEmbedded map(Group group) {
-//        if (group == null) return null;
-//        return GroupEmbedded.builder()
-//                .groupId(group.getId())
-//                .groupName(group.getGroupName())
-//                .build();
-//    }
 
 }

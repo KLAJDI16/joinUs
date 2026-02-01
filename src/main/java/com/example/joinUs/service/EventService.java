@@ -7,10 +7,9 @@ import com.example.joinUs.mapping.*;
 import com.example.joinUs.mapping.embedded.EventEmbeddedMapper;
 import com.example.joinUs.mapping.embedded.GroupEmbeddedMapper;
 import com.example.joinUs.mapping.summary.EventSummaryMapper;
-import com.example.joinUs.model.mongodb.City;
-import com.example.joinUs.model.mongodb.Event;
-import com.example.joinUs.model.mongodb.Group;
-import com.example.joinUs.model.mongodb.User;
+import com.example.joinUs.model.embedded.EventEmbedded;
+import com.example.joinUs.model.embedded.GroupEmbedded;
+import com.example.joinUs.model.mongodb.*;
 import com.example.joinUs.model.neo4j.Event_Neo4J;
 import com.example.joinUs.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,9 +91,10 @@ public class EventService {
      return  eventNeo4JRepo.findAll();
     }
 
-    public Page<EventDTO> getAllEvents(int page, int size) {
-        Page<EventDTO> events = eventRepository.findAllEvents(PageRequest.of(page, size));
-        return events;
+    public Page<EventSummaryDTO> getAllEvents(int page, int size) {
+//        Page<EventDTO> events = eventRepository.findAllEvents(PageRequest.of(page, size));
+     Page<Event> events =   eventRepository.findAll(PageRequest.of(page,size));
+        return events.map(e -> eventSummaryMapper.toDTO(e));
     }
 
     public EventDTO getEventById(String id) {
@@ -114,8 +114,8 @@ public class EventService {
 
             User user = Utils.getUserFromContext();
 
-            List<Event> userUpcomingEvents = user.getUpcomingEvents();
-            userUpcomingEvents.add(eventEmbeddedMapper.toEntity(eventEmbeddedMapper.toDTO(event)));
+            List<EventEmbedded> userUpcomingEvents = user.getUpcomingEvents();
+            userUpcomingEvents.add(eventEmbeddedMapper.toDTO(event));
             user.setUpcomingEvents(userUpcomingEvents);
             user.setEventCount(user.getEventCount() + 1);
             mongoTemplate.updateFirst(
@@ -139,6 +139,7 @@ public class EventService {
             user.removeUpcomingEvent(id);
             user.setEventCount(user.getEventCount() - 1);
             userRepository.save(user);
+
             mongoTemplate.updateFirst(
                     Query.query(Criteria.where("_id").is(id)),
                     new Update().inc( "member_count", -1),
@@ -186,12 +187,12 @@ public class EventService {
         eventDTO.setCreated(new Date());
         eventDTO.setUpdated(new Date());
         eventDTO.setMemberCount(0);
-        eventDTO.setEventStatus("upcoming");
 
-        if (Utils.isNullOrEmpty(eventDTO.getFee())) eventDTO.setFee(FeeDTO.getDefaultDTO());
 
-        VenueDTO venueDTO = updateVenueForEvent(eventDTO);
-        if (venueDTO != null) eventDTO.setVenue(venueDTO);
+        if (Utils.isNullOrEmpty(eventDTO.getFee())) eventDTO.setFee(Fee.getDefault());
+
+        Venue venue = updateVenueForEvent(eventDTO);
+        if (venue != null) eventDTO.setVenue(venue);
 
         setCreatorGroupForCreate(eventDTO);
 
@@ -212,13 +213,12 @@ public class EventService {
             eventDTO.setCreatorGroup(event.getCreatorGroup());
             if (Utils.isNullOrEmpty(eventDTO.getEventName())) eventDTO.setEventName(event.getEventName());
             if (Utils.isNullOrEmpty(eventDTO.getEventTime())) eventDTO.setEventTime(event.getEventTime());
-            if (Utils.isNullOrEmpty(eventDTO.getEventUrl())) eventDTO.setEventUrl(event.getEventUrl());
             if (Utils.isNullOrEmpty(eventDTO.getDescription())) eventDTO.setDescription(event.getDescription());
-            if (Utils.isNullOrEmpty(eventDTO.getFee())) eventDTO.setFee(FeeDTO.getDefaultDTO());
+            if (Utils.isNullOrEmpty(eventDTO.getFee())) eventDTO.setFee(Fee.getDefault());
 
             if (Utils.isNullOrEmpty(eventDTO.getVenue())){
-                eventDTO.setVenue(venueMapper.toDTO(event.getVenue()));
-            }else cityService.parseCityDTO(eventDTO.getVenue().getCity());
+                eventDTO.setVenue(event.getVenue());
+            }else cityService.parseCity(event.getVenue().getCity());
 
             eventDTO.setUpdated(new Date());
 //            eventDTO.getCreatorGroup().setId(event.getCreatorGroup().getId());
@@ -246,11 +246,18 @@ public class EventService {
 
         user.removeUpcomingEvent(id);
 
-//        Group group = event.getCreatorGroup();
-//        group.removeUpcomingEvent(id);
+        GroupEmbedded group = event.getCreatorGroup();
+
         eventRepository.deleteById(id);
         userRepository.save(user);
-//        groupRepository.save(group);
+
+        mongoTemplate.updateFirst(Query.query(Criteria.where("_id").is(group.getGroupId())),
+                new Update().pull("upcoming_events",
+                        Query.query(Criteria.where("event_id").is(event.getId())))
+                        .inc("event_count",-1)
+                , Group.class);
+
+        //        groupRepository.save(group);
        }catch (Exception exception){
            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,exception.getMessage());
        }
@@ -277,12 +284,17 @@ public class EventService {
         if (city != null)
             query.addCriteria(Criteria.where("venue.city.name").regex(city,"i"));
 
-        if (minMembers != null)
-            query.addCriteria(Criteria.where("member_count").gte(minMembers));
+        if (minMembers != null || maxMembers != null) {
+            Criteria memberCountCriteria = Criteria.where("member_count");
 
-        if (maxMembers != null)
-            query.addCriteria(Criteria.where("member_count").lte(maxMembers));
+            if (minMembers != null)
+                memberCountCriteria.gte(minMembers);
 
+            if (maxMembers != null)
+                memberCountCriteria.lte(maxMembers);
+
+            query.addCriteria(memberCountCriteria);
+        }
 
         if (fromDate != null || toDate != null) {
             Criteria dateCriteria = Criteria.where("event_time");
@@ -298,7 +310,7 @@ public class EventService {
 
 
         if (category != null)
-            query.addCriteria(Criteria.where("categories.name").is(category));
+            query.addCriteria(Criteria.where("category.name").is(category));
 
         if (maxFee != null)
             query.addCriteria(Criteria.where("fee.amount").lte(maxFee));
@@ -317,17 +329,17 @@ public class EventService {
 
 
 
-    private VenueDTO updateVenueForEvent(EventDTO eventDTO) {
-        VenueDTO venueDTO = eventDTO.getVenue();
-        if (venueDTO != null) {
-            cityService.parseCityDTO(venueDTO.getCity());
+    private Venue updateVenueForEvent(EventDTO eventDTO) {
+        Venue venue = eventDTO.getVenue();
+        if (venue != null) {
+            cityService.parseCity(venue.getCity());
         }
-        return venueDTO;
+        return venue;
     }
 
     private void setVenueAndCityForUpdate(Event newEvent, EventDTO eventDTO) {
-        VenueDTO venueDTO = updateVenueForEvent(eventDTO);
-        if (venueDTO != null) newEvent.setVenue(venueMapper.toEntity(venueDTO));
+        Venue venue = updateVenueForEvent(eventDTO);
+        if (venue != null) newEvent.setVenue(venue);
     }
 
     public void setCreatorGroupForCreate(EventDTO eventDTO) {

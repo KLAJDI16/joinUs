@@ -24,36 +24,12 @@ import java.util.Date;
 public interface EventMapper {
 
     @Mapping(target = "id", source = "id")
-//    @Mapping(source = "creatorGroup.id", target = "creatorGroup.groupId")
-//    @Mapping(source = "creatorGroup.groupName", target = "creatorGroup.groupName")
-    @Mapping(source = "creatorGroup", target = "creatorGroup")
     EventDTO toDTO(Event event);
 
-    // Ignore Mongo internal id because the DTO doesn't carry it.
     @Mapping(target = "id", source = "id")
-    @Mapping(source = "creatorGroup", target = "creatorGroup")
-//    @Mapping(source = "creatorGroup.groupId", target = "creatorGroup.id")
-//    @Mapping(source = "creatorGroup.groupName", target = "creatorGroup.groupName")
     Event toEntity(EventDTO dto);
-//Unmapped target properties: "description, link, timezone, created, city, categories,
-// groupPhoto, memberCount, eventCount, organizers, upcomingEvents".
-// Mapping from property "GroupEmbedded creatorGroup" to "Group creatorGroup".
     default Date map(OffsetDateTime value) {
         return value == null ? null : Date.from(value.toInstant());
     }
-//    default GroupEmbedded map(Group group) {
-//        if (group == null) return null;
-//        return GroupEmbedded.builder()
-//                .id(group.getId())
-//                .groupName(group.getGroupName())
-//                .build();
-//    }
-//    default Group map(GroupEmbedded groupEmbeddedDTO) {
-//        if (groupEmbeddedDTO == null) return null;
-//        return Group.builder()
-//                .id(groupEmbeddedDTO.getId())
-//                .groupName(groupEmbeddedDTO.getGroupName())
-//                .build();
-//    }
 
 }

@@ -1,8 +1,9 @@
 package com.example.joinUs.dto;
 
+import com.example.joinUs.model.embedded.CityEmbedded;
 import com.example.joinUs.model.embedded.EventEmbedded;
 import com.example.joinUs.model.embedded.UserEmbedded;
-import com.example.joinUs.model.embedded.UserEmbeddedDTO;
+import com.example.joinUs.model.mongodb.Category;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,12 +24,10 @@ public class GroupDTO {
     private String id;
     private String description;
     private String groupName;
-    private String link;
-    private String timezone;
     private Date created;
 
-    private CityDTO city;
-    private List<CategoryDTO> categories;
+    private CityEmbedded city;
+    private Category category;
 
     private Integer memberCount;
     private Integer eventCount;

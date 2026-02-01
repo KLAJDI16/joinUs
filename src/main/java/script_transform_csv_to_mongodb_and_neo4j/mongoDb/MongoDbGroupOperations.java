@@ -354,7 +354,7 @@ public class MongoDbGroupOperations {
 
                 newGroupDocument = (Document) futures[0].get();
                 newGroupDocument.append("city", futures[1].get());
-                newGroupDocument.append("categories", futures[2].get());
+                newGroupDocument.append("category", futures[2].get());
 
 
                 Document finalNewGroupDocument1 = newGroupDocument;
