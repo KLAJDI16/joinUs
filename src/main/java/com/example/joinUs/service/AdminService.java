@@ -9,9 +9,11 @@ import com.example.joinUs.mapping.TopicMapper;
 import com.example.joinUs.model.mongodb.User;
 import com.example.joinUs.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class AdminService {
     @Autowired
     private EventNeo4JRepository eventNeo4JRepository;
@@ -61,7 +63,7 @@ public class AdminService {
     public PaidVsFreeEventAnalytic paidVsFreePopularity(){
         return eventRepository.paidVsFreePopularity();
     }
-    
+
 
     public List<GroupCommunityDTO> findGroupCommunities(int sharedMembers, int limit){
 
