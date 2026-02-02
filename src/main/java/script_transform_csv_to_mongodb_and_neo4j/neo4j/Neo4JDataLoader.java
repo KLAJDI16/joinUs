@@ -66,36 +66,36 @@ public class Neo4JDataLoader {
         Neo4JOperations.createNeo4JIndex("Group","group_id");
         Neo4JOperations.createNeo4JIndex("Member","member_id");
         Neo4JOperations.createNeo4JIndex("Event","event_id");
-        Neo4JOperations.createNeo4JIndex("Topic","Topic_id");
+        Neo4JOperations.createNeo4JIndex("Topic","topic_id");
 
 
         System.out.println("CREATING Edges ");
-//        futures[2] = parallelExecutor.submit(() -> {
+        futures[2] = parallelExecutor.submit(() -> {
         Neo4JOperations.createGroupTopicsEdges();
-//        });
-//        futures[3] =   parallelExecutor.submit( () -> {
+        });
+        futures[3] =   parallelExecutor.submit( () -> {
         Neo4JOperations.createMemberEventsEdges();
-//        });
+        });
 
-//        futures[2].get();
-//        futures[3].get();
+        futures[2].get();
+        futures[3].get();
         System.out.println("FINISHED CREATING  Edges Group-Topics  and Member-Events ");
 
 //        futures[0] = parallelExecutor.submit(() -> neo4JOperations.createEdgesFromRsvp());
-//        futures[1] = parallelExecutor.submit(() -> {
+        futures[1] = parallelExecutor.submit(() -> {
             Neo4JOperations.createGroupEventsEdges();
-//        });
-//        futures[4] = parallelExecutor.submit(() -> {
+        });
+        futures[4] = parallelExecutor.submit(() -> {
             Neo4JOperations.createMemberTopicsEdges();
-//        });
-//             futures[1].get();
-//             futures[4].get();
+        });
+             futures[1].get();
+             futures[4].get();
         System.out.println("FINISHED CREATING  Edges Group-Events  and Member-Topics ");
 
 
-//        futures[5] =   parallelExecutor.submit( () -> {
+        futures[5] =   parallelExecutor.submit( () -> {
             Neo4JOperations.createMemberGroupsEdge();
-//        });
+        });
         System.out.println("FINISHED CREATING  Edges Group-Members ");
 
           ParallelExecutor.getFutures(futures);

@@ -52,7 +52,11 @@ public class MongoDbEventOperations {
 
         Document feeDocument = new Document();
         feeDocument.append("accepts", oldEvent.getString("fee_accepts"));
-        feeDocument.append("amount", Double.parseDouble(oldEvent.getString("fee_amount")));
+        String amount = oldEvent.getString("fee_amount");
+        if (amount!=null && !amount.isEmpty() && !amount.isBlank()) {
+            feeDocument.append("amount", Double.parseDouble(amount));
+        }else feeDocument.append("amount",0);
+
         String currency = oldEvent.getString("fee_currency");
 
         if (!currency.equalsIgnoreCase("not_found")) {

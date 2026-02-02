@@ -1,7 +1,6 @@
 package com.example.joinUs.model.neo4j;
 
 
-import com.example.joinUs.dto.TopicNeo4jDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,20 +9,23 @@ import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Property;
 
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Node("Topic")
-public class Topic_Neo4J {
+@Node("Member")
+public class UserNeo4J {
 
     @Id
-    @Property(name = "topic_id")
-    private String topicId;
+    @Property(name = "member_id")
+    private String memberId;
 
-    @Property(name = "topic_name")
-    private String topicName;
+    @Property(name = "member_name")
+    private String memberName;
 
+    @Property(name = "city")
+    private String cityName;
+
+ //    private static final List<String> memberProperties=List.of("member_id", "city", "member_name");
 }
 

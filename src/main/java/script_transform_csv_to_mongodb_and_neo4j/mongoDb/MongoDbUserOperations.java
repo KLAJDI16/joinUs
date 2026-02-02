@@ -47,7 +47,7 @@ public class MongoDbUserOperations {
      * @param memberId
      * @return
      */
-    public   List<Document> extractTopicPerMember(String memberId) {
+    public   List<Document> extractTopicsPerMember(String memberId) {
 
         MongoCollection topicCollection = MongoDataLoader.csvDocuments.getCollection("members_topics.csv");
 
@@ -215,56 +215,25 @@ public class MongoDbUserOperations {
     }
 
 
-    public static Document extractCityDocumentToEmbedPerMember(String memberId, List<Document> members) {
+    public static Document extractCityDocumentToEmbedPerMember(Document oldDocument) {
 
-        String cityName;
-        if (members != null && !members.isEmpty()) {
-            Document member = members.get(0);
-            cityName = member.getString("city");
-        } else {
-            MongoCollection memberCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
-            MongoCursor<Document> mongoCursor = memberCollection.find(Filters.eq("member_id", memberId)).cursor();
-
-            if (mongoCursor.hasNext()){
-              cityName =   mongoCursor.next().getString("city");
-                return MongoDbCityOperation.extractCityToEmbedFromCityName(cityName);
-            }
-            else {
-                return null;
-            }
-        }
-        return MongoDbCityOperation.extractCityToEmbedFromCityName(cityName);
+        if (oldDocument==null) return new Document();
+        String cityName=   oldDocument.getString("city");
+          return MongoDbCityOperation.extractCityToEmbedFromCityName(cityName);
 
     }
 
-    /**
-     * To extract the needed fields that we are going to use for  the member in the final database (joinUs)
-     *
-     * @param memberId
-     * @param members  to avoid unnecessary iteration and therefore performance degradation .
-     * @return
-     */
-    public static Document extractMemberDocument(String memberId, List<Document> members) {
+
+    public static Document extractMemberDocument(Document oldDocument) {
 
         Document document = new Document();
-        if (members != null && !members.isEmpty()) {
-            document = new Document();
-            Document member = members.get(0);
-            document.append("_id", member.getString("member_id"));
-            document.append("member_name", member.getString("member_name"));
-            MongoDataLoader.assignIfFound(document,"hometown",member.getString("hometown"));
-            MongoDataLoader.assignIfFound(document,"bio",member.getString("bio"));
+        if (oldDocument==null) return document;
+        document.append("_id", oldDocument.getString("member_id"));
+        document.append("member_name", oldDocument.getString("member_name"));
+        MongoDataLoader.assignIfFound(document, "hometown", oldDocument.getString("hometown"));
+        MongoDataLoader.assignIfFound(document, "bio", oldDocument.getString("bio"));
 
-        } else {
-            MongoCollection memberCollection = MongoDataLoader.csvDocuments.getCollection("members.csv");
-          Document  document2 = ((Document) memberCollection.find(Filters.eq("member_id", memberId))
-                    .first());
-            document.append("_id", document2.getString("member_id"));
-            document.append("member_name", document2.getString("member_name"));
-            MongoDataLoader.assignIfFound(document,"hometown",document2.getString("hometown"));
-            MongoDataLoader.assignIfFound(document,"bio",document2.getString("bio"));
 
-        }
         return document;
     }
 
@@ -280,7 +249,7 @@ public class MongoDbUserOperations {
 
         Future[] futures = new Future[5];
 
-        try (MongoCursor<Document> mongoCursor = includeFilter ? oldMemberCollection.find(Filters.in("member_id", memberIds)).cursor() : oldMemberCollection.find().cursor()) {
+        try (MongoCursor<Document> mongoCursor = oldMemberCollection.find().cursor()) {
 
             futures[0] = parallelExecutor.submit(() -> extractEventCountPerMember());
             futures[1] = parallelExecutor.submit(() -> extractGroupCountPerMember());
@@ -304,19 +273,15 @@ public class MongoDbUserOperations {
 
                 if (!membersAlreadyEvaluated.contains(memberId)) {
 
-                    futures[0] = parallelExecutor.submit(MongoDbUserOperations::extractMemberDocument,memberId,membersWithId);
+                    futures[0] = parallelExecutor.submit(MongoDbUserOperations::extractMemberDocument,document);
 
-                    futures[2] = parallelExecutor.submit(MongoDbUserOperations::extractCityDocumentToEmbedPerMember,memberId,membersWithId);
-                    futures[1] = parallelExecutor.submit(e -> extractTopicPerMember(e), memberId);
+                    futures[2] = parallelExecutor.submit(MongoDbUserOperations::extractCityDocumentToEmbedPerMember,document);
+                    futures[1] = parallelExecutor.submit(e -> extractTopicsPerMember(e), memberId);
                     futures[3] = parallelExecutor.submit(e -> extractFutureEventsPerMember(e), memberId);
-
+                    String finalMemberName1 = memberName;
 
                     finalDocument= (Document) futures[0].get();
                     finalDocument.append("city", futures[2].get());
-
-
-                    String finalMemberName1 = memberName;
-                    futures[4] = parallelExecutor.submit((e) -> extractGroupIdsWhereOrganizer(e),finalMemberName1);
 
                     finalDocument.append("upcoming_events", futures[3].get());
                     finalDocument.append("topics", futures[1].get());
@@ -332,8 +297,7 @@ public class MongoDbUserOperations {
 //                    if (MongoDbGroupOperations.groups_per_organizer.get(memberId)!=null) {
 //                      groups_organizer = MongoDbGroupOperations.groups_per_organizer.get(memberId);
 //                    }
-                    List<String> groups_organizer= (List<String>) futures[4].get();
-                    finalDocument.append("group_count", (groupCount.get(memberId)!=null?groupCount.get(memberId):0)+groups_organizer.size());
+                    finalDocument.append("group_count", (groupCount.get(memberId)!=null?groupCount.get(memberId):0));
                     Document finalDocument1 = finalDocument;
                     parallelExecutor.submit(() ->  newMemberCollection.insertOne(finalDocument1));
 

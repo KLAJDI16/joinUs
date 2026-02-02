@@ -1,22 +1,15 @@
 package com.example.joinUs;
 
-import com.example.joinUs.dto.GroupDTO;
-import com.example.joinUs.model.mongodb.Event;
-import com.example.joinUs.model.mongodb.Group;
-import com.example.joinUs.model.neo4j.User_Neo4J;
+import com.example.joinUs.model.neo4j.UserNeo4J;
+import com.example.joinUs.repository.UserNeo4JRepository;
 import com.example.joinUs.repository.UserRepository;
-import com.example.joinUs.repository.User_Neo4J_Repo;
 import com.example.joinUs.service.EventService;
 import com.example.joinUs.service.GroupService;
 import com.example.joinUs.service.UserService;
-import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.data.domain.Page;
-
-import java.util.List;
 
 
 @SpringBootApplication
@@ -31,6 +24,9 @@ public class JoinUsApplication implements CommandLineRunner {
     public UserRepository userRepository;
 
     @Autowired
+    public UserNeo4JRepository userNeo4JRepository;
+
+    @Autowired
     public GroupService groupService;
 
     public static void main(String[] args) {
@@ -39,6 +35,7 @@ public class JoinUsApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-   userRepository.findById("2609").stream().forEach(e -> System.out.println(e.getMemberName()+" " +e.getId()));
+
+
     }
 }

@@ -8,7 +8,7 @@ import com.example.joinUs.mapping.embedded.EventEmbeddedMapper;
 import com.example.joinUs.mapping.embedded.GroupEmbeddedMapper;
 import com.example.joinUs.mapping.embedded.UserEmbeddedMapper;
 import com.example.joinUs.model.mongodb.Group;
-import com.example.joinUs.model.neo4j.Group_Neo4J;
+import com.example.joinUs.model.neo4j.GroupNeo4J;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -39,9 +39,9 @@ public interface GroupSummaryMapper {
     @Mapping(target = "memberCount", ignore = true)
     @Mapping(target = "eventCount", ignore = true)
     @Mapping(target = "organizers", ignore = true)
-    GroupSummaryDTO toDTOFromNeo4j(Group_Neo4J group);
+    GroupSummaryDTO toDTOFromNeo4j(GroupNeo4J group);
 
-    List<GroupSummaryDTO> toDTOsFromNeo4j(List<Group_Neo4J> groupNeo4JS);
+    List<GroupSummaryDTO> toDTOsFromNeo4j(List<GroupNeo4J> groupNeo4JS);
 
 
 

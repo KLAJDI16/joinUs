@@ -1,7 +1,6 @@
 package com.example.joinUs.repository;
 
-import com.example.joinUs.model.neo4j.Group_Neo4J;
-import com.example.joinUs.model.neo4j.User_Neo4J;
+import com.example.joinUs.model.neo4j.UserNeo4J;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
@@ -9,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface User_Neo4J_Repo extends Neo4jRepository<User_Neo4J,String> {
+public interface UserNeo4JRepository extends Neo4jRepository<UserNeo4J,String> {
 
     @Query(
   """
@@ -17,7 +16,12 @@ public interface User_Neo4J_Repo extends Neo4jRepository<User_Neo4J,String> {
    RETURN DISTINCT n ;
   """
     )
-  List<User_Neo4J> getMembersLinkedToGroup(String groupId);
+  List<UserNeo4J> getMembersLinkedToGroup(String groupId);
 
+    @Query("""
+MATCH (u:Member { member_id: $memberId })
+DETACH DELETE u
+""")
+    void deleteUser(String memberId);
 
 }

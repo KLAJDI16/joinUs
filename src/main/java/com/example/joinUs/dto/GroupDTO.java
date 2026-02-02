@@ -2,6 +2,7 @@ package com.example.joinUs.dto;
 
 import com.example.joinUs.model.embedded.CityEmbedded;
 import com.example.joinUs.model.embedded.EventEmbedded;
+import com.example.joinUs.model.embedded.TopicEmbedded;
 import com.example.joinUs.model.embedded.UserEmbedded;
 import com.example.joinUs.model.mongodb.Category;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -35,8 +36,10 @@ public class GroupDTO {
     private List<UserEmbedded> organizers;
 
     private List<EventEmbedded> upcomingEvents;
+    private List<TopicEmbedded> topics;
 
     private GroupPhotoDTO groupPhoto;
+
 
 }
 

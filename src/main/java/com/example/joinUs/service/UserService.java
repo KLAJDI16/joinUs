@@ -3,8 +3,6 @@ package com.example.joinUs.service;
 import com.example.joinUs.Utils;
 import com.example.joinUs.dto.*;
 import com.example.joinUs.mapping.UserMapper;
-import com.example.joinUs.model.embedded.CityEmbedded;
-import com.example.joinUs.model.mongodb.City;
 import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.mongodb.User;
@@ -44,7 +42,7 @@ public class UserService {
     private EventRepository eventRepository;
 
     @Autowired
-    private User_Neo4J_Repo userNeo4JRepo;
+    private UserNeo4JRepository userNeo4JRepo;
 
     @Autowired
     private MongoTemplate mongoTemplate;
@@ -64,25 +62,40 @@ public class UserService {
         User existingUser = Utils.getUserFromContext();
         String userId = existingUser.getId();
 
-        userUpdate.setId(userId);
-
-
-        // Update only the allowed fields ,the others remain as they were
-        if (userUpdate.getBio() != null) existingUser.setBio(userUpdate.getBio());
-        if (userUpdate.getMemberName() != null) existingUser.setMemberName(userUpdate.getMemberName());
-        if (userUpdate.getPassword()!=null) existingUser.setPassword(passwordEncoder.encode(userUpdate.getPassword()));
+        if (Utils.isNullOrEmpty(userUpdate.getBio()))  userUpdate.setBio(existingUser.getBio());
+        if (Utils.isNullOrEmpty(userUpdate.getMemberName()))  userUpdate.setMemberName(existingUser.getMemberName());
+        if (Utils.isNullOrEmpty(userUpdate.getTopics()))  userUpdate.setTopics(existingUser.getTopics());
+        if (Utils.isNullOrEmpty(userUpdate.getMemberName()))  userUpdate.setMemberName(existingUser.getMemberName());
+        if (Utils.isNullOrEmpty(userUpdate.getPassword())){
+            userUpdate.setPassword(existingUser.getPassword());
+        }else userUpdate.setPassword(passwordEncoder.encode(userUpdate.getPassword()));
 
         if (userUpdate.getCity() != null) {
+            cityService.parseCity(userUpdate.getCity());
             existingUser.setCity(userUpdate.getCity());
-        }else cityService.parseCity(existingUser.getCity());
+        }
 
-        userRepository.save(existingUser);
+        //Fields that should not change :
+        userUpdate.setId(userId);
+        userUpdate.setEventCount(existingUser.getEventCount());
+        userUpdate.setGroupCount(existingUser.getGroupCount());
+        userUpdate.setUpcomingEvents(existingUser.getUpcomingEvents());
 
-        return userMapper.toDTO(existingUser);
+// Changing the approach here to modify the Dto instead of the entity ,so that we can use the DTO for Neo4J too,
+//        but saving the previous approach to rollback if needed
+
+//        if (userUpdate.getBio() != null) existingUser.setBio(userUpdate.getBio());
+//        if (userUpdate.getMemberName() != null) existingUser.setMemberName(userUpdate.getMemberName());
+//        if (userUpdate.getPassword()!=null) existingUser.setPassword(passwordEncoder.encode(userUpdate.getPassword()));
+
+        saveUser(userMapper.toEntity(userUpdate));
+        userNeo4JRepo.save(userMapper.toNeo4jEntity(userUpdate));
+
+        return userUpdate;
     }
 
 
-    public boolean checkUserHasPermissionToEditGroup(String groupId)  {
+    public void checkUserHasPermissionToEditGroup(String groupId)  {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication==null || !authentication.isAuthenticated() ){
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"User is not authenticated in the application");
@@ -94,7 +107,7 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this group");
 
         for (Group group : groups){
-            if (group.getId().equalsIgnoreCase(groupId)) return true;
+            if (group.getId().equalsIgnoreCase(groupId)) return;
         }
 
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this group");
@@ -102,7 +115,7 @@ public class UserService {
 
     }
 
-    public boolean checkUserHasPermissionToEditEvent(String eventId)  {
+    public void checkUserHasPermissionToEditEvent(String eventId)  {
 //        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 //        if ( authentication==null || !authentication.isAuthenticated()){
 //            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"User is not authenticated in the application");
@@ -117,13 +130,13 @@ public class UserService {
         for (Group group : groups){
             List<Event> events = eventRepository.findEventsByCreatorGroup(group.getId());
             for (Event event : events) {
-                if (event.getId().equalsIgnoreCase(eventId)) return true;
+                if (event.getId().equalsIgnoreCase(eventId)) return;
             }
         }
            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this event");
     }
 
-    //TODO implement correctly
+    //TODO follow the same approach as for the editProfile, if we have time
     public SecurityContext registerUser(UserDTO userDTO) {
 
      if (!Utils.isNullOrEmpty(userRepository.findMemberByName(userDTO.getMemberName())))
@@ -133,6 +146,9 @@ public class UserService {
      }
    try{
        String password=userDTO.getPassword();
+       if (userDTO.getCity() != null) {
+           cityService.parseCity(userDTO.getCity());
+       }
        User user = userMapper.toEntity(userDTO);
        user.setEventCount(0);
        user.setGroupCount(0);
@@ -143,11 +159,15 @@ public class UserService {
         if (userDTO.getBio() != null) user.setBio(userDTO.getBio());
         if (userDTO.getMemberName() != null) user.setMemberName(userDTO.getMemberName());
 
-
         if (userDTO.getCity() != null) {
             cityService.parseCity(userDTO.getCity());
+            user.setCity(userDTO.getCity());
         }
-       userRepository.save(user);
+
+        saveUser(user);
+
+        userNeo4JRepo.save(userMapper.toNeo4jEntity(userDTO));
+
         Authentication auth = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         user.getMemberName(), password
@@ -162,6 +182,7 @@ public class UserService {
          throw  new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Your registration failed "+"\n Error : "+e.getMessage());
         }
+
     }
 
     public SecurityContext loginUser(LoginForm loginForm){
@@ -188,6 +209,7 @@ public class UserService {
     public void deleteProfile() {
         User user = Utils.getUserFromContext();
         userRepository.delete(user);
+        userNeo4JRepo.deleteUser(user.getId());
     }
 }
 

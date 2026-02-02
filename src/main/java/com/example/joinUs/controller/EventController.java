@@ -2,7 +2,7 @@ package com.example.joinUs.controller;
 
 import com.example.joinUs.dto.EventDTO;
 import com.example.joinUs.dto.summary.EventSummaryDTO;
-import com.example.joinUs.model.neo4j.Event_Neo4J;
+import com.example.joinUs.model.neo4j.EventNeo4J;
 import com.example.joinUs.service.EventService;
 import com.example.joinUs.service.UserService;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -43,7 +42,7 @@ public class EventController {
     }
 
     @GetMapping("/fromGraph")
-    public List<Event_Neo4J> getEventFromGraph() {
+    public List<EventNeo4J> getEventFromGraph() {
         return eventService.getEventsFromNeo4j();
     }
 
@@ -83,9 +82,9 @@ public class EventController {
             @RequestParam(required = false) Integer minMembers,
             @RequestParam(required = false) Integer maxMembers,
             @Parameter(example = "2026-12-15T01:45:30Z")
-            OffsetDateTime fromDate,
+            Date fromDate,
             @Parameter(example = "2026-12-15T01:45:30Z")
-            OffsetDateTime toDate,
+            Date toDate,
             @RequestParam(required = false) Integer maxFee,
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "100") Integer pageSize

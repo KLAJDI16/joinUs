@@ -2,6 +2,7 @@ package com.example.joinUs.model.mongodb;
 
 import com.example.joinUs.model.embedded.CityEmbedded;
 import com.example.joinUs.model.embedded.EventEmbedded;
+import com.example.joinUs.model.embedded.TopicEmbedded;
 import com.example.joinUs.model.embedded.UserEmbedded;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -41,6 +42,7 @@ public class Group {
 
     private List<UserEmbedded> organizers;
     private List<EventEmbedded> upcomingEvents;
+    private List<TopicEmbedded> topics;
 
     public void removeOrganizerMember(String memberId){
         organizers.removeIf(e -> e.getMemberId().equalsIgnoreCase(memberId));

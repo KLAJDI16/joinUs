@@ -38,7 +38,7 @@ public class Event {
 
     private Fee fee;
     private Venue venue;
-    private Category categories;
+    private Category category;
 
     private Integer memberCount;
 

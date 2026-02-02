@@ -261,6 +261,25 @@ public class MongoDbGroupOperations {
 
         return organizers;
     }
+    public  List<Document> extractTopicsPerGroup(String groupId) {
+
+        MongoCollection topicCollection = MongoDataLoader.csvDocuments.getCollection("groups_topics.csv");
+
+        List<Document> groupTopics = new ArrayList<>();
+        try (MongoCursor<Document> cursor = topicCollection
+                .find(new Document("group_id", groupId))
+                .cursor()) {
+            while (cursor.hasNext()) {
+                Document document = cursor.next();
+                Document documentToAdd = new Document();
+                documentToAdd.append("topic_id",document.getString("topic_id"));
+                documentToAdd.append("topic_name",document.getString("topic_name"));
+                groupTopics.add(documentToAdd);
+            }
+        }
+
+        return groupTopics;
+    }
 
     public static Document extractGroupDocument(Document oldGroupDocument)  {
         List<String> directKeysToInclude=Arrays.asList(
@@ -351,6 +370,7 @@ public class MongoDbGroupOperations {
                 futures[3] = parallelExecutor.submit(e -> extractOrganizer(e),oldGroupDocument);
                 futures[4] = parallelExecutor.submit(e ->extractUpcomingEvents(e),oldGroupDocument);
                 futures[5] = parallelExecutor.submit(MongoDbGroupOperations::extractGroupPhoto,oldGroupDocument);
+                futures[6] = parallelExecutor.submit(e -> extractTopicsPerGroup(e),group_id);
 
                 newGroupDocument = (Document) futures[0].get();
                 newGroupDocument.append("city", futures[1].get());
@@ -360,10 +380,12 @@ public class MongoDbGroupOperations {
                 Document finalNewGroupDocument1 = newGroupDocument;
 
                 newGroupDocument.append("organizers", futures[3].get());
+                newGroupDocument.append("topics",new Document());
                 newGroupDocument.append("upcoming_events", futures[4].get());
                 newGroupDocument.append("group_photo", futures[5].get());
                 newGroupDocument.append("event_count", eventCount.get(group_id)!=null? eventCount.get(group_id):0);
                 newGroupDocument.append("member_count", memberCount.get(group_id)!=null? memberCount.get(group_id):0);
+                newGroupDocument.append("topics",futures[6].get());//might do this if we want
 
 
 

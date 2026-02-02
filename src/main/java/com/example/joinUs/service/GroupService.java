@@ -57,12 +57,6 @@ public class GroupService {
     @Autowired
     private GroupPhotoMapper groupPhotoMapper;
 
-    @Autowired
-    private CityMapper cityMapper;
-
-    @Autowired
-    private CategoryMapper categoryMapper;
-
     public ResponseMessage joinGroup(String id){
         Group group = getGroupOrThrow(id);
         try {
@@ -124,6 +118,8 @@ public class GroupService {
         groupRepository.save(group);
     return new ResponseMessage("successful","Organizer with id"+organizerId+" was added successfully");
     }
+
+
 
 
 
@@ -201,12 +197,12 @@ public class GroupService {
         User user = Utils.getUserFromContext();
 
         // Minimal approach: require groupId to be present and unique
-        if (Utils.isNullOrEmpty(groupDTO.getId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "id must be provided");
-        }
-        if (groupRepository.existsById(groupDTO.getId())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Group already exists: " + groupDTO.getId());
-        }
+//        if (Utils.isNullOrEmpty(groupDTO.getId())) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "id must be provided");
+//        }
+//        if (groupRepository.existsById(groupDTO.getId())) {
+//            throw new ResponseStatusException(HttpStatus.CONFLICT, "Group already exists: " + groupDTO.getId());
+//        }
         groupDTO.setCreated(new Date());
         groupDTO.setUpcomingEvents(new ArrayList<>());
         groupDTO.setMemberCount(1);
@@ -229,6 +225,7 @@ public class GroupService {
         if (Utils.isNullOrEmpty(groupDTO.getGroupPhoto())) groupDTO.setGroupPhoto(groupPhotoMapper.toDTO(existing.getGroupPhoto()));
         if (Utils.isNullOrEmpty(groupDTO.getDescription())) groupDTO.setDescription(existing.getDescription());
         if (Utils.isNullOrEmpty(groupDTO.getCategory())) groupDTO.setCategory(existing.getCategory());
+        if (Utils.isNullOrEmpty(groupDTO.getTopics())) groupDTO.setTopics(existing.getTopics());
 
         if (Utils.isNullOrEmpty(groupDTO.getCity())){
             groupDTO.setCity(existing.getCity());

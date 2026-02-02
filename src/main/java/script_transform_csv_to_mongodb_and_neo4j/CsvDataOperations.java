@@ -177,9 +177,9 @@ public class CsvDataOperations {
             String[] row;
             int count=0;
             while ((row = reader.readNext()) != null) {
-             if ((inputCsv.contains("members") && (membersLimit>0 && count>membersLimit)) ||
-                     (recordsLimit>0 && count>recordsLimit)) break;
-             count++;
+                if ((inputCsv.contains("members") && (membersLimit>0 && count>membersLimit)) ||
+                        (recordsLimit>0 && count>recordsLimit)) break;
+                count++;
                 String oldId = row[index];
                 if (mapping.containsKey(oldId)) {
                     row[index] = mapping.get(oldId);
@@ -214,13 +214,13 @@ public class CsvDataOperations {
     }
 
     public static void copyFilesToNeo4JImportFolder() throws IOException {
-String importFolder=ConfigurationFileReader.checkAndGetProp("importFolder");
-for (File file : new File(CsvDataOperations.transformedDatasetFolder).listFiles()){
-    String fileName=file.getName();
-    Files.copy(file.toPath(),new FileOutputStream(importFolder+fileName));
-}
-Files.copy(Path.of(topicsPath),new FileOutputStream(importFolder+"topics.csv"));
-Files.copy(Path.of(CsvDataOperations.secondDatasetFolder+"rsvps.csv"),new FileOutputStream(importFolder+"rsvps.csv"));
+        String importFolder=ConfigurationFileReader.checkAndGetProp("importFolder");
+        for (File file : new File(CsvDataOperations.transformedDatasetFolder).listFiles()){
+            String fileName=file.getName();
+            Files.copy(file.toPath(),new FileOutputStream(importFolder+fileName));
+        }
+        Files.copy(Path.of(topicsPath),new FileOutputStream(importFolder+"topics.csv"));
+        Files.copy(Path.of(CsvDataOperations.secondDatasetFolder+"rsvps.csv"),new FileOutputStream(importFolder+"rsvps.csv"));
 
     }
 

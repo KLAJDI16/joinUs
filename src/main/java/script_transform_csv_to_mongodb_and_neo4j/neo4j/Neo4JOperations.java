@@ -1,11 +1,17 @@
 package script_transform_csv_to_mongodb_and_neo4j.neo4j;
 
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvValidationException;
 import org.bson.Document;
 import org.neo4j.driver.*;
 import script_transform_csv_to_mongodb_and_neo4j.ConfigurationFileReader;
+import script_transform_csv_to_mongodb_and_neo4j.CsvDataOperations;
 import script_transform_csv_to_mongodb_and_neo4j.ParallelExecutor;
 import script_transform_csv_to_mongodb_and_neo4j.mongoDb.MongoDataLoader;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 public class Neo4JOperations {
@@ -23,7 +29,6 @@ public class Neo4JOperations {
 
     public Neo4JOperations(Driver driver, String neo4jDatabase, ParallelExecutor parallelExecutor) {
         this.driver = driver;
-
         this.neo4jDatabase = neo4jDatabase;
     }
 
@@ -53,7 +58,7 @@ public class Neo4JOperations {
                     "   LOAD CSV WITH HEADERS FROM '"+ ImportFolder +""+fileName+"' AS row " +
                     "CALL {" +
                     "WITH row "
-                    + "   CREATE (m:"+nodeName+" { "+txt+" })" +
+                    + "   MERGE (m:"+nodeName+" { "+txt+" })" +
                     " } IN TRANSACTIONS OF "+BATCH_SIZE+" ROWS;"+
                     "")   ;
 
@@ -85,12 +90,53 @@ public class Neo4JOperations {
         createNode("topics.csv","Topic",fields);
     }
     public static void createMemberNodes(List<String> fieldsToInclude){
-        List<String> fields ;
-        if (fieldsToInclude==null || fieldsToInclude.isEmpty()){
-            fields = memberProperties;
+
+        createNode("members.csv","Member",memberProperties);
+
+        String path = ImportFolder+"members.csv";
+        try {
+            CSVReader csvReader = new CSVReader(new FileReader(path));
+
+            String[] header = csvReader.readNext();
+            int memberIdIndex = -1;
+            int cityIndex = -1;
+            int memberNameIndex = -1;
+
+            for (int i = 0; i < header.length; i++) {
+                if (header[i].equalsIgnoreCase("member_id")) memberIdIndex = i;
+                else if (header[i].equalsIgnoreCase("city")) {
+                    cityIndex = i;
+                } else if (header[i].equalsIgnoreCase("member_name")) {
+                    memberNameIndex = i;
+                }
+            }
+
+            if (memberNameIndex == -1 || cityIndex == -1 || memberIdIndex == -1)
+                throw new Exception("File does not have the column");
+
+            String[] row;
+            ArrayList<String> membersIncluded=new ArrayList<>();
+            while ( (row=csvReader.readNext())!=null ){
+
+                String member_id = row[memberIdIndex];
+
+                if (!membersIncluded.contains(member_id)){
+                    String member_name=row[memberNameIndex];
+                    String city = row[cityIndex];
+
+                    String query=" CREATE (m:Member {member_id: '"+member_id+"' , city: '"+city+"' , member_name: '"+member_name+"' })";
+                    driver.executableQuery(query).withConfig(QueryConfig.builder().withDatabase(neo4jDatabase).build()).execute();
+
+                    membersIncluded.add(member_id);
+                }
+
+            }
+
         }
-        else fields=fieldsToInclude;
-        createNode("members.csv","Member",fields);
+     catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
 
@@ -281,7 +327,7 @@ protected static void  createMemberGroupsEdge(){
                     "   LOAD CSV WITH HEADERS FROM '"+ ImportFolder +fileName+"' AS row " +
                     "CALL {" +
                     "WITH row "
-                    + "   MATCH (m:"+firstNode+" { "+firstKey+": row."+firstKey+" }) " +
+                    +" MATCH (m:"+firstNode+" { "+firstKey+": row."+firstKey+" }) " +
                     "    MATCH (e:"+secondNode+" { "+secondKey+": row."+secondKey+" })  " +
                     " CREATE (m)-[:"+relationship+"]->(e)  " +
                     " CREATE (m)<-[:"+relationship+"]-(e) " +

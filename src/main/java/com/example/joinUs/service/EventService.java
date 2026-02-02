@@ -10,7 +10,7 @@ import com.example.joinUs.mapping.summary.EventSummaryMapper;
 import com.example.joinUs.model.embedded.EventEmbedded;
 import com.example.joinUs.model.embedded.GroupEmbedded;
 import com.example.joinUs.model.mongodb.*;
-import com.example.joinUs.model.neo4j.Event_Neo4J;
+import com.example.joinUs.model.neo4j.EventNeo4J;
 import com.example.joinUs.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -28,7 +28,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.*;
 import java.util.Date;
 import java.util.List;
-import java.util.SimpleTimeZone;
 
 import static java.util.TimeZone.getTimeZone;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -47,26 +46,14 @@ public class EventService {
 
     @Autowired
     private CityService cityService;
-    @Autowired
-    private CityMapper cityMapper;
-
-    @Autowired
-    private CategoryMapper categoryMapper;
-
 
     @Autowired
     private EventMapper eventMapper;
-    @Autowired
-    private FeeMapper feeMapper;
 
     @Autowired
     private EventEmbeddedMapper eventEmbeddedMapper;
     @Autowired
     private GroupEmbeddedMapper groupEmbeddedMapper;
-    @Autowired
-    private VenueMapper venueMapper;
-    @Autowired
-    private UserMapper userMapper;
 
     @Autowired
     private EventSummaryMapper eventSummaryMapper;
@@ -77,17 +64,20 @@ public class EventService {
     @Autowired
     private MongoTemplate mongoTemplate;
 
+    @Autowired
+    private EventNeo4JRepository eventNeo4JRepository;
+
 //    @Autowired
 //    private Neo4jClient neo4jClient;
 
 
 
     @Autowired
-    private Event_Neo4J_Repo eventNeo4JRepo; // TODO
+    private EventNeo4JRepository eventNeo4JRepo; // TODO
 
 
 
-    public List<Event_Neo4J> getEventsFromNeo4j(){
+    public List<EventNeo4J> getEventsFromNeo4j(){
      return  eventNeo4JRepo.findAll();
     }
 
@@ -125,6 +115,8 @@ public class EventService {
             );// This is atomic  operation per document ,so it is thread safe if 2 users attend the same event simultaneously
 
             userRepository.save(user);
+            eventNeo4JRepo.addUserAttending(id,user.getId());
+
             return new ResponseMessage("successful","Your attendance in the event "+event.getEventName()+" is confirmed");
             //TODO complete the part for the Neo4J too
       } catch (Exception e) {
@@ -161,6 +153,8 @@ public class EventService {
         try {
             Event entity = eventMapper.toEntity(eventDTO1);
             Event saved = eventRepository.save(entity);
+            eventDTO1.setId(saved.getId());
+            eventNeo4JRepo.save(eventMapper.toNeo4jEntity(eventDTO1));
             return eventMapper.toDTO(saved);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -194,6 +188,7 @@ public class EventService {
         Venue venue = updateVenueForEvent(eventDTO);
         if (venue != null) eventDTO.setVenue(venue);
 
+
         setCreatorGroupForCreate(eventDTO);
 
         return eventDTO;
@@ -201,7 +196,7 @@ public class EventService {
     }
 
 
-    public EventDTO updateEvent(EventDTO eventDTO, String id) { // TODO revisit, especially PATCH semantics
+    public EventDTO updateEvent(EventDTO eventDTO, String id) {
 
         userService.checkUserHasPermissionToEditEvent(id);
 
@@ -214,17 +209,28 @@ public class EventService {
             if (Utils.isNullOrEmpty(eventDTO.getEventName())) eventDTO.setEventName(event.getEventName());
             if (Utils.isNullOrEmpty(eventDTO.getEventTime())) eventDTO.setEventTime(event.getEventTime());
             if (Utils.isNullOrEmpty(eventDTO.getDescription())) eventDTO.setDescription(event.getDescription());
-            if (Utils.isNullOrEmpty(eventDTO.getFee())) eventDTO.setFee(Fee.getDefault());
+            if (Utils.isNullOrEmpty(eventDTO.getFee())){
+                eventDTO.setFee(event.getFee());
+            }
+            if (Utils.isNullOrEmpty(eventDTO.getDuration())) eventDTO.setDuration(event.getDuration());
+            if (Utils.isNullOrEmpty(eventDTO.getCategory())) eventDTO.setCategory(event.getCategory());
 
             if (Utils.isNullOrEmpty(eventDTO.getVenue())){
                 eventDTO.setVenue(event.getVenue());
             }else cityService.parseCity(event.getVenue().getCity());
 
+
+            //Fields that should remain the same
             eventDTO.setUpdated(new Date());
+            eventDTO.setCreated(event.getCreated());
+            eventDTO.setMemberCount(event.getMemberCount());
+
+
 //            eventDTO.getCreatorGroup().setId(event.getCreatorGroup().getId());
 //            eventDTO.getCreatorGroup().setGroupName(event.getEventName());
             eventDTO.setId(event.getId());
             eventRepository.save(eventMapper.toEntity(eventDTO));
+            eventNeo4JRepo.save(eventMapper.toNeo4jEntity(eventDTO));//TODO this can be parallelized
             return eventDTO;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -244,20 +250,21 @@ public class EventService {
        try {
            User user = Utils.getUserFromContext();
 
-        user.removeUpcomingEvent(id);
+        user.removeUpcomingEvent(id);//TODO also complete the edge removal for Neo4J
 
         GroupEmbedded group = event.getCreatorGroup();
 
         eventRepository.deleteById(id);
+        eventNeo4JRepo.deleteById(id);
+
         userRepository.save(user);
 
         mongoTemplate.updateFirst(Query.query(Criteria.where("_id").is(group.getGroupId())),
                 new Update().pull("upcoming_events",
                         Query.query(Criteria.where("event_id").is(event.getId())))
                         .inc("event_count",-1)
-                , Group.class);
+                , Group.class); //TODO also complete the edge removal for Neo4J
 
-        //        groupRepository.save(group);
        }catch (Exception exception){
            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,exception.getMessage());
        }
@@ -269,8 +276,8 @@ public class EventService {
             String category,
             Integer minMembers,
             Integer maxMembers,
-            OffsetDateTime fromDate,
-            OffsetDateTime toDate,
+            Date fromDate,
+            Date toDate,
             Integer maxFee,
             int page,
             int pageSize
@@ -344,7 +351,6 @@ public class EventService {
 
     public void setCreatorGroupForCreate(EventDTO eventDTO) {
 
-//        User user = Utils.getUserFromContext();
 
         if (Utils.isNullOrEmpty(eventDTO.getCreatorGroup())){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Please provide a groupId or a groupName that will represent the creatorGroup of the event");
@@ -369,6 +375,8 @@ public class EventService {
         eventDTO.setCreatorGroup(groupEmbeddedMapper.toDTO(group));
 
     }
+
+
 
 //    public Page<EventDTO> filterByCategory(String category, int page, int size) {
 //        Pageable pageable = PageRequest.of(page, size + 1);

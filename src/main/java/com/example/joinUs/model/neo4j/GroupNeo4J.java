@@ -1,6 +1,5 @@
 package com.example.joinUs.model.neo4j;
 
-import com.example.joinUs.dto.GroupNeo4jDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +13,7 @@ import org.springframework.data.neo4j.core.schema.Property;
 @NoArgsConstructor
 @Builder
 @Node("Group")
-public class Group_Neo4J {
+public class GroupNeo4J {
     @Id
     @Property("group_id")
     private String groupId;
