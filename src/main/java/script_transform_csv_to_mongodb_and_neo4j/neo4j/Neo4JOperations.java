@@ -93,7 +93,7 @@ public class Neo4JOperations {
 
 //        createNode("members.csv","Member",memberProperties);
 
-        String path = ImportFolder+"members.csv";
+        String path = CsvDataOperations.transformedMembers;
         try {
             CSVReader csvReader = new CSVReader(new FileReader(path));
 
@@ -115,7 +115,7 @@ public class Neo4JOperations {
                 throw new Exception("File does not have the column");
 
             String[] row;
-            ArrayList<String> membersIncluded=new ArrayList<>();
+            Set<String> membersIncluded=new HashSet<>();
             while ( (row=csvReader.readNext())!=null ){
 
                 String member_id = row[memberIdIndex];
@@ -124,9 +124,24 @@ public class Neo4JOperations {
                     String member_name=row[memberNameIndex];
                     String city = row[cityIndex];
 
-                    String query=" CREATE (m:Member {member_id: '"+member_id+"' , city: '"+city+"' , member_name: '"+member_name+"' })";
-                    driver.executableQuery(query).withConfig(QueryConfig.builder().withDatabase(neo4jDatabase).build()).execute();
+                    String query = """
+    CREATE (m:Member {
+        member_id: $memberId,
+        city: $city,
+        member_name: $memberName
+    })
+""";
 
+                    driver.executableQuery(query)
+                            .withParameters(Map.of(
+                                    "memberId", member_id,
+                                    "city", city,
+                                    "memberName", member_name
+                            ))
+                            .withConfig(QueryConfig.builder()
+                                    .withDatabase(neo4jDatabase)
+                                    .build())
+                            .execute();
                     membersIncluded.add(member_id);
                 }
 

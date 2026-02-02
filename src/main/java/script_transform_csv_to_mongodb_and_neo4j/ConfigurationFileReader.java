@@ -29,7 +29,7 @@ public  class ConfigurationFileReader {
     }
 
     public static String getNeo4JDatabase()  {
-        return  checkAndGetProp("neo4j.defaultDatabase");
+        return  checkAndGetProp("spring.data.neo4j.database");
     }
     public static String getNeo4JURL()  {
         return  checkAndGetProp("spring.neo4j.uri");

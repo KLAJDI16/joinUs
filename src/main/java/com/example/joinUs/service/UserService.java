@@ -2,6 +2,7 @@ package com.example.joinUs.service;
 
 import com.example.joinUs.Utils;
 import com.example.joinUs.dto.*;
+import com.example.joinUs.dto.summary.EventSummaryDTO;
 import com.example.joinUs.mapping.UserMapper;
 import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Group;
@@ -36,16 +37,13 @@ public class UserService {
     private CityService cityService;
 
     @Autowired
-    private GroupRepository groupRepository;
+    private GroupService groupService;
 
     @Autowired
-    private EventRepository eventRepository;
+    private EventService eventService;
 
     @Autowired
     private UserNeo4JRepository userNeo4JRepo;
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
 
     @Autowired
     private UserMapper userMapper;
@@ -94,6 +92,13 @@ public class UserService {
         return userUpdate;
     }
 
+    protected void addUserToGroup(String userId,String groupId){
+        userNeo4JRepo.addUserToGroup(userId,groupId);
+    }
+    protected void removeUserFromGroup(String userId, String groupId){
+        userNeo4JRepo.removeUserFromGroup(userId,groupId);
+    }
+
 
     public void checkUserHasPermissionToEditGroup(String groupId)  {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -102,7 +107,7 @@ public class UserService {
         }
         User user = (User) authentication.getPrincipal();
         String userId=user.getId();
-        List<Group> groups = groupRepository.findGroupsByOrganizerId(userId);
+        List<Group> groups = groupService.findGroupsByOrganizerId(userId);
         if (groups==null|| groups.isEmpty())
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this group");
 
@@ -116,19 +121,15 @@ public class UserService {
     }
 
     public void checkUserHasPermissionToEditEvent(String eventId)  {
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//        if ( authentication==null || !authentication.isAuthenticated()){
-//            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"User is not authenticated in the application");
-//        }
-//        User user = (User) authentication.getPrincipal();
+
         User user = Utils.getUserFromContext();
         String userId=user.getId();
-        List<Group> groups = groupRepository.findGroupsByOrganizerId(userId);
+        List<Group> groups = groupService.findGroupsByOrganizerId(userId);
         if (groups==null)  throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this event");
 
 //        boolean foundEvent;
         for (Group group : groups){
-            List<Event> events = eventRepository.findEventsByCreatorGroup(group.getId());
+            List<Event> events = eventService.findEventsByCreatorGroup(group.getId());
             for (Event event : events) {
                 if (event.getId().equalsIgnoreCase(eventId)) return;
             }
@@ -210,6 +211,20 @@ public class UserService {
         User user = Utils.getUserFromContext();
         userRepository.delete(user);
         userNeo4JRepo.deleteUser(user.getId());
+    }
+
+    public List<EventSummaryDTO> findAllEvents(){
+        User user = Utils.getUserFromContext();
+        return eventService.findEventsOfUser(user.getId());
+    }
+    public List<GroupDTO> findAllGroups(){
+        User user = Utils.getUserFromContext();
+        return groupService.findGroupsOfUser(user.getId());
+    }
+
+    public List<UserDTO> findUsersOfGroup(String groupId){
+        return  userNeo4JRepo.getMembersLinkedToGroup(groupId).stream()
+                .map(e -> userMapper.toNeo4jDTO(e)).toList();
     }
 }
 

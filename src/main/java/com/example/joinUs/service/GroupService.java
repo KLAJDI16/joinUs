@@ -1,14 +1,19 @@
 package com.example.joinUs.service;
 
 import com.example.joinUs.Utils;
+import com.example.joinUs.dto.EventDTO;
 import com.example.joinUs.dto.GroupDTO;
 import com.example.joinUs.dto.ResponseMessage;
+import com.example.joinUs.dto.UserDTO;
+import com.example.joinUs.dto.summary.EventSummaryDTO;
 import com.example.joinUs.dto.summary.GroupSummaryDTO;
 import com.example.joinUs.mapping.*;
 import com.example.joinUs.mapping.embedded.UserEmbeddedMapper;
 import com.example.joinUs.mapping.summary.GroupSummaryMapper;
 import com.example.joinUs.model.mongodb.Group;
 import com.example.joinUs.model.mongodb.User;
+import com.example.joinUs.repository.EventNeo4JRepository;
+import com.example.joinUs.repository.GroupNeo4JRepository;
 import com.example.joinUs.repository.GroupRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -37,6 +42,9 @@ public class GroupService {
     private GroupRepository groupRepository;
 
     @Autowired
+    GroupNeo4JRepository groupNeo4JRepository;
+
+    @Autowired
     private UserService userService;
 
     @Autowired
@@ -44,6 +52,9 @@ public class GroupService {
 
     @Autowired
     private GroupMapper groupMapper;
+
+    @Autowired
+    private EventService eventService;
 
     @Autowired
     private GroupSummaryMapper groupSummaryMapper;
@@ -72,8 +83,11 @@ public class GroupService {
             );// This is atomic  operation per document ,so it is thread safe if 2 users join the same group simultaneously
 
             userService.saveUser(user);
+            userService.addUserToGroup(user.getId(),id); //Neo4J operation
+
+
             return new ResponseMessage("successful","Your attendance in the group "+group.getGroupName()+" is confirmed");
-            //TODO complete the part for the Neo4J too
+
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -93,8 +107,8 @@ public class GroupService {
             );// This is atomic  operation per document ,so it is thread safe if 2 users join the same group simultaneously
 
             userService.saveUser(user);
+            userService.removeUserFromGroup(user.getId(),id); //Neo4J operation
             return new ResponseMessage("successful","You left the group "+group.getGroupName()+" ");
-            //TODO complete the part for the Neo4J too
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -116,6 +130,7 @@ public class GroupService {
         );
         group.getOrganizers().add(userEmbeddedMapper.toDTO(user));
         groupRepository.save(group);
+        userService.addUserToGroup(organizerId,groupId); //Neo4J Safe because the query is MERGE not create
     return new ResponseMessage("successful","Organizer with id"+organizerId+" was added successfully");
     }
 
@@ -211,8 +226,14 @@ public class GroupService {
         cityService.parseCity(groupDTO.getCity());
         Group entity = groupMapper.toEntity(groupDTO);
         Group saved = groupRepository.save(entity);
+        groupDTO.setId(saved.getId());
+        groupNeo4JRepository.save(groupMapper.toNeo4JEntity(groupDTO));
+
         return groupMapper.toDTO(saved);
     }
+
+
+
 
     public GroupDTO updateGroup(String id, GroupDTO groupDTO) { // TODO revisit, especially PATCH semantics
 
@@ -231,24 +252,16 @@ public class GroupService {
             groupDTO.setCity(existing.getCity());
         } else cityService.parseCity(groupDTO.getCity());
 
-        // If you want "replace" semantics, use PUT and overwrite everything instead.
-        Group patch = groupMapper.toEntity(groupDTO);
-
         // Ensure the identifier stays consistent ,and other fields
-        patch.setId(existing.getId());
-        patch.setEventCount(existing.getEventCount());
-        patch.setMemberCount(existing.getMemberCount());
-        patch.setCreated(existing.getCreated());
-        patch.setUpcomingEvents(existing.getUpcomingEvents());
-        patch.setOrganizers(existing.getOrganizers());
+        groupDTO.setId(existing.getId());
+        groupDTO.setEventCount(existing.getEventCount());
+        groupDTO.setMemberCount(existing.getMemberCount());
+        groupDTO.setCreated(existing.getCreated());
+        groupDTO.setUpcomingEvents(existing.getUpcomingEvents());
+        groupDTO.setOrganizers(existing.getOrganizers());
 
-
-        // Preserve Mongo internal id if you use it
-//        patch.setGroupId(existing.getId());
-
-        // If your mapper doesn't handle "merge", then do a simple overwrite:
-        // (Minimal) overwrite existing with patch entity:
-        Group saved = groupRepository.save(patch);
+        Group saved = groupRepository.save(groupMapper.toEntity(groupDTO));
+        groupNeo4JRepository.save(groupMapper.toNeo4JEntity(groupDTO));
 
         return groupMapper.toDTO(saved);
     }
@@ -258,11 +271,29 @@ public class GroupService {
         userService.checkUserHasPermissionToEditGroup(id);
 
         groupRepository.deleteById(id);
+        groupNeo4JRepository.deleteGroup(id);
     }
+   public List<Group> findGroupsByOrganizerId( String userId){
+     return groupRepository.findGroupsByOrganizerId(userId);
+    };
+
 
     private Group getGroupOrThrow(String id) {
         return groupRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Event not found: " + id));
+    }
+
+    public List<GroupDTO> findGroupsOfUser(String userId){
+        return  groupNeo4JRepository.findAllGroupsOfUser(userId).stream()
+                .map(e -> groupMapper.toNeo4JDTO(e)).toList();
+    }
+
+    public  List<UserDTO> findAllUsersOfGroup(String groupId){
+        return userService.findUsersOfGroup(groupId);
+    }
+
+    public List<EventSummaryDTO> findAllEventOrganizedByGroup(String groupId){
+        return eventService.findEventsOrganizedByGroup(groupId);
     }
 
 

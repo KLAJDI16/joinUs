@@ -25,7 +25,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.*;
 import java.util.Date;
 import java.util.List;
 
@@ -73,7 +72,7 @@ public class EventService {
 
 
     @Autowired
-    private EventNeo4JRepository eventNeo4JRepo; // TODO
+    private EventNeo4JRepository eventNeo4JRepo;
 
 
 
@@ -126,7 +125,7 @@ public class EventService {
 
     public ResponseMessage revokeAttendance(String id) {
 
-//        try {
+        try {
             User user = Utils.getUserFromContext();
             user.removeUpcomingEvent(id);
             user.setEventCount(user.getEventCount() - 1);
@@ -138,13 +137,13 @@ public class EventService {
                     Event.class
             ); // This is atomic  operation per document ,so it is thread safe if 2 users attend the same event simultaneously
 
-
+            eventNeo4JRepo.revokeUserAttending(id,user.getId());
             //TODO complete the part for the Neo4J too
             return new ResponseMessage("successful","Your attendance in the event  is revoked ");
 
-//        } catch (Exception e) {
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-//        }
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
     }
 
     public EventDTO createEvent(EventDTO eventDTO) {
@@ -255,7 +254,7 @@ public class EventService {
         GroupEmbedded group = event.getCreatorGroup();
 
         eventRepository.deleteById(id);
-        eventNeo4JRepo.deleteById(id);
+        eventNeo4JRepo.deleteEvent(id);
 
         userRepository.save(user);
 
@@ -263,7 +262,7 @@ public class EventService {
                 new Update().pull("upcoming_events",
                         Query.query(Criteria.where("event_id").is(event.getId())))
                         .inc("event_count",-1)
-                , Group.class); //TODO also complete the edge removal for Neo4J
+                , Group.class);
 
        }catch (Exception exception){
            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,exception.getMessage());
@@ -365,15 +364,32 @@ public class EventService {
 
         Group group = groups.get(0);
 
-   mongoTemplate.updateFirst(Query.query(Criteria.where("_id").is(group.getId())),
+        mongoTemplate.updateFirst(Query.query(Criteria.where("_id").is(group.getId())),
                 new Update().push("organizer_members",
-                        eventEmbeddedMapper.toDTO(eventMapper.toEntity(eventDTO)))
-                        .inc("event_count",1), Group.class); //To ensure atomicity if from the same groups are being created events simultaneously
+                                eventEmbeddedMapper.toDTO(eventMapper.toEntity(eventDTO)))
+                        .inc("event_count", 1), Group.class); //To ensure atomicity if from the same groups are being created events simultaneously
 
         userService.checkUserHasPermissionToEditGroup(group.getId());
 
         eventDTO.setCreatorGroup(groupEmbeddedMapper.toDTO(group));
 
+        eventNeo4JRepo.addGroupEventRelation(eventDTO.getCreatorGroup().getGroupId(), eventDTO.getId());
+//Neo4j operation
+    }
+
+    public List<Event> findEventsByCreatorGroup(String creatorGroupId){
+        return eventRepository.findEventsByCreatorGroup(creatorGroupId);
+    }
+
+
+    public List<EventSummaryDTO> findEventsOfUser(String userId){
+        return eventNeo4JRepo.findAllEventsAttendedByUser(userId).stream()
+                .map(e -> eventMapper.toDTOFromNeo4j(e)).toList();
+    }
+
+    public List<EventSummaryDTO> findEventsOrganizedByGroup(String groupId){
+        return eventNeo4JRepo.findAllEventsOrganizedByGroup(groupId)
+                .stream().map(e -> eventMapper.toDTOFromNeo4j(e)).toList();
     }
 
 

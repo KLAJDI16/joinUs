@@ -1,9 +1,12 @@
 package com.example.joinUs.controller;
 
+import com.example.joinUs.dto.GroupDTO;
 import com.example.joinUs.dto.UserDTO;
 import com.example.joinUs.dto.UserNeo4jDTO;
+import com.example.joinUs.dto.summary.EventSummaryDTO;
 import com.example.joinUs.model.mongodb.User;
 import com.example.joinUs.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.bson.json.JsonObject;
@@ -40,6 +43,23 @@ public class UserController {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
+    }
+    /**
+     * Get all events the authenticated user is attending
+     */
+    @GetMapping("/allEvents")
+    @Operation(summary = "Get all events (upcoming and historical) of the authenticated user")
+    public List<EventSummaryDTO> getMyEvents() {
+        return userService.findAllEvents();
+    }
+
+    /**
+     * Get all groups the authenticated user belongs to
+     */
+    @GetMapping("/allEvents")
+    @Operation(summary = "Get all groups (upcoming and historical) of the authenticated user")
+    public List<GroupDTO> getMyGroups() {
+        return userService.findAllGroups();
     }
 
 }

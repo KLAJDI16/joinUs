@@ -1,20 +1,17 @@
 package com.example.joinUs.controller;
 
 import com.example.joinUs.dto.GroupDTO;
-import com.example.joinUs.dto.ResponseMessage;
 import com.example.joinUs.dto.summary.EventSummaryDTO;
 import com.example.joinUs.dto.summary.GroupSummaryDTO;
-import com.example.joinUs.exceptions.ApplicationException;
 import com.example.joinUs.service.GroupService;
 import com.example.joinUs.service.UserService;
-import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 
 
@@ -73,6 +70,13 @@ public class GroupController {
     public ResponseEntity updateGroup(@PathVariable String id, @RequestBody GroupDTO groupDTO) {
 
         return ResponseEntity.ok(groupService.updateGroup(id, groupDTO));
+    }
+    @GetMapping("/{groupId}/events")
+    @Operation(summary = "Get all events (historical and upcoming) organized by a group")
+    public List<EventSummaryDTO> getEventsOrganizedByGroup(
+            @PathVariable String groupId
+    ) {
+        return groupService.findAllEventOrganizedByGroup(groupId);
     }
     @GetMapping("/search")
     public Page<GroupSummaryDTO> searchGroups(
