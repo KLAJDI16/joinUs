@@ -91,7 +91,7 @@ public class Neo4JOperations {
     }
     public static void createMemberNodes(List<String> fieldsToInclude){
 
-        createNode("members.csv","Member",memberProperties);
+//        createNode("members.csv","Member",memberProperties);
 
         String path = ImportFolder+"members.csv";
         try {
@@ -331,7 +331,7 @@ protected static void  createMemberGroupsEdge(){
                     "    MATCH (e:"+secondNode+" { "+secondKey+": row."+secondKey+" })  " +
                     " CREATE (m)-[:"+relationship+"]->(e)  " +
                     " CREATE (m)<-[:"+relationship+"]-(e) " +
-                    " } IN TRANSACTIONS OF 10000 ROWS;"+
+                    " } IN TRANSACTIONS OF "+BATCH_SIZE+" ROWS;"+
 //        + "  SET m.name = row.name"+
                     "")   ;
 /*
