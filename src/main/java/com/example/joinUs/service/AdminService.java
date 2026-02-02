@@ -2,14 +2,12 @@ package com.example.joinUs.service;
 
 import com.example.joinUs.Utils;
 import com.example.joinUs.dto.GroupCommunityDTO;
+import com.example.joinUs.dto.analytics.*;
 import com.example.joinUs.mapping.EventMapper;
 import com.example.joinUs.mapping.GroupMapper;
 import com.example.joinUs.mapping.TopicMapper;
 import com.example.joinUs.model.mongodb.User;
-import com.example.joinUs.repository.EventNeo4JRepository;
-import com.example.joinUs.repository.GroupNeo4JRepository;
-import com.example.joinUs.repository.TopicNeo4JRepository;
-import com.example.joinUs.repository.UserNeo4JRepository;
+import com.example.joinUs.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -25,6 +23,18 @@ public class AdminService {
     private TopicNeo4JRepository topicNeo4JRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private EventRepository eventRepository;
+
+    @Autowired
+    private GroupRepository groupRepository;
+
+    @Autowired
+    private TopicRepository topicRepository;
+
+    @Autowired
     TopicMapper topicMapper;
 
     @Autowired
@@ -33,8 +43,25 @@ public class AdminService {
     @Autowired
     GroupMapper groupMapper;
 
+    public List<ActivityScorePerUserAnalytic> topUsersByActivityScore(int limit){
+        return userRepository.topUsersByActivityScore(limit);
+    }
 
+    public List<CityActivityAnalytic> mostActiveCities(int limit){
+        return  userRepository.mostActiveCities();
+    }
 
+    public List<GroupsPerCityAnalytic> topCitiesByGroupsLast10Years(int limit){
+        return groupRepository.topCitiesByGroupsLast10Years(limit);
+    }
+    public List<TrendingTopicPerCityAnalytic> topTrendingTopicsPerCity(int topicCount){
+        return userRepository.topTrendingTopicsPerCity(topicCount);
+    }
+
+    public PaidVsFreeEventAnalytic paidVsFreePopularity(){
+        return eventRepository.paidVsFreePopularity();
+    }
+    
 
     public List<GroupCommunityDTO> findGroupCommunities(int sharedMembers, int limit){
 

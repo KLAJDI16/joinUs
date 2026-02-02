@@ -2,8 +2,10 @@ package com.example.joinUs.repository;
 
 import com.example.joinUs.Utils;
 import com.example.joinUs.dto.EventDTO;
+import com.example.joinUs.dto.analytics.PaidVsFreeEventAnalytic;
 import com.example.joinUs.dto.summary.EventSummaryDTO;
 import com.example.joinUs.model.mongodb.Event;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -121,12 +123,78 @@ public interface EventRepository extends MongoRepository<Event, String> {
 
 
 
+    //Aggregations for the Admin controller
+    //Count Events per City to see Which cities host the most events
+    @Aggregation(pipeline = {
+            "{ $group: { _id: '$creator_group.city.name', eventsCount: { $sum: 1 } } }",
+            "{ $sort: { eventsCount: -1 } }"
+    })
+    List<EventDTO> countEventsByCity();
+
+//    //How many events are created each month.
+//    @Aggregation(pipeline = {
+//            "{ $match: { event_time: { $ne: null } } }",
+//            "{ $group: { _id: { year: { $year: '$event_time' }, month: { $month: '$event_time' } }, eventsCount: { $sum: 1 } } }",
+//            "{ $sort: { '_id.year': 1, '_id.month': 1 } }"
+//    })
+//    List<Document> countEventsPerMonth();
+
+
+
+
+
+
+    //Trending Categories (Shows which categories are growing or declining.) See which category people attend most
+    @Aggregation(pipeline = {
+            "{ $match: { event_time: { $gte: ?1 } } }",
+            "{ $group: { " +
+                    "_id: '$category.name', " +
+                    "lastWeek: { $sum: { $cond: [ { $gte: ['$event_time', ?0] }, { $ifNull: ['$member_count', 0] }, 0 ] } }, " +
+                    "previousWeek: { $sum: { $cond: [ { $and: [ { $gte: ['$event_time', ?1] }, { $lt: ['$event_time', ?0] } ] }, { $ifNull: ['$member_count', 0] }, 0 ] } } " +
+                    "} }",
+            "{ $addFields: { delta: { $subtract: ['$lastWeek', '$previousWeek'] } } }",
+            "{ $sort: { delta: -1 } }"
+    })
+    List<Document> trendingCategoriesWeekly(Date lastWeekStart, Date prevWeekStart);
+
+
+
+
+//Popularity of Paid vs Free Events showing Do people attend paid or free events more?
+@Aggregation(pipeline = {
+        "{ $addFields: { " +
+                "eventType: { $cond: [ " +
+                "{ $or: [ { $eq: ['$fee.amount', 0] }, { $eq: ['$fee', null] }, { $eq: ['$fee.amount', null] } ] }, " +
+                "'FREE', 'PAID' ] }, " +
+                "attendance: { $ifNull: ['$member_count', 0] } " +
+                "} }",
+
+        "{ $group: { _id: '$eventType', eventsCount: { $sum: 1 }, totalAttendance: { $sum: '$attendance' }" +
+                ", avgAttendance: { $avg: '$attendance' } } }",
+
+        "{ $project: { type: '$_id', eventsCount: 1, totalAttendance: 1, avgAttendance: 1, _id: 0 } }",
+        "{ $sort: { totalAttendance: -1 } }"
+})
+PaidVsFreeEventAnalytic paidVsFreePopularity();
+
+
+    //Top cities by upcoming events count (overall activity)
+    @Aggregation(pipeline = {
+            "{ $match: { event_time: { $gte: ?0 } } }",
+            "{ $group: { _id: '$creator_group.city.name', totalUpcomingEvents: { $sum: 1 } } }",
+            "{ $sort: { totalUpcomingEvents: -1 } }",
+            "{ $limit: 20 }",
+            "{ $project: { city: '$_id', totalUpcomingEvents: 1, _id: 0 } }"
+    })
+    List<Document> topCitiesByUpcomingEvents(Date now);
+
+
 //    List<EventSummaryDTO> findByEventNameContainingIgnoreCase(String name);
 
 
 
 
-    // USING THE AGGREGATION APPROACH
+    // USING THE AGGREGATION APPROACH FOR THE Queries
 //
 //    @Aggregation( pipeline = {
 //            "{$match:{'event_name' : { $regex: ?0, $options: 'i' } }}",

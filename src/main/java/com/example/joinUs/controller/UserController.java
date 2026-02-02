@@ -53,7 +53,7 @@ public class UserController {
     /**
      * Get all groups the authenticated user belongs to
      */
-    @GetMapping("/allEvents")
+    @GetMapping("/allGroups")
     @Operation(summary = "Get all groups (upcoming and historical) of the authenticated user")
     public List<GroupDTO> getMyGroups() {
         return userService.findAllGroups();
