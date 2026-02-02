@@ -40,4 +40,33 @@ public interface GroupRepository extends MongoRepository<Group, String> {
     })
     List<GroupDTO> findAllByAggregation(int offset,int limit);
 
+    //Count Events per City to see Which cities host the most events
+    @Aggregation(pipeline = {
+            "{ $group: { _id: '$creator_group.city.name', eventsCount: { $sum: 1 } } }",
+            "{ $sort: { eventsCount: -1 } }"
+    })
+    List<Document> countEventsByCity();
+
+    // Query 1 Top Cities by Groups Created in the Past 10 Years
+    @Aggregation(pipeline = {
+            "{ $match: { created: { $gte: new Date('2016-02-01T00:00:00.000Z') } } }",
+            "{ $group: { _id: '$city.name', groupsCreated: { $sum: 1 } } }",
+            "{ $sort: { groupsCreated: -1 } }",
+            "{ $limit: 20 }"
+    })
+    List<Document> topCitiesByGroupsSince2016();
+
+    // Query 2 Organizer leaderboard (top organizers by number of groups)
+    @Aggregation(pipeline = {
+            "{ $unwind: '$organizer_members' }",
+            "{ $group: { _id: '$organizer_members.member_id', organizerName: { $first: '$organizer_members.member_name' }, groupsOrganized: { $sum: 1 } } }",
+            "{ $sort: { groupsOrganized: -1 } }",
+            "{ $limit: 20 }",
+            "{ $project: { memberId: '$_id', organizerName: 1, groupsOrganized: 1, _id: 0 } }"
+    })
+    List<Document> topOrganizersByGroups();
+
+
+
+
 }
