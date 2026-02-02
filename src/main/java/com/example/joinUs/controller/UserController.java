@@ -2,14 +2,11 @@ package com.example.joinUs.controller;
 
 import com.example.joinUs.dto.GroupDTO;
 import com.example.joinUs.dto.UserDTO;
-import com.example.joinUs.dto.UserNeo4jDTO;
 import com.example.joinUs.dto.summary.EventSummaryDTO;
-import com.example.joinUs.model.mongodb.User;
 import com.example.joinUs.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.bson.json.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

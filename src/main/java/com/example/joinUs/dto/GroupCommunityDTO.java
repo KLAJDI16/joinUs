@@ -5,14 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TopicNeo4jDTO {
+public class GroupCommunityDTO {
+        private GroupDTO group1;
+       private GroupDTO group2;
+        private int sharedMembers;
+    }
 
-    private String topicId;
-    private String topicName;
-    private String description;
-    private String link;
-}

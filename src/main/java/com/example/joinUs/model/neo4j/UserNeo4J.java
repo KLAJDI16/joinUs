@@ -26,6 +26,5 @@ public class UserNeo4J {
     @Property(name = "city")
     private String cityName;
 
- //    private static final List<String> memberProperties=List.of("member_id", "city", "member_name");
 }
 

@@ -17,11 +17,6 @@ public class GlobalExceptionHandler {
                 .body(ex.getBody());
     }
 
-//    AuthenticationException
-    @ExceptionHandler(AuthenticationException.class)
-public ResponseEntity handleAuthenticationException(AuthenticationException exception){
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getMessage());
-}
 
 }
 

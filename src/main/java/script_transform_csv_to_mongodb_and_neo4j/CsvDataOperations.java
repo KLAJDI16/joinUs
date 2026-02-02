@@ -192,14 +192,17 @@ public class CsvDataOperations {
     public static void updateMemberIdsAtCSV() throws Exception {
         CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaMembersPath,"member_id","member_id",-1, CsvDataOperations.membersPath, CsvDataOperations.memberTopicsPath);
         CsvDataOperations.updateIdsFromCsv(CsvDataOperations.transformedMembers,"member_id","organizer.member_id",-1, CsvDataOperations.groupsPath);
-//        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.transformedMembers,"member_name","organizer.name",-1, CsvDataOperations.transformedGroups);
+
+        //        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.transformedMembers,"member_name","organizer.name",-1, CsvDataOperations.transformedGroups);
 
     }
     public static void updateEventIdsAtCSV() throws Exception {
         CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaEventsPath,"event_id","event_id",-1, CsvDataOperations.eventsPath);
     }
     public static void updateGroupIdsAtCSV() throws Exception {
-        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaGroupsPath,"group_id","group_id",-1, CsvDataOperations.transformedGroups,transformedDatasetFolder+"members.csv", CsvDataOperations.groupTopicsPath, CsvDataOperations.transformedEvents);
+        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaGroupsPath,"group_id","group_id",-1, CsvDataOperations.transformedGroups,transformedDatasetFolder+"members.csv",
+                CsvDataOperations.groupTopicsPath, CsvDataOperations.transformedEvents);
+
     }
 
     public static void updateIdsDirectlyFromCSV(){
