@@ -8,6 +8,7 @@ import com.example.joinUs.service.UserService;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -82,14 +83,16 @@ public class EventController {
             @RequestParam(required = false) Integer minMembers,
             @RequestParam(required = false) Integer maxMembers,
             @Parameter(example = "2026-12-15T01:45:30Z")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             Date fromDate,
             @Parameter(example = "2026-12-15T01:45:30Z")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             Date toDate,
             @RequestParam(required = false) Integer maxFee,
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "100") Integer pageSize
 
-            ) {
+    ) {
         return eventService.search(
                 name,
                 city,
@@ -103,7 +106,6 @@ public class EventController {
                 pageSize
         );
     }
-
 
 //    // 🔍 By name
 //    @GetMapping("/searchByName")

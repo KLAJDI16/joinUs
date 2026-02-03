@@ -163,6 +163,38 @@ public interface EventRepository extends MongoRepository<Event, String> {
 ////    """)
 ////    List<Event> findByCityAndName(String city, String name);
 //
+//   //Aggr 7 Count Events per City to see Which cities host the most events
+//@Aggregation(pipeline = {
+//        "{ $match: { 'venue.city.name': { $nin: [null, ''] } } }",
+//        "{ $group: { _id: '$venue.city.name', eventsCount: { $sum: 1 } } }",
+//        "{ $sort: { eventsCount: -1 } }",
+//        "{ $project: { _id: 0, city: '$_id', eventsCount: 1 } }"
+//})
+//List<Document> countEventsByVenueCity();
+
+//Aggr 8 Count Events per Category to see Which categories are most common
+//@Aggregation(pipeline = {
+//        "{ $unwind: { path: '$category', preserveNullAndEmptyArrays: false } }",
+//        "{ $match: { 'category.name': { $nin: [null, ''] } } }",
+//        "{ $group: { _id: '$category.name', eventsCount: { $sum: 1 } } }",
+//        "{ $sort: { eventsCount: -1 } }",
+//        "{ $project: { _id: 0, category: '$_id', eventsCount: 1 } }"
+//})
+//List<Document> countEventsByCategory();
+
+// Aggr 9  Events per month(platform activity over time)
+//@Aggregation(pipeline = {
+//        "{ $match: { event_time: { $ne: null } } }",
+//        "{ $group: { _id: { year: { $year: '$event_time' }, month: { $month: '$event_time' } }, eventsCount: { $sum: 1 } } }",
+//        "{ $sort: { '_id.year': 1, '_id.month': 1 } }",
+//        "{ $addFields: { year: '$_id.year', month: '$_id.month' } }",
+//        "{ $project: { _id: 0, year: 1, month: 1, eventsCount: 1 } }"
+//})
+//List<Document> countEventsPerMonth();
+
+
+
+
 //    @Aggregation(pipeline = {
 //            "{$match :{ 'member_count' : { $gte: ?0, $lte: ?1 } } }",
 //            "{$sort:{ 'member_count':-1 } }",

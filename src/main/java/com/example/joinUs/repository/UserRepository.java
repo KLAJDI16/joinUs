@@ -50,31 +50,31 @@ public interface UserRepository extends MongoRepository<User,String> {
     @Query(value = "{ 'city.name': ?0 }", count = true)
     long countByCity(String cityName);
 
-    //Query 1 Cities with the largest user base.
-    @Aggregation(pipeline = {
-            "{ $group: { _id: '$city.name', usersCount: { $sum: 1 } } }",
-            "{ $sort: { usersCount: -1 } }",
-            "{ $limit: 20 }"
-    })
-    List<Document> countUsersByCity();
-
-    // Query 2 Users With Upcoming Events (high intent users)
-    @Aggregation(pipeline = {
-            "{ $project: { member_id: 1, member_name: 1, upcomingCount: { $size: { $ifNull: ['$upcoming_events', []] } } } }",
-            "{ $match: { upcomingCount: { $gt: 0 } } }",
-            "{ $sort: { upcomingCount: -1 } }",
-            "{ $limit: 20 }"
-    })
-    List<Document> usersWithUpcomingEvents();
-
-    //Query 3 Average activity by city (avg event_count + group_count)
-    @Aggregation(pipeline = {
-            "{ $project: { city: '$city.name', activity: { $add: [ { $ifNull: ['$event_count', 0] }, { $ifNull: ['$group_count', 0] } ] } } }",
-            "{ $group: { _id: '$city', avgActivity: { $avg: '$activity' }, users: { $sum: 1 } } }",
-            "{ $sort: { avgActivity: -1 } }",
-            "{ $limit: 20 }",
-            "{ $project: { city: '$_id', avgActivity: 1, users: 1, _id: 0 } }"
-    })
-    List<Document> avgActivityByCity();
+//    //Aggr 1 Cities with the largest user base.
+//    @Aggregation(pipeline = {
+//            "{ $group: { _id: '$city.name', usersCount: { $sum: 1 } } }",
+//            "{ $sort: { usersCount: -1 } }",
+//            "{ $limit: 20 }"
+//    })
+//    List<Document> countUsersByCity();
+//
+//    // Aggr 2 Users With Upcoming Events (high intent users)
+//    @Aggregation(pipeline = {
+//            "{ $project: { member_id: 1, member_name: 1, upcomingCount: { $size: { $ifNull: ['$upcoming_events', []] } } } }",
+//            "{ $match: { upcomingCount: { $gt: 0 } } }",
+//            "{ $sort: { upcomingCount: -1 } }",
+//            "{ $limit: 20 }"
+//    })
+//    List<Document> usersWithUpcomingEvents();
+//
+//    //Aggr 3 Average activity by city (avg event_count + group_count)
+//    @Aggregation(pipeline = {
+//            "{ $project: { city: '$city.name', activity: { $add: [ { $ifNull: ['$event_count', 0] }, { $ifNull: ['$group_count', 0] } ] } } }",
+//            "{ $group: { _id: '$city', avgActivity: { $avg: '$activity' }, users: { $sum: 1 } } }",
+//            "{ $sort: { avgActivity: -1 } }",
+//            "{ $limit: 20 }",
+//            "{ $project: { city: '$_id', avgActivity: 1, users: 1, _id: 0 } }"
+//    })
+//    List<Document> avgActivityByCity();
 
 }
