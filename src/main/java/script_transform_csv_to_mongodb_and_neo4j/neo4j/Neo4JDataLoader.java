@@ -66,6 +66,8 @@ public class Neo4JDataLoader {
         Neo4JOperations.createNeo4JIndex("Group","group_id");
         Neo4JOperations.createNeo4JIndex("Member","member_id");
         Neo4JOperations.createNeo4JIndex("Event","event_id");
+        Neo4JOperations.createNeo4JIndex("Event","event_time");
+
         Neo4JOperations.createNeo4JIndex("Topic","topic_id");
 
 

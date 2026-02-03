@@ -343,6 +343,10 @@ public class MongoDataLoader {
         eventsCollection.createIndex(new Document("event_id",1));
         eventsCollection.createIndex(new Document("event_name",1));
         eventsCollection.createIndex(new Document("creator_group",1));
+        eventsCollection.createIndex(new Document("event_time",1));
+        eventsCollection.createIndex(new Document("fee.amount",1));
+        eventsCollection.createIndex(new Document("venue.city.name",1));
+
     }
     public static void createIndexesForMembersCollection(){
         MongoCollection membersCollection= MongoDataLoader.newMongoDatabase.getCollection("members");
@@ -351,6 +355,13 @@ public class MongoDataLoader {
     public static void createIndexesForGroupsCollection(){
         MongoCollection groupsCollection= MongoDataLoader.newMongoDatabase.getCollection("groups");
         groupsCollection.createIndex(new Document("group_id",1));
+        groupsCollection.createIndex(new Document("group_name",1));
+        groupsCollection.createIndex(new Document("event_count",1));
+        groupsCollection.createIndex(new Document("member_count",1));
+        groupsCollection.createIndex(new Document("category.name",1));
+        groupsCollection.createIndex(new Document("city.name",1));
+
+
     }
     public static void createIndexesForTopicsCollection(){
         MongoCollection topicsCollection= MongoDataLoader.newMongoDatabase.getCollection("topics");

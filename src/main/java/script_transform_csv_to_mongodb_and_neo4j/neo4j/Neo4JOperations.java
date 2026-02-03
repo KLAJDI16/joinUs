@@ -355,7 +355,6 @@ protected static void  createMemberGroupsEdge(){
                     +" MATCH (m:"+firstNode+" { "+firstKey+": row."+firstKey+" }) " +
                     "    MATCH (e:"+secondNode+" { "+secondKey+": row."+secondKey+" })  " +
                     " CREATE (m)-[:"+relationship+"]->(e)  " +
-//                    " CREATE (m)<-[:"+relationship+"]-(e) " +
                     " } IN TRANSACTIONS OF "+BATCH_SIZE+" ROWS;"+
 //        + "  SET m.name = row.name"+
                     "")   ;
