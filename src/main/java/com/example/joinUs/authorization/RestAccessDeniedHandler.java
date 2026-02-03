@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+
 @Component
 public class RestAccessDeniedHandler implements AccessDeniedHandler {
 
@@ -23,10 +24,10 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
         response.setContentType("application/json");
 
         response.getWriter().write("""
-            {
-              "error": "Forbidden",
-              "message": "You do not have permission to access this endpoint"
-            }
-        """);
+                    {
+                      "error": "Forbidden",
+                      "message": "You do not have permission to access this endpoint"
+                    }
+                """);
     }
 }

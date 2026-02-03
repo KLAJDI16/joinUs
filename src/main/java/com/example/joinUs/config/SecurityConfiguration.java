@@ -21,6 +21,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -44,13 +45,13 @@ public class SecurityConfiguration {
                         .accessDeniedHandler(restAccessDeniedHandler))
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/recommendations","/user/*").authenticated()
-                                .requestMatchers("/user/**").authenticated()
-                        .requestMatchers(HttpMethod.POST,"/groups/**", "/events/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT,"/groups/**", "/events/**").authenticated()
-                                .requestMatchers(HttpMethod.PATCH,"/groups/**", "/events/**").authenticated()
-                                .requestMatchers(HttpMethod.DELETE,"/groups/**", "/events/**").authenticated()
-                                .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/recommendations", "/user/*").authenticated()
+                        .requestMatchers("/user/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/groups/**", "/events/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/groups/**", "/events/**").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/groups/**", "/events/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/groups/**", "/events/**").authenticated()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().permitAll()
                 )
                 .httpBasic(e -> e.disable())
@@ -61,7 +62,7 @@ public class SecurityConfiguration {
                             res.getWriter().write("Logged out successfully");
                         })
                 )
-                ;
+        ;
 
         return http.build();
     }
@@ -73,8 +74,8 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(){
-        DaoAuthenticationProvider authenticationProvider= new DaoAuthenticationProvider(userDetailsService);
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userDetailsService);
         authenticationProvider.setUserDetailsPasswordService(UserDetailsPasswordService.NOOP);
         authenticationProvider.setPasswordEncoder(passwordEncoder());
         return authenticationProvider;

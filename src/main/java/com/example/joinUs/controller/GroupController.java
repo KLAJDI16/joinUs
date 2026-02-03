@@ -28,8 +28,8 @@ public class GroupController {
     // READ: list all groups
     @GetMapping
     public Page<GroupSummaryDTO> getAllGroups(@RequestParam(defaultValue = "0") int page,
-                                              @RequestParam(defaultValue = "100") int size ) {
-        return groupService.getAllGroups(page,size);
+            @RequestParam(defaultValue = "100") int size) {
+        return groupService.getAllGroups(page, size);
     }
 
     // READ: get one group by groupId
@@ -37,15 +37,16 @@ public class GroupController {
     public GroupDTO getGroupById(@PathVariable String id) {
         return groupService.getGroupById(id);
     }
+
     @PostMapping("/{groupId}/join")
     public ResponseEntity joinGroup(@PathVariable String groupId) {
-        return ResponseEntity.ok(  groupService.joinGroup(groupId));
+        return ResponseEntity.ok(groupService.joinGroup(groupId));
     }
 
     // Leave group
     @PostMapping("/{groupId}/leave")
     public ResponseEntity leaveGroup(@PathVariable String groupId) {
-        return ResponseEntity.ok( groupService.leaveGroup(groupId));
+        return ResponseEntity.ok(groupService.leaveGroup(groupId));
     }
 
     // Add organizer
@@ -57,12 +58,11 @@ public class GroupController {
         return ResponseEntity.ok(groupService.addOrganizer(groupId, organizerId));
     }
 
-
     // CREATE: create a new group
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public  ResponseEntity createGroup(@RequestBody GroupDTO groupDTO)  {
-        return ResponseEntity.ok( groupService.createGroup(groupDTO));
+    public ResponseEntity createGroup(@RequestBody GroupDTO groupDTO) {
+        return ResponseEntity.ok(groupService.createGroup(groupDTO));
     }
 
     // UPDATE (partial): update an existing group
@@ -71,6 +71,7 @@ public class GroupController {
 
         return ResponseEntity.ok(groupService.updateGroup(id, groupDTO));
     }
+
     @GetMapping("/{groupId}/events")
     @Operation(summary = "Get all events (historical and upcoming) organized by a group")
     public List<EventSummaryDTO> getEventsOrganizedByGroup(
@@ -78,6 +79,7 @@ public class GroupController {
     ) {
         return groupService.findAllEventOrganizedByGroup(groupId);
     }
+
     @GetMapping("/search")
     public Page<GroupSummaryDTO> searchGroups(
             @RequestParam(required = false) String name,
@@ -92,15 +94,15 @@ public class GroupController {
 
     ) {
         return groupService.search(
-                 name,
-                 city,
-                 category,
-                 minMembers,
-                 maxMembers,
-                 minEvents,
-                 maxEvents,
-         page,
-         pageSize
+                name,
+                city,
+                category,
+                minMembers,
+                maxMembers,
+                minEvents,
+                maxEvents,
+                page,
+                pageSize
         );
     }
 

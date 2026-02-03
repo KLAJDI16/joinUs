@@ -1,6 +1,5 @@
 package com.example.joinUs.repository;
 
-import com.example.joinUs.dto.GroupDTO;
 import com.example.joinUs.dto.analytics.GroupsPerCityAnalytic;
 import com.example.joinUs.dto.analytics.GroupsPerOrganizerAnalytic;
 import com.example.joinUs.dto.analytics.GroupsPerTopicAnalytic;
@@ -13,15 +12,15 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 
 @Repository
 public interface GroupRepository extends MongoRepository<Group, String> {
-    String fields= "{'_id':1,'group_name':1,'upcoming_events':1,'city.name':1','category.name':1,'member_count':1,'event_count':1}";
-    String projection="{$project:"+fields+"}";
+
+    String fields = "{'_id':1,'group_name':1,'upcoming_events':1,'city.name':1','category.name':1,'member_count':1,'event_count':1}";
+    String projection = "{$project:" + fields + "}";
 
     Optional<Group> findById(String id);
 
@@ -37,11 +36,10 @@ public interface GroupRepository extends MongoRepository<Group, String> {
     //{$or:[{group_id:"5817263"},{group_name:"San Francisco Startup Socials"}]}
 
     @Query("{$or:[{ '_id': ?0 },{ 'group_name': ?1 }]}")
-    List<Group> findGroupByGroupIdOrGroupName(String groupId,String groupName);
+    List<Group> findGroupByGroupIdOrGroupName(String groupId, String groupName);
 
     // Aggregations for Admin page
-//Top Cities by Groups Created in the Past 10 Years
-
+    //Top Cities by Groups Created in the Past 10 Years
 
     // Count Groups per Category
     @Aggregation(pipeline = {
@@ -52,7 +50,6 @@ public interface GroupRepository extends MongoRepository<Group, String> {
             "{$project: {topic:'$_id',groupsCount:1,_id:0}}"
     })
     List<GroupsPerTopicAnalytic> countGroupsByTopic(int limit);
-
 
     //Top Cities by Groups Created in the Past 10 Years
     @Aggregation(pipeline = {
@@ -74,7 +71,6 @@ public interface GroupRepository extends MongoRepository<Group, String> {
     })
     List<Document> trendingCategoriesLastMonth();
 
-
     //Groups created per year (trend) showing Growth of groups over time.
     @Aggregation(pipeline = {
             "{ $match: { created: { $ne: null } } }",
@@ -83,8 +79,6 @@ public interface GroupRepository extends MongoRepository<Group, String> {
             "{ $project: { year: '$_id', groupsCreated: 1, _id: 0 } }"
     })
     List<Document> groupsCreatedPerYear();
-
-
 
     //Organizer leaderboard (top organizers by number of groups)
     @Aggregation(pipeline = {

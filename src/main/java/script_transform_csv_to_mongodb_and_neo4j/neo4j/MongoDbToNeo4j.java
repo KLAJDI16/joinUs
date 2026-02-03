@@ -44,7 +44,7 @@
 //            String queryForNeo4j = "CREATE (p:" + nodesName + "  " +docToNeo4jNode(document) + " )";
 //            executeQueryInParallel(
 //                    driver.executableQuery(queryForNeo4j).withConfig(QueryConfig.builder().withDatabase(neo4jDatabase).build())
-////                            .execute();
+/// /                            .execute();
 //            );
 //        }
 //    }

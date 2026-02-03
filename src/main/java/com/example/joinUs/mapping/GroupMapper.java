@@ -19,35 +19,34 @@ import java.util.List;
 )
 public interface GroupMapper {
 
-//    @Mapping(target = "groupId",source = "id")
-//    @Mapping(source = "id", ignore = true)
+    //    @Mapping(target = "groupId",source = "id")
+    //    @Mapping(source = "id", ignore = true)
     GroupDTO toDTO(Group group);
 
-//    @Mapping(target = "groupId",source = "id")
-//@Mapping(target = "id", ignore = true)
-List<GroupDTO> toDTOs(List<Group> groups);
+    //    @Mapping(target = "groupId",source = "id")
+    //@Mapping(target = "id", ignore = true)
+    List<GroupDTO> toDTOs(List<Group> groups);
 
     // Ignore Mongo internal id because the DTO doesn't carry it.
-//    @Mapping(target = "id",source = "groupId")
-//    @Mapping(target = "id", ignore = true)
+    //    @Mapping(target = "id",source = "groupId")
+    //    @Mapping(target = "id", ignore = true)
     Group toEntity(GroupDTO dto);
 
+    @Mapping(target = "groupId", source = "id")
+    @Mapping(target = "cityName", source = "city.name")
+    @Mapping(target = "categoryName", source = "category.name")
+    GroupNeo4J toNeo4JEntity(GroupDTO dto);
 
-        @Mapping(target = "groupId",source = "id")
-        @Mapping(target = "cityName",source = "city.name")
-        @Mapping(target = "categoryName",source = "category.name")
-        GroupNeo4J toNeo4JEntity(GroupDTO dto);
-
-    @Mapping(target = "id",source = "groupId")
-    @Mapping(target = "city.name",source = "cityName")
-    @Mapping(target = "category.name",source = "categoryName")
-    @Mapping(target = "created",ignore = true)
-    @Mapping(target = "memberCount",ignore = true)
-    @Mapping(target = "eventCount",ignore = true)
-    @Mapping(target = "organizers",ignore = true)
-    @Mapping(target = "upcomingEvents",ignore = true)
-    @Mapping(target = "topics",ignore = true)
-    @Mapping(target = "groupPhoto",ignore = true)
+    @Mapping(target = "id", source = "groupId")
+    @Mapping(target = "city.name", source = "cityName")
+    @Mapping(target = "category.name", source = "categoryName")
+    @Mapping(target = "created", ignore = true)
+    @Mapping(target = "memberCount", ignore = true)
+    @Mapping(target = "eventCount", ignore = true)
+    @Mapping(target = "organizers", ignore = true)
+    @Mapping(target = "upcomingEvents", ignore = true)
+    @Mapping(target = "topics", ignore = true)
+    @Mapping(target = "groupPhoto", ignore = true)
     GroupDTO toNeo4JDTO(GroupNeo4J groupNeo4J);
 
 }

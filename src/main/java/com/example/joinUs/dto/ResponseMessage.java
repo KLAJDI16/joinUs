@@ -1,6 +1,7 @@
 package com.example.joinUs.dto;
 
 public class ResponseMessage {
+
     public String status;
     public String message;
 

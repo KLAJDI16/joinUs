@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class GroupPhoto {
+
     private String highresLink;
     private String photoLink;
     private String thumbLink;

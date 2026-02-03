@@ -14,28 +14,30 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class CsvDataOperations {
-    public static final String firstDatasetFolder= ConfigurationFileReader.checkAndGetProp("firstDatasetFolder");
-    public static final String secondDatasetFolder=ConfigurationFileReader.checkAndGetProp("secondDatasetFolder");;
-    public static  String transformedDatasetFolder=firstDatasetFolder.substring(0,firstDatasetFolder
-            .substring(0,firstDatasetFolder.length()-2).lastIndexOf("\\")+1)+"TransformedDataset\\";
-    public static final String metaMembersPath= secondDatasetFolder+"meta-members.csv";
-    public static final String metaEventsPath= secondDatasetFolder+"meta-events.csv";
-    public static final String metaGroupsPath= secondDatasetFolder+"meta-groups.csv";
-    public static final String membersPath= firstDatasetFolder+"members.csv";
-    public static final String groupsPath= firstDatasetFolder+"groups.csv";
-    public static final String eventsPath= firstDatasetFolder+"events.csv";
-    public static final String topicsPath= firstDatasetFolder+"topics.csv";
 
-    public static final String memberTopicsPath= firstDatasetFolder+"members_topics.csv";
-    public static final String groupTopicsPath= firstDatasetFolder+"groups_topics.csv";
-    public static final String transformedMembers=transformedDatasetFolder+"members.csv";
-    public static final String transformedGroups=transformedDatasetFolder+"groups.csv";
-    public static final String transformedEvents=transformedDatasetFolder+"events.csv";
-    public static final String transformedGroupTopics=transformedDatasetFolder+"groups_topics.csv";
-    public static final String transformedMemberTopics=transformedDatasetFolder+"member_topics.csv";
-    public static double membersLimit= Double.parseDouble(ConfigurationFileReader.checkAndGetProp("membersLimit"));
-    public static double recordsLimit= Double.parseDouble(ConfigurationFileReader.checkAndGetProp("recordsLimit"));
+public class CsvDataOperations {
+
+    public static final String firstDatasetFolder = ConfigurationFileReader.checkAndGetProp("firstDatasetFolder");
+    public static final String secondDatasetFolder = ConfigurationFileReader.checkAndGetProp("secondDatasetFolder");
+    public static String transformedDatasetFolder = firstDatasetFolder.substring(0, firstDatasetFolder
+            .substring(0, firstDatasetFolder.length() - 2).lastIndexOf("\\") + 1) + "TransformedDataset\\";
+    public static final String metaMembersPath = secondDatasetFolder + "meta-members.csv";
+    public static final String metaEventsPath = secondDatasetFolder + "meta-events.csv";
+    public static final String metaGroupsPath = secondDatasetFolder + "meta-groups.csv";
+    public static final String membersPath = firstDatasetFolder + "members.csv";
+    public static final String groupsPath = firstDatasetFolder + "groups.csv";
+    public static final String eventsPath = firstDatasetFolder + "events.csv";
+    public static final String topicsPath = firstDatasetFolder + "topics.csv";
+
+    public static final String memberTopicsPath = firstDatasetFolder + "members_topics.csv";
+    public static final String groupTopicsPath = firstDatasetFolder + "groups_topics.csv";
+    public static final String transformedMembers = transformedDatasetFolder + "members.csv";
+    public static final String transformedGroups = transformedDatasetFolder + "groups.csv";
+    public static final String transformedEvents = transformedDatasetFolder + "events.csv";
+    public static final String transformedGroupTopics = transformedDatasetFolder + "groups_topics.csv";
+    public static final String transformedMemberTopics = transformedDatasetFolder + "member_topics.csv";
+    public static double membersLimit = Double.parseDouble(ConfigurationFileReader.checkAndGetProp("membersLimit"));
+    public static double recordsLimit = Double.parseDouble(ConfigurationFileReader.checkAndGetProp("recordsLimit"));
 
     static List<String> readColumnValues(String csvPath, String column) throws Exception {
         try (CSVReader reader = new CSVReader(new FileReader(csvPath))) {
@@ -153,7 +155,6 @@ public class CsvDataOperations {
         return mapping;
     }
 
-
     static void applyMapping(
             String inputCsv,
             String outputCsv,
@@ -170,18 +171,18 @@ public class CsvDataOperations {
             String[] header = reader.readNext();
             String[] headerToWrite = new String[header.length];
 
-            for (int i=0;i<header.length;i++)
-                headerToWrite[i] = header[i].replace(".","_"); //Go back here
+            for (int i = 0; i < header.length; i++)
+                headerToWrite[i] = header[i].replace(".", "_"); //Go back here
 
             writer.writeNext(headerToWrite);
 
             int index = Arrays.asList(header).indexOf(idColumn);
 
             String[] row;
-            int count=0;
+            int count = 0;
             while ((row = reader.readNext()) != null) {
-                if ((inputCsv.contains("members") && (membersLimit>0 && count>membersLimit)) ||
-                        (recordsLimit>0 && count>recordsLimit)) break;
+                if ((inputCsv.contains("members") && (membersLimit > 0 && count > membersLimit)) ||
+                        (recordsLimit > 0 && count > recordsLimit)) break;
                 count++;
                 String oldId = row[index];
                 if (mapping.containsKey(oldId)) {
@@ -193,22 +194,28 @@ public class CsvDataOperations {
     }
 
     public static void updateMemberIdsAtCSV() throws Exception {
-        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaMembersPath,"member_id","member_id",-1, CsvDataOperations.membersPath, CsvDataOperations.memberTopicsPath);
-        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.transformedMembers,"member_id","organizer.member_id",-1, CsvDataOperations.groupsPath);
+        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaMembersPath, "member_id", "member_id", -1,
+                CsvDataOperations.membersPath, CsvDataOperations.memberTopicsPath);
+        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.transformedMembers, "member_id", "organizer.member_id", -1,
+                CsvDataOperations.groupsPath);
 
         //        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.transformedMembers,"member_name","organizer.name",-1, CsvDataOperations.transformedGroups);
 
     }
+
     public static void updateEventIdsAtCSV() throws Exception {
-        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaEventsPath,"event_id","event_id",-1, CsvDataOperations.eventsPath);
+        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaEventsPath, "event_id", "event_id", -1,
+                CsvDataOperations.eventsPath);
     }
+
     public static void updateGroupIdsAtCSV() throws Exception {
-        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaGroupsPath,"group_id","group_id",-1, CsvDataOperations.transformedGroups,transformedDatasetFolder+"members.csv",
+        CsvDataOperations.updateIdsFromCsv(CsvDataOperations.metaGroupsPath, "group_id", "group_id", -1,
+                CsvDataOperations.transformedGroups, transformedDatasetFolder + "members.csv",
                 CsvDataOperations.groupTopicsPath, CsvDataOperations.transformedEvents);
 
     }
 
-    public static void updateIdsDirectlyFromCSV(){
+    public static void updateIdsDirectlyFromCSV() {
 
         try {
             CsvDataOperations.updateEventIdsAtCSV();
@@ -243,7 +250,8 @@ public class CsvDataOperations {
             int port = Integer.parseInt(ConfigurationFileReader.checkAndGetProp("scpPort")); // e.g., 22
             String username = ConfigurationFileReader.checkAndGetProp("scpUsername");
             String password = ConfigurationFileReader.checkAndGetProp("scpPassword");
-            String remoteDestination = ConfigurationFileReader.checkAndGetProp("scpDestination"); // Remote destination directory
+            String remoteDestination = ConfigurationFileReader.checkAndGetProp(
+                    "scpDestination"); // Remote destination directory
 
             JSch jsch = new JSch();
             Session session = null;
@@ -272,7 +280,8 @@ public class CsvDataOperations {
 
                 // Upload topics.csv and rsvps.csv
                 try (InputStream topicsStream = Files.newInputStream(Path.of(topicsPath));
-                        InputStream rsvpsStream = Files.newInputStream(Path.of(CsvDataOperations.secondDatasetFolder + "rsvps.csv"))) {
+                        InputStream rsvpsStream = Files.newInputStream(
+                                Path.of(CsvDataOperations.secondDatasetFolder + "rsvps.csv"))) {
                     channelSftp.put(topicsStream, remoteDestination + "/topics.csv");
                     channelSftp.put(rsvpsStream, remoteDestination + "/rsvps.csv");
                 }
@@ -289,92 +298,90 @@ public class CsvDataOperations {
                 }
             }
         } else {
-            throw new IllegalArgumentException("Invalid transferMode specified in the configuration. Use 'local' or 'scp'.");
+            throw new IllegalArgumentException(
+                    "Invalid transferMode specified in the configuration. Use 'local' or 'scp'.");
         }
     }
-//    public static void copyFilesToNeo4JImportFolder() throws IOException {
-//        String transferMode = ConfigurationFileReader.checkAndGetProp("transferMode"); // "local" or "ftp"
-//        String importFolder = ConfigurationFileReader.checkAndGetProp("importFolder");
-//
-//        File[] files = new File(CsvDataOperations.transformedDatasetFolder).listFiles();
-//        if (files == null) {
-//            throw new IOException("Transformed dataset folder is empty or doesn't exist.");
-//        }
-//
-//        if ("local".equalsIgnoreCase(transferMode)) {
-//            // Local copying
-//            for (File file : files) {
-//                String fileName = file.getName();
-//                Files.copy(file.toPath(), new FileOutputStream(importFolder + fileName));
-//            }
-//            Files.copy(Path.of(topicsPath), new FileOutputStream(importFolder + "topics.csv"));
-//            Files.copy(Path.of(CsvDataOperations.secondDatasetFolder + "rsvps.csv"),
-//                    new FileOutputStream(importFolder + "rsvps.csv"));
-//        } else if ("ftp".equalsIgnoreCase(transferMode)) {
-//            // FTP file transfer
-//            String host = ConfigurationFileReader.checkAndGetProp("ftpHost");
-//            int port = Integer.parseInt(ConfigurationFileReader.checkAndGetProp("ftpPort")); // Default: 21
-//            String username = ConfigurationFileReader.checkAndGetProp("ftpUsername");
-//            String password = ConfigurationFileReader.checkAndGetProp("ftpPassword");
-//            String remoteDestination = ConfigurationFileReader.checkAndGetProp("ftpDestination");
-//
-//            FTPClient ftpClient = new FTPClient();
-//
-//            try {
-//                // Connect to FTP server
-//                ftpClient.connect(host, port);
-//                ftpClient.login(username, password);
-//
-//                // Set FTP transfer mode
-//                ftpClient.enterLocalPassiveMode();
-//                ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
-//
-//                // Upload transformed dataset files
-//                for (File file : files) {
-//                    String remoteFilePath = remoteDestination + "/" + file.getName();
-//                    try (InputStream fileInputStream = new FileInputStream(file)) {
-//                        boolean success = ftpClient.storeFile(remoteFilePath, fileInputStream);
-//                        if (!success) {
-//                            throw new IOException("Failed to upload file: " + file.getName());
-//                        }
-//                    }
-//                }
-//
-//                // Upload topics.csv and rsvps.csv
-//                try (InputStream topicsStream = Files.newInputStream(Path.of(topicsPath));
-//                        InputStream rsvpsStream = Files.newInputStream(Path.of(CsvDataOperations.secondDatasetFolder + "rsvps.csv"))) {
-//                    if (!ftpClient.storeFile(remoteDestination + "/topics.csv", topicsStream)) {
-//                        throw new IOException("Failed to upload topics.csv");
-//                    }
-//                    if (!ftpClient.storeFile(remoteDestination + "/rsvps.csv", rsvpsStream)) {
-//                        throw new IOException("Failed to upload rsvps.csv");
-//                    }
-//                }
-//
-//            } catch (Exception e) {
-//                throw new IOException("Error occurred during FTP file transfer: " + e.getMessage(), e);
-//            } finally {
-//                // Disconnect from FTP server
-//                if (ftpClient.isConnected()) {
-//                    try {
-//                        ftpClient.logout();
-//                        ftpClient.disconnect();
-//                    } catch (IOException ex) {
-//                        System.err.println("Error while disconnecting from FTP server: " + ex.getMessage());
-//                    }
-//                }
-//            }
-//        } else {
-//            throw new IllegalArgumentException("Invalid transferMode specified in the configuration. Use 'local' or 'ftp'.");
-//        }
-//    }
-
-
-
-
+    //    public static void copyFilesToNeo4JImportFolder() throws IOException {
+    //        String transferMode = ConfigurationFileReader.checkAndGetProp("transferMode"); // "local" or "ftp"
+    //        String importFolder = ConfigurationFileReader.checkAndGetProp("importFolder");
+    //
+    //        File[] files = new File(CsvDataOperations.transformedDatasetFolder).listFiles();
+    //        if (files == null) {
+    //            throw new IOException("Transformed dataset folder is empty or doesn't exist.");
+    //        }
+    //
+    //        if ("local".equalsIgnoreCase(transferMode)) {
+    //            // Local copying
+    //            for (File file : files) {
+    //                String fileName = file.getName();
+    //                Files.copy(file.toPath(), new FileOutputStream(importFolder + fileName));
+    //            }
+    //            Files.copy(Path.of(topicsPath), new FileOutputStream(importFolder + "topics.csv"));
+    //            Files.copy(Path.of(CsvDataOperations.secondDatasetFolder + "rsvps.csv"),
+    //                    new FileOutputStream(importFolder + "rsvps.csv"));
+    //        } else if ("ftp".equalsIgnoreCase(transferMode)) {
+    //            // FTP file transfer
+    //            String host = ConfigurationFileReader.checkAndGetProp("ftpHost");
+    //            int port = Integer.parseInt(ConfigurationFileReader.checkAndGetProp("ftpPort")); // Default: 21
+    //            String username = ConfigurationFileReader.checkAndGetProp("ftpUsername");
+    //            String password = ConfigurationFileReader.checkAndGetProp("ftpPassword");
+    //            String remoteDestination = ConfigurationFileReader.checkAndGetProp("ftpDestination");
+    //
+    //            FTPClient ftpClient = new FTPClient();
+    //
+    //            try {
+    //                // Connect to FTP server
+    //                ftpClient.connect(host, port);
+    //                ftpClient.login(username, password);
+    //
+    //                // Set FTP transfer mode
+    //                ftpClient.enterLocalPassiveMode();
+    //                ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+    //
+    //                // Upload transformed dataset files
+    //                for (File file : files) {
+    //                    String remoteFilePath = remoteDestination + "/" + file.getName();
+    //                    try (InputStream fileInputStream = new FileInputStream(file)) {
+    //                        boolean success = ftpClient.storeFile(remoteFilePath, fileInputStream);
+    //                        if (!success) {
+    //                            throw new IOException("Failed to upload file: " + file.getName());
+    //                        }
+    //                    }
+    //                }
+    //
+    //                // Upload topics.csv and rsvps.csv
+    //                try (InputStream topicsStream = Files.newInputStream(Path.of(topicsPath));
+    //                        InputStream rsvpsStream = Files.newInputStream(Path.of(CsvDataOperations.secondDatasetFolder + "rsvps.csv"))) {
+    //                    if (!ftpClient.storeFile(remoteDestination + "/topics.csv", topicsStream)) {
+    //                        throw new IOException("Failed to upload topics.csv");
+    //                    }
+    //                    if (!ftpClient.storeFile(remoteDestination + "/rsvps.csv", rsvpsStream)) {
+    //                        throw new IOException("Failed to upload rsvps.csv");
+    //                    }
+    //                }
+    //
+    //            } catch (Exception e) {
+    //                throw new IOException("Error occurred during FTP file transfer: " + e.getMessage(), e);
+    //            } finally {
+    //                // Disconnect from FTP server
+    //                if (ftpClient.isConnected()) {
+    //                    try {
+    //                        ftpClient.logout();
+    //                        ftpClient.disconnect();
+    //                    } catch (IOException ex) {
+    //                        System.err.println("Error while disconnecting from FTP server: " + ex.getMessage());
+    //                    }
+    //                }
+    //            }
+    //        } else {
+    //            throw new IllegalArgumentException("Invalid transferMode specified in the configuration. Use 'local' or 'ftp'.");
+    //        }
+    //    }
 
 
     class CsvMemberUpdater {
+
         void updateMembersTopicsCsv(
                 String inputPath,
                 String outputPath,
@@ -419,7 +426,6 @@ public class CsvDataOperations {
             );
         }
 
-
         Map<String, String> updateMembersCsv(
                 String membersPath,
                 String outputPath,
@@ -457,7 +463,6 @@ public class CsvDataOperations {
             }
             return idMap;
         }
-
 
         List<String> loadMetaMemberIds(String metaPath) throws Exception {
             List<String> ids = new ArrayList<>();

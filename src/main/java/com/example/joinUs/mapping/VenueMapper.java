@@ -5,7 +5,7 @@ import com.example.joinUs.model.mongodb.Venue;
 import org.mapstruct.Mapper;
 
 
-@Mapper(config = CentralMappingConfig.class,uses = {CityMapper.class})
+@Mapper(config = CentralMappingConfig.class, uses = { CityMapper.class })
 public interface VenueMapper {
 
     VenueDTO toDTO(Venue venue);

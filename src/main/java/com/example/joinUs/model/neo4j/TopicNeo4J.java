@@ -1,6 +1,5 @@
 package com.example.joinUs.model.neo4j;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

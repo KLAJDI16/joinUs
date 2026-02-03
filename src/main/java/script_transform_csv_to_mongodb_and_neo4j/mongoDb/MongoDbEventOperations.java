@@ -15,11 +15,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.Future;
 
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.match;
-
 
 public class MongoDbEventOperations {
+
     public MongoClient mongoClient;
     public MongoDatabase mongoOriginalDatabase;
     public static String newEventCollectionName = "events";
@@ -30,13 +28,15 @@ public class MongoDbEventOperations {
         return mongoOriginalDatabase.getCollection(newEventCollectionName);
     }
 
-    public MongoDbEventOperations(MongoClient mongoClient, MongoDatabase mongoOriginalDatabase, ParallelExecutor parallelExecutor) {
+    public MongoDbEventOperations(MongoClient mongoClient, MongoDatabase mongoOriginalDatabase,
+            ParallelExecutor parallelExecutor) {
         this.mongoClient = mongoClient;
         this.mongoOriginalDatabase = mongoOriginalDatabase;
         this.parallelExecutor = parallelExecutor;
     }
 
-    public MongoDbEventOperations(MongoClient mongoClient, MongoDatabase mongoOriginalDatabase, MongoCollection eventCollection, ParallelExecutor parallelExecutor) {
+    public MongoDbEventOperations(MongoClient mongoClient, MongoDatabase mongoOriginalDatabase,
+            MongoCollection eventCollection, ParallelExecutor parallelExecutor) {
         this.mongoClient = mongoClient;
         this.mongoOriginalDatabase = mongoOriginalDatabase;
         this.parallelExecutor = parallelExecutor;
@@ -53,9 +53,9 @@ public class MongoDbEventOperations {
         Document feeDocument = new Document();
         feeDocument.append("accepts", oldEvent.getString("fee_accepts"));
         String amount = oldEvent.getString("fee_amount");
-        if (amount!=null && !amount.isEmpty() && !amount.isBlank()) {
+        if (amount != null && !amount.isEmpty() && !amount.isBlank()) {
             feeDocument.append("amount", Double.parseDouble(amount));
-        }else feeDocument.append("amount",0);
+        } else feeDocument.append("amount", 0);
 
         String currency = oldEvent.getString("fee_currency");
 
@@ -77,7 +77,7 @@ public class MongoDbEventOperations {
      * @param oldEvent
      * @return
      */
-    public   Document  extractCreatorGroupForEvent(Document oldEvent) {
+    public Document extractCreatorGroupForEvent(Document oldEvent) {
         Document groupDocument = new Document();
         String event_id = oldEvent.getString("event_id");
         MongoCollection groupCollection = MongoDataLoader.csvDocuments.getCollection("groups.csv");
@@ -92,7 +92,6 @@ public class MongoDbEventOperations {
         groupDocument.append("group_name", document.getString("group_name"));
         groupDocument.append("thumb_link", document.getString("group_photo_thumb_link"));
 
-
         return groupDocument;
 
     }
@@ -100,7 +99,6 @@ public class MongoDbEventOperations {
     public static Document extractVenueForEvent(Document oldEvent) {
         String cityName = oldEvent.getString("venue_city");
         Document venue = new Document();
-
 
         Document city = MongoDbCityOperation.extractCityToEmbedFromCityName(cityName);
         venue.append("city", city);
@@ -116,9 +114,9 @@ public class MongoDbEventOperations {
         Document event = new Document();
 
         List<String> fieldsToIncludeDirectly = List.of(
-                "description",  "event_name");
+                "description", "event_name");
 
-        event.append("_id",oldEvent.getString("event_id"));
+        event.append("_id", oldEvent.getString("event_id"));
         for (String key : oldEvent.keySet()) {
             if (fieldsToIncludeDirectly.contains(key)) {
                 event.append(key, oldEvent.getString(key));
@@ -136,7 +134,6 @@ public class MongoDbEventOperations {
             throw new RuntimeException(e);
         }
 
-
         Instant eventTimeInstant = event_time.toInstant();
         Instant updatedInstant = updated.toInstant();
         Instant createdInstant = created.toInstant();
@@ -147,14 +144,13 @@ public class MongoDbEventOperations {
         updated = Date.from(updatedInstant.plus(9 * 365 + 2, ChronoUnit.DAYS));
         created = Date.from(createdInstant.plus(9 * 365 + 2, ChronoUnit.DAYS));
 
-
         event.append("created", created);
         event.append("event_time", event_time);
         event.append("updated", updated);
 
         Long duration = Long.parseLong(oldEvent.getString("duration"));
 
-        event.append("duration", duration/60);
+        event.append("duration", duration / 60);
 
         return event;
     }
@@ -170,8 +166,8 @@ public class MongoDbEventOperations {
 
         MongoCollection groupCollection = MongoDataLoader.csvDocuments.getCollection("groups.csv");
 
-        Document group = (Document) groupCollection.find(Filters.eq("group_name", oldEvent.getString("group_name"))).first();
-
+        Document group = (Document) groupCollection.find(Filters.eq("group_name", oldEvent.getString("group_name")))
+                .first();
 
         return MongoDbGroupOperations.extractCategoryFromGroup(group);
     }
@@ -193,7 +189,8 @@ public class MongoDbEventOperations {
 
         while (mongoCursor.hasNext()) {
             Document document = mongoCursor.next();
-            memberCount.put(document.getString("event_id"), document.getDouble("member_count")!=null?document.getDouble("member_count"):0 );
+            memberCount.put(document.getString("event_id"),
+                    document.getDouble("member_count") != null ? document.getDouble("member_count") : 0);
         }
         return memberCount;
 
@@ -207,7 +204,6 @@ public class MongoDbEventOperations {
 
         MongoCollection oldEventCollection = MongoDataLoader.csvDocuments.getCollection("events.csv");
 
-
         try (MongoCursor<Document> mongoCursor = oldEventCollection.find().cursor()) {
             Future[] futures = new Future[5];
 
@@ -217,13 +213,13 @@ public class MongoDbEventOperations {
                 String event_id = oldDocument.getString("event_id");
                 String event_name = oldDocument.getString("event_name");
 
-                if (event_name==null || event_name.isEmpty() || event_name.isBlank()) continue;
+                if (event_name == null || event_name.isEmpty() || event_name.isBlank()) continue;
 
                 futures[0] = parallelExecutor.submit(MongoDbEventOperations::extractEventDocument, oldDocument);
                 futures[1] = parallelExecutor.submit(MongoDbEventOperations::extractCategoryForEvent, oldDocument);
                 futures[2] = parallelExecutor.submit(MongoDbEventOperations::extractFeeFromEvent, oldDocument);
                 futures[3] = parallelExecutor.submit(MongoDbEventOperations::extractVenueForEvent, oldDocument);
-                futures[4] = parallelExecutor.submit(e -> extractCreatorGroupForEvent(e),oldDocument);
+                futures[4] = parallelExecutor.submit(e -> extractCreatorGroupForEvent(e), oldDocument);
 
                 newEvent = (Document) futures[0].get();
 
@@ -231,18 +227,15 @@ public class MongoDbEventOperations {
                 newEvent.append("fee", futures[2].get());
                 newEvent.append("venue", futures[3].get());
 
-
                 MongoDataLoader.assignIfFound(newEvent, "creator_group", futures[4].get());
-                newEvent.append("member_count", memberCount.get(event_id)!=null?memberCount.get(event_id):0);
+                newEvent.append("member_count", memberCount.get(event_id) != null ? memberCount.get(event_id) : 0);
 
-
-//                newEvent = extractEventDocument(oldDocument);
-//                CsvToMongoTransformer.assignIfFound(newEvent, "creator_group", extractCreatorGroupForEvent(oldDocument));
-//                newEvent.append("categories", extractCategoryForEvent(oldDocument));
-//                newEvent.append("fee", extractFeeFromEvent(oldDocument));
-//                newEvent.append("venue", extractVenueForEvent(oldDocument));
-//                newEvent.append("member_count", memberCount.get(event_id));
-
+                //                newEvent = extractEventDocument(oldDocument);
+                //                CsvToMongoTransformer.assignIfFound(newEvent, "creator_group", extractCreatorGroupForEvent(oldDocument));
+                //                newEvent.append("categories", extractCategoryForEvent(oldDocument));
+                //                newEvent.append("fee", extractFeeFromEvent(oldDocument));
+                //                newEvent.append("venue", extractVenueForEvent(oldDocument));
+                //                newEvent.append("member_count", memberCount.get(event_id));
 
                 Document finalNewEvent = newEvent;
                 parallelExecutor.submit(() -> newEventCollection.insertOne(finalNewEvent));
@@ -256,14 +249,12 @@ public class MongoDbEventOperations {
         List<Document> upcomingEvents = new ArrayList<>();
         MongoCollection<Document> eventCollection = MongoDataLoader.newMongoDatabase.getCollection("events");
 
-
         try (MongoCursor<Document> eventCursor = eventCollection.find(
                 Filters.and(
                         Filters.in("_id", event_ids)
                         , Filters.gt("event_time", new Date())
                 )
         ).cursor()) {
-
 
             while (eventCursor.hasNext()) {
                 Document documentToEmbed = new Document();
@@ -280,6 +271,5 @@ public class MongoDbEventOperations {
         }
         return upcomingEvents;
     }
-
 
 }

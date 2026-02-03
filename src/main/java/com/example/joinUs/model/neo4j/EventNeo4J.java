@@ -10,12 +10,14 @@ import org.springframework.data.neo4j.core.schema.Property;
 
 import java.time.OffsetDateTime;
 
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Node("Event")
 public class EventNeo4J {
+
     @Id
     @Property(name = "event_id")
     private String eventId;

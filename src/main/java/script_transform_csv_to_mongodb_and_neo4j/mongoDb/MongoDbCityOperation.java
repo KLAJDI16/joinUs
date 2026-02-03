@@ -9,15 +9,17 @@ import org.bson.Document;
 import script_transform_csv_to_mongodb_and_neo4j.ParallelExecutor;
 
 import java.util.List;
-import java.util.concurrent.Callable;
+
 
 public class MongoDbCityOperation {
+
     public MongoClient mongoClient;
     public MongoDatabase mongoOriginalDatabase;
     public static String newCityCollectionName = "cities";
     private final ParallelExecutor parallelExecutor;
 
-    public MongoDbCityOperation(MongoClient mongoClient, MongoDatabase mongoOriginalDatabase, ParallelExecutor parallelExecutor) {
+    public MongoDbCityOperation(MongoClient mongoClient, MongoDatabase mongoOriginalDatabase,
+            ParallelExecutor parallelExecutor) {
         this.mongoClient = mongoClient;
         this.mongoOriginalDatabase = mongoOriginalDatabase;
         this.parallelExecutor = parallelExecutor;
@@ -29,43 +31,42 @@ public class MongoDbCityOperation {
         return mongoCollection;
     }
 
-
     public MongoDbCityOperation(MongoClient mongoClient, ParallelExecutor parallelExecutor) {
         this.mongoClient = mongoClient;
         mongoOriginalDatabase = mongoClient.getDatabase("joinUs");
         this.parallelExecutor = parallelExecutor;
     }
 
-    protected  Document extractCityToEmbedFromId(String cityId) {
+    protected Document extractCityToEmbedFromId(String cityId) {
         MongoCollection cityCollection = MongoDataLoader.csvDocuments.getCollection("cities.csv");
 
         Document oldDocument = (Document) cityCollection.find(Filters.eq("city_id", cityId))
                 .projection(new Document("_id", 0).append("member_count", 0).append("ranking", 0)).first();
 
-        return extractCityDocument(oldDocument,"city_id");
+        return extractCityDocument(oldDocument, "city_id");
     }
 
     protected static Document extractCityToEmbedFromCityName(String cityName) {
-            MongoCollection cityCollection = MongoDataLoader.csvDocuments.getCollection("cities.csv");
-            Document oldDocument = (Document) cityCollection.find(Filters.eq("city", cityName))
-                    .projection(new Document("_id", 0)).first();
+        MongoCollection cityCollection = MongoDataLoader.csvDocuments.getCollection("cities.csv");
+        Document oldDocument = (Document) cityCollection.find(Filters.eq("city", cityName))
+                .projection(new Document("_id", 0)).first();
 
-            if (oldDocument==null) return new Document();
+        if (oldDocument == null) return new Document();
 
-            Document newDocument = new Document();
-           newDocument.append("name", oldDocument.get("city"));
-            newDocument.append("city_id", oldDocument.get("city_id"));
-            newDocument.append("state", oldDocument.get("state"));
-            newDocument.append("country", oldDocument.get("country"));
-//        city_id
-//                name
-//        state
-//                country
+        Document newDocument = new Document();
+        newDocument.append("name", oldDocument.get("city"));
+        newDocument.append("city_id", oldDocument.get("city_id"));
+        newDocument.append("state", oldDocument.get("state"));
+        newDocument.append("country", oldDocument.get("country"));
+        //        city_id
+        //                name
+        //        state
+        //                country
 
-            return newDocument;
+        return newDocument;
     }
 
-    private static Document extractCityDocument(Document oldDocument,String idField) {
+    private static Document extractCityDocument(Document oldDocument, String idField) {
         if (oldDocument == null || oldDocument.isEmpty()) return new Document();
         Document documentToReturn = new Document();
         List<String> keysToIncludeDirectly = List.of("country"
@@ -91,7 +92,6 @@ public class MongoDbCityOperation {
         MongoCollection newCollection = getCityCollection();
         MongoCollection oldCollection = MongoDataLoader.csvDocuments.getCollection("cities.csv");
 
-
         try (MongoCursor<Document> mongoCursor = oldCollection.find().cursor()) {
             Document oldDocument;
 
@@ -99,7 +99,7 @@ public class MongoDbCityOperation {
                 oldDocument = mongoCursor.next();
                 Document finalOldDocument = oldDocument;
                 parallelExecutor.submit(() -> {
-                    newCollection.insertOne(extractCityDocument(finalOldDocument,"_id"));
+                    newCollection.insertOne(extractCityDocument(finalOldDocument, "_id"));
                 });
             }
         }

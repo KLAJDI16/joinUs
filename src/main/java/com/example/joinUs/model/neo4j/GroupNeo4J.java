@@ -8,12 +8,14 @@ import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Property;
 
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Node("Group")
 public class GroupNeo4J {
+
     @Id
     @Property("group_id")
     private String groupId;

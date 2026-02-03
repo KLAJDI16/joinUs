@@ -40,6 +40,5 @@ public class GroupDTO {
 
     private GroupPhotoDTO groupPhoto;
 
-
 }
 

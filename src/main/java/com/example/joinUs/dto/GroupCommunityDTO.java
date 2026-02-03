@@ -11,8 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class GroupCommunityDTO {
-        private GroupDTO group1;
-       private GroupDTO group2;
-        private int sharedMembers;
-    }
+
+    private GroupDTO group1;
+    private GroupDTO group2;
+    private int sharedMembers;
+}
 

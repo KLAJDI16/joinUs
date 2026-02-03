@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -56,12 +55,11 @@ public class User implements UserDetails {
     @Field("password")
     private String password;
 
-
     @Field("isAdmin")
     private Boolean isAdmin;
 
-    public void removeUpcomingEvent(String eventId){
-      upcomingEvents.removeIf(e -> e.getEventId().equalsIgnoreCase(eventId));
+    public void removeUpcomingEvent(String eventId) {
+        upcomingEvents.removeIf(e -> e.getEventId().equalsIgnoreCase(eventId));
     }
 
     @Override

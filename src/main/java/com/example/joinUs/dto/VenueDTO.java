@@ -1,7 +1,6 @@
 package com.example.joinUs.dto;
 
 import com.example.joinUs.model.embedded.CityEmbedded;
-import com.example.joinUs.model.mongodb.City;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

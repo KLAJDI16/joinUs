@@ -1,6 +1,5 @@
 package com.example.joinUs;
 
-import com.example.joinUs.model.neo4j.UserNeo4J;
 import com.example.joinUs.repository.UserNeo4JRepository;
 import com.example.joinUs.repository.UserRepository;
 import com.example.joinUs.service.EventService;

@@ -17,7 +17,7 @@ public class Fee {
     private String description;
     private Boolean isRequired;
 
-    public static Fee getDefault(){
-        return new Fee("others",0,"per person",false);
+    public static Fee getDefault() {
+        return new Fee("others", 0, "per person", false);
     }
 }

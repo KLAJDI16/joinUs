@@ -1,11 +1,8 @@
 package com.example.joinUs.mapping;
 
-import com.example.joinUs.dto.EventDTO;
 import com.example.joinUs.dto.TopicDTO;
-import com.example.joinUs.model.mongodb.Event;
 import com.example.joinUs.model.mongodb.Topic;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 import java.util.List;
 
@@ -15,7 +12,7 @@ public interface TopicMapper {
 
     TopicDTO toDTO(Topic topic);
 
-//    @Mapping(target = "id", ignore = true)
+    //    @Mapping(target = "id", ignore = true)
     Topic toEntity(TopicDTO dto);
 
     List<TopicDTO> toDTOs(List<Topic> topics);

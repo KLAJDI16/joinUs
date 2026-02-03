@@ -8,4 +8,6 @@ import org.mapstruct.ReportingPolicy;
         componentModel = "spring",
         unmappedTargetPolicy = ReportingPolicy.ERROR
 )
-public interface CentralMappingConfig {}
+public interface CentralMappingConfig {
+
+}

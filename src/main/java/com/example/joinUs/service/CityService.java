@@ -1,7 +1,6 @@
 package com.example.joinUs.service;
 
 import com.example.joinUs.Utils;
-import com.example.joinUs.dto.CityDTO;
 import com.example.joinUs.mapping.CityMapper;
 import com.example.joinUs.model.embedded.CityEmbedded;
 import com.example.joinUs.model.mongodb.City;
@@ -9,8 +8,6 @@ import com.example.joinUs.repository.CityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 
 @Service
@@ -24,7 +21,7 @@ public class CityService {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    public void parseCity(CityEmbedded cityOld){
+    public void parseCity(CityEmbedded cityOld) {
         if (!Utils.isNullOrEmpty(cityOld)) {
             if (!Utils.isNullOrEmpty(cityOld.getCityId())) {
                 String cityId = cityOld.getCityId();
@@ -33,7 +30,7 @@ public class CityService {
             } else if (!Utils.isNullOrEmpty(cityOld.getName())) {
                 String cityName = cityOld.getName();
                 City city = cityRepository.findByName(cityName);
-                if (city != null) cityOld =cityMapper.toEmbedded(city);
+                if (city != null) cityOld = cityMapper.toEmbedded(city);
             }
         }
     }

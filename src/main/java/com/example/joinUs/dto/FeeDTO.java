@@ -19,7 +19,7 @@ public class FeeDTO {
     private String description;
     private Boolean isRequired;
 
-    public static FeeDTO getDefaultDTO(){
-        return new FeeDTO("others",0,"per person",false);
+    public static FeeDTO getDefaultDTO() {
+        return new FeeDTO("others", 0, "per person", false);
     }
 }

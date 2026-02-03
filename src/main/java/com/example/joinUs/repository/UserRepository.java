@@ -8,10 +8,10 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
+
 
 @Repository
-public interface UserRepository extends MongoRepository<User,String> {
+public interface UserRepository extends MongoRepository<User, String> {
 
     // Find by exact member name
     @Query("{ '_id': ?0 }")
@@ -21,7 +21,7 @@ public interface UserRepository extends MongoRepository<User,String> {
     @Query("{ 'member_name': ?0 }")
     List<User> findMemberByName(String member_name);
     // Find by member_id (you could also just use findById inherited from MongoRepository)
-//    Optional<User> findByMember_id(String member_id);
+    //    Optional<User> findByMember_id(String member_id);
 
     // Find all users in a specific city
     @Query("{ 'city.name': ?0 }")
@@ -46,12 +46,11 @@ public interface UserRepository extends MongoRepository<User,String> {
     // 3. Save: userRepository.save(user);
 
     // Delete by member_id
-//    void deleteByMember_id(String member_id);
+    //    void deleteByMember_id(String member_id);
 
     // Count users in a specific city
     @Query(value = "{ 'city.name': ?0 }", count = true)
     long countByCity(String cityName);
-
 
     @Aggregation(pipeline = {
             "{\n" +
@@ -67,7 +66,7 @@ public interface UserRepository extends MongoRepository<User,String> {
                     "      _id:0\n" +
                     "    }\n" +
                     "  }",
-                    "{ $sort: { activityScore: -1 } }",
+            "{ $sort: { activityScore: -1 } }",
             "{ $limit: ?0 }"
     })
     List<ActivityScorePerUserAnalytic> topUsersByActivityScore(int limit);
@@ -92,7 +91,6 @@ public interface UserRepository extends MongoRepository<User,String> {
     })
     List<TrendingTopicPerCityAnalytic> topTrendingTopicsPerCity(int topicCount);
 
-
     @Aggregation(pipeline = {
             "{ $project: { city: '$city.name', isActive: { $gt: [ { $size: { $ifNull: ['$upcoming_events', []] } }, 0 ] } } }",
             "{ $group: { _id: '$city', totalMembers: { $sum: 1 }, activeMembers: { $sum: { $cond: ['$isActive', 1, 0] } } } }",
@@ -101,7 +99,6 @@ public interface UserRepository extends MongoRepository<User,String> {
             "{ $limit: 10 }"
     })
     List<CityActivityAnalytic> mostActiveCities();
-
 
     @Aggregation(pipeline = {
             "{ $group: { _id: '$city.name', usersCount: { $sum: 1 } } }",

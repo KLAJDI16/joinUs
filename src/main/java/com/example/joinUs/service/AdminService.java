@@ -13,8 +13,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+
 @Service
 public class AdminService {
+
     @Autowired
     private EventNeo4JRepository eventNeo4JRepository;
     @Autowired
@@ -45,34 +47,34 @@ public class AdminService {
     @Autowired
     GroupMapper groupMapper;
 
-    public List<ActivityScorePerUserAnalytic> topUsersByActivityScore(int limit){
+    public List<ActivityScorePerUserAnalytic> topUsersByActivityScore(int limit) {
         return userRepository.topUsersByActivityScore(limit);
     }
 
-    public List<CityActivityAnalytic> mostActiveCities(int limit){
-        return  userRepository.mostActiveCities();
+    public List<CityActivityAnalytic> mostActiveCities(int limit) {
+        return userRepository.mostActiveCities();
     }
 
-    public List<GroupsPerCityAnalytic> topCitiesByGroupsLast10Years(int limit){
+    public List<GroupsPerCityAnalytic> topCitiesByGroupsLast10Years(int limit) {
         return groupRepository.topCitiesByGroupsLast10Years(limit);
     }
-    public List<TrendingTopicPerCityAnalytic> topTrendingTopicsPerCity(int topicCount){
+
+    public List<TrendingTopicPerCityAnalytic> topTrendingTopicsPerCity(int topicCount) {
         return userRepository.topTrendingTopicsPerCity(topicCount);
     }
 
-    public PaidVsFreeEventAnalytic paidVsFreePopularity(){
+    public PaidVsFreeEventAnalytic paidVsFreePopularity() {
         return eventRepository.paidVsFreePopularity();
     }
 
-    public long countActiveMembersInGroup(String groupId){
+    public long countActiveMembersInGroup(String groupId) {
         return groupNeo4JRepository.countActiveMembersInGroup(groupId);
     }
 
-
-    public List<GroupCommunityDTO> findGroupCommunities(int sharedMembers, int limit){
+    public List<GroupCommunityDTO> findGroupCommunities(int sharedMembers, int limit) {
 
         User user = Utils.getUserFromContext();
 
-        return groupNeo4JRepository.findGroupCommunities(sharedMembers,limit);
+        return groupNeo4JRepository.findGroupCommunities(sharedMembers, limit);
     }
 }

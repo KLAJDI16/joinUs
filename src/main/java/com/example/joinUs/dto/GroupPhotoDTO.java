@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GroupPhotoDTO {
+
     private String highresLink;
     private String photoLink;
     private String thumbLink;

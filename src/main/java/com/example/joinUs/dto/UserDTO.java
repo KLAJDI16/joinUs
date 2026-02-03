@@ -34,5 +34,4 @@ public class UserDTO {
 
     private List<EventEmbedded> upcomingEvents;
 
-
 }

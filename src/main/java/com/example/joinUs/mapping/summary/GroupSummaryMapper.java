@@ -14,22 +14,23 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
+
 @Mapper(config = CentralMappingConfig.class, uses = {
         UserEmbeddedMapper.class, EventEmbeddedMapper.class, GroupEmbeddedMapper.class,
-        UserMapper.class})
+        UserMapper.class })
 
 public interface GroupSummaryMapper {
 
     @Mapping(source = "city.name", target = "cityName")
     @Mapping(source = "id", target = "id")
-    @Mapping(source = "organizers",target = "organizers")
+    @Mapping(source = "organizers", target = "organizers")
     GroupSummaryDTO toDTO(Group group);
-//groupId
+
+    //groupId
     @Mapping(source = "city.name", target = "cityName")
     @Mapping(source = "id", target = "id")
-    @Mapping(source = "organizers",target = "organizers")
+    @Mapping(source = "organizers", target = "organizers")
     List<GroupSummaryDTO> toDTOs(List<Group> group);
-
 
     @Mapping(source = "groupId", target = "id")
     @Mapping(source = "groupName", target = "groupName")
@@ -42,8 +43,6 @@ public interface GroupSummaryMapper {
     GroupSummaryDTO toDTOFromNeo4j(GroupNeo4J group);
 
     List<GroupSummaryDTO> toDTOsFromNeo4j(List<GroupNeo4J> groupNeo4JS);
-
-
 
     default List<CategoryDTO> mapCategory(String categoryName) {
         if (categoryName == null) return null;

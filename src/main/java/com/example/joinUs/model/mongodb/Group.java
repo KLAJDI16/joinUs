@@ -31,7 +31,7 @@ public class Group {
 
     private String description;
     private String groupName;
-    private Date  created;
+    private Date created;
 
     private CityEmbedded city;
     private Category category;
@@ -44,16 +44,19 @@ public class Group {
     private List<EventEmbedded> upcomingEvents;
     private List<TopicEmbedded> topics;
 
-    public void removeOrganizerMember(String memberId){
+    public void removeOrganizerMember(String memberId) {
         organizers.removeIf(e -> e.getMemberId().equalsIgnoreCase(memberId));
     }
-    public void removeUpcomingEvent(String eventId){
-       upcomingEvents.removeIf(e -> e.getEventId().equalsIgnoreCase(eventId));
+
+    public void removeUpcomingEvent(String eventId) {
+        upcomingEvents.removeIf(e -> e.getEventId().equalsIgnoreCase(eventId));
     }
-    public void addUpcomingEvent(EventEmbedded eventEmbedded){
+
+    public void addUpcomingEvent(EventEmbedded eventEmbedded) {
         upcomingEvents.add(eventEmbedded);
     }
-    public void addOrganizer(UserEmbedded userEmbedded){
+
+    public void addOrganizer(UserEmbedded userEmbedded) {
         organizers.add(userEmbedded);
     }
 

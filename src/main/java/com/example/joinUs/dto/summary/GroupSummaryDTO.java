@@ -1,7 +1,5 @@
 package com.example.joinUs.dto.summary;
 
-
-import com.example.joinUs.dto.CategoryDTO;
 import com.example.joinUs.model.embedded.EventEmbedded;
 import com.example.joinUs.model.embedded.UserEmbedded;
 import com.example.joinUs.model.mongodb.Category;
@@ -13,12 +11,14 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GroupSummaryDTO {
+
     private String id;
     private String groupName;
     private Category category;

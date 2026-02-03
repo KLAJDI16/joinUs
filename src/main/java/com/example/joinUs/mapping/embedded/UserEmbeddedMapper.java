@@ -1,8 +1,8 @@
 package com.example.joinUs.mapping.embedded;
 
-import com.example.joinUs.model.embedded.UserEmbedded;
 import com.example.joinUs.mapping.CentralMappingConfig;
 import com.example.joinUs.mapping.UserMapper;
+import com.example.joinUs.model.embedded.UserEmbedded;
 import com.example.joinUs.model.mongodb.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -10,7 +10,7 @@ import org.mapstruct.Mapping;
 import java.util.List;
 
 
-@Mapper(config = CentralMappingConfig.class,uses = {UserMapper.class})
+@Mapper(config = CentralMappingConfig.class, uses = { UserMapper.class })
 public interface UserEmbeddedMapper {
 
     @Mapping(target = "memberId", source = "id")

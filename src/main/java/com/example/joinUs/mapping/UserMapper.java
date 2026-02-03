@@ -16,10 +16,10 @@ public interface UserMapper {
     @Mapping(target = "id", source = "id")
     UserDTO toDTO(User user);
 
-//    @Mapping(target = "roles",ignore = true)
-//    @Mapping(target = "authorities",ignore = true)
-//    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "isAdmin",ignore = true)
+    //    @Mapping(target = "roles",ignore = true)
+    //    @Mapping(target = "authorities",ignore = true)
+    //    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "isAdmin", ignore = true)
     @Mapping(target = "id", source = "id")
     User toEntity(UserDTO dto);
 
@@ -39,7 +39,7 @@ public interface UserMapper {
     @Mapping(source = "city.name", target = "cityName")
     UserNeo4J toNeo4jEntity(UserDTO dto);
 
-//
+    //
     /*
         @Mapping(target = "topics", ignore = true)
     @Mapping(target = "bio", ignore = true)

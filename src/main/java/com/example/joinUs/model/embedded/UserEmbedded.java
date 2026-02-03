@@ -1,10 +1,10 @@
 package com.example.joinUs.model.embedded;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 
 @Data
 @NoArgsConstructor
@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 //@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserEmbedded {
+
     private String memberId;
     private String memberName;
 }
