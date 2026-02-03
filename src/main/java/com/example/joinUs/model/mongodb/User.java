@@ -60,15 +60,6 @@ public class User implements UserDetails {
     @Field("isAdmin")
     private Boolean isAdmin;
 
-//    public List<String> getRoles(){
-//        List<String> roles = new ArrayList<>();
-//        if (this.isAdmin) roles.add("ADMIN");
-//        for (String str:getCreated_groups()){
-//            roles.add("ORGANIZE_"+str);
-//        }
-//        return roles;
-//    }
-
     public void removeUpcomingEvent(String eventId){
       upcomingEvents.removeIf(e -> e.getEventId().equalsIgnoreCase(eventId));
     }
@@ -76,9 +67,7 @@ public class User implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Collection<String> list = new ArrayList<>();
-
         if (isAdmin) list.add("ROLE_ADMIN"); // TODO also include groups?
-
         return list.stream().map(e -> new SimpleGrantedAuthority(e)).toList();
     }
 

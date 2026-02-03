@@ -337,7 +337,17 @@ protected static void  createMemberGroupsEdge(){
         String secondNode=findNode(secondKey);
         String relationship = findRelationship(firstKey,secondKey);
 
+
+//        String str1="" +
+//                "   LOAD CSV WITH HEADERS FROM '"+ ImportFolder +fileName+"' AS row " +
+//                "CALL {" +
+//                "WITH row "
+//                +" MATCH (m:"+firstNode+" { "+firstKey+": row."+firstKey+" }) " +
+//                "    MATCH (e:"+secondNode+" { "+secondKey+": row."+secondKey+" })  " +
+//                " CREATE (m)-[:"+relationship+"]->(e)  ";
+
         try (Session session = driver.session(SessionConfig.builder().withDatabase(ConfigurationFileReader.getNeo4JDatabase()).build())) {
+
             session.run("" +
                     "   LOAD CSV WITH HEADERS FROM '"+ ImportFolder +fileName+"' AS row " +
                     "CALL {" +
@@ -345,7 +355,7 @@ protected static void  createMemberGroupsEdge(){
                     +" MATCH (m:"+firstNode+" { "+firstKey+": row."+firstKey+" }) " +
                     "    MATCH (e:"+secondNode+" { "+secondKey+": row."+secondKey+" })  " +
                     " CREATE (m)-[:"+relationship+"]->(e)  " +
-                    " CREATE (m)<-[:"+relationship+"]-(e) " +
+//                    " CREATE (m)<-[:"+relationship+"]-(e) " +
                     " } IN TRANSACTIONS OF "+BATCH_SIZE+" ROWS;"+
 //        + "  SET m.name = row.name"+
                     "")   ;

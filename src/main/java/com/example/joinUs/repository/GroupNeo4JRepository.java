@@ -27,9 +27,10 @@ DETACH DELETE u
 
 
     @Query("""
-    MATCH (g:Group {group_id: $groupId})-[:MEMBER_OF]->(m:Member)-[:ATTENDS]->(:Event)
-    RETURN COUNT(DISTINCT m)
-""")
+        MATCH (g:Group {group_id: $groupId})-[:MEMBER_OF]->(m:Member),
+              (g)-[:ORGANIZES]->(e:Event)<-[:ATTENDS]-(m)
+        RETURN COUNT(DISTINCT m)
+        """)
     long countActiveMembersInGroup(String groupId);
 
 

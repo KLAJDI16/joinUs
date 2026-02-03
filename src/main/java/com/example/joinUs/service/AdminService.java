@@ -64,6 +64,10 @@ public class AdminService {
         return eventRepository.paidVsFreePopularity();
     }
 
+    public long countActiveMembersInGroup(String groupId){
+        return groupNeo4JRepository.countActiveMembersInGroup(groupId);
+    }
+
 
     public List<GroupCommunityDTO> findGroupCommunities(int sharedMembers, int limit){
 

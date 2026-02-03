@@ -26,8 +26,5 @@ public class GroupNeo4J {
     @Property("category_name")
     private String categoryName;
 
-    //    private static final List<String> groupProperties=List.of("group_id", "group_name",
-//    "city", "description","category_name");
-
 }
 

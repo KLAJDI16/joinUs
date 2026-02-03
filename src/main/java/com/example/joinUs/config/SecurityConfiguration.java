@@ -38,20 +38,12 @@ public class SecurityConfiguration {
     // Configure HTTP security
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-        http
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(sm ->
+        http.csrf(csrf -> csrf.disable()).sessionManagement(sm ->
                         sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-
-                )
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(restAuthenticationEntryPoint)
-                        .accessDeniedHandler(restAccessDeniedHandler)
-                )
+                ).exceptionHandling(ex -> ex.authenticationEntryPoint(restAuthenticationEntryPoint)
+                        .accessDeniedHandler(restAccessDeniedHandler))
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers(HttpMethod.GET,"/groups","/events","/").permitAll()
                         .requestMatchers("/recommendations","/user/*").authenticated()
                                 .requestMatchers("/user/**").authenticated()
                         .requestMatchers(HttpMethod.POST,"/groups/**", "/events/**").authenticated()
@@ -68,7 +60,6 @@ public class SecurityConfiguration {
                             res.setStatus(HttpServletResponse.SC_OK);
                             res.getWriter().write("Logged out successfully");
                         })
-
                 )
                 ;
 

@@ -16,37 +16,25 @@ import java.time.OffsetDateTime;
 @Builder
 @Node("Event")
 public class EventNeo4J {
-
     @Id
     @Property(name = "event_id")
     private String eventId;
     @Property(name = "event_name")
     private String eventName;
-
     @Property(name = "group_name")
     private String groupName;
-
     @Property(name = "group_id")
     private String groupId;
-
     @Property(name = "description")
     private String description;
-
     @Property(name = "event_time")
     private OffsetDateTime eventTime;
-
     @Property(name = "fee_amount")
     private String feeAmount;
-
-//     Venue/City fields
     @Property(name = "venue_city")
     private String cityName;
-
     @Property(name = "venue_address_1")
     private String venueAddress1;
 
-    //    private static final List<String> eventProperties=List.of("event_id", "event_name",
-    //    "event_time", "description",
-    //    "fee_amount","venue_city","group_name","group_id","venue_address_1");
 }
 

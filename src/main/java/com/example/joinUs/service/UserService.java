@@ -117,7 +117,6 @@ public class UserService {
 
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"You do not have permission to edit this group");
 
-
     }
 
     public void checkUserHasPermissionToEditEvent(String eventId)  {

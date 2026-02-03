@@ -25,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -98,11 +99,8 @@ public class EventService {
 
     public ResponseMessage attendEvent(String id) {
         Event event = getEventOrThrow(id);
-
         try {
-
             User user = Utils.getUserFromContext();
-
             List<EventEmbedded> userUpcomingEvents = user.getUpcomingEvents();
             userUpcomingEvents.add(eventEmbeddedMapper.toDTO(event));
             user.setUpcomingEvents(userUpcomingEvents);
@@ -117,7 +115,6 @@ public class EventService {
             eventNeo4JRepo.addUserAttending(id,user.getId());
 
             return new ResponseMessage("successful","Your attendance in the event "+event.getEventName()+" is confirmed");
-            //TODO complete the part for the Neo4J too
       } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }

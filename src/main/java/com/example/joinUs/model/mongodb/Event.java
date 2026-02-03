@@ -26,7 +26,6 @@ public class Event {
     @Id
     @Indexed(unique = true)
     private String id;
-
     private String description;
     private String eventName;
 
@@ -35,13 +34,10 @@ public class Event {
     private Date updated;
 
     private Integer duration;
-
     private Fee fee;
     private Venue venue;
     private Category category;
-
     private Integer memberCount;
-
     @Field("creator_group")
     private GroupEmbedded creatorGroup;
 

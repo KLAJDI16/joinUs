@@ -57,8 +57,6 @@ public class RecommendationService {
                 .stream().map(e -> groupMapper.toNeo4JDTO(e)).toList();
     }
 
-
-
     public List<EventSummaryDTO> recommendEventsBySharedGroupTopics(int limit){
         User user = Utils.getUserFromContext();
 

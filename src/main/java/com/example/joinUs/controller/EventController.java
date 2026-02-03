@@ -8,6 +8,7 @@ import com.example.joinUs.service.UserService;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,11 +40,6 @@ public class EventController {
     @GetMapping("/{id}")
     public EventDTO getEventById(@PathVariable String id) {
         return eventService.getEventById(id);
-    }
-
-    @GetMapping("/fromGraph")
-    public List<EventNeo4J> getEventFromGraph() {
-        return eventService.getEventsFromNeo4j();
     }
 
 
@@ -82,8 +78,10 @@ public class EventController {
             @RequestParam(required = false) Integer minMembers,
             @RequestParam(required = false) Integer maxMembers,
             @Parameter(example = "2026-12-15T01:45:30Z")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             Date fromDate,
-            @Parameter(example = "2026-12-15T01:45:30Z")
+            @Parameter(example = "2027-12-15T01:45:30Z")
+             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             Date toDate,
             @RequestParam(required = false) Integer maxFee,
             @RequestParam(defaultValue = "0") Integer page,
@@ -105,7 +103,6 @@ public class EventController {
     }
 
 
-//    // 🔍 By name
 //    @GetMapping("/searchByName")
 //    public Page<EventDTO> searchByName(@RequestParam String name,
 //                                 @RequestParam(defaultValue = "0") int page,
@@ -113,7 +110,6 @@ public class EventController {
 //        return eventService.findByEventNameContainingIgnoreCase(name,page,size);
 //    }
 //
-//    // 🏙 By city
 //    @GetMapping("/filterByCity")
 //    public Page<EventDTO> filterByCity(@RequestParam String city,
 //                                 @RequestParam(defaultValue = "0") int page,
@@ -121,7 +117,6 @@ public class EventController {
 //        return eventService.filterByCity(city,page,size);
 //    }
 //
-//    // 🏷 By category
 //    @GetMapping("/filterByCategory")
 //    public Page<EventDTO> filterByCategory(@RequestParam String category,
 //                                     @RequestParam(defaultValue = "0") int page,
@@ -129,7 +124,6 @@ public class EventController {
 //        return eventService.filterByCategory(category,page,size);
 //    }
 //
-//    // 👥 By member count range
 //    @GetMapping("/filterByMembersCount")
 //    public Page<EventDTO> filterByMembersCount(
 //            @RequestParam int min,
@@ -140,7 +134,6 @@ public class EventController {
 //        return eventService.filterByMemberCount(min, max,page,size);
 //    }
 //
-//    // 📅 By event date range
 //    @GetMapping("/filterByDate")
 //    public Page<EventDTO> filterByDate( //TODO Change Date's type to include only the Date and not the hh:mm:ssss
 //                                        @RequestParam(required = false)
@@ -155,7 +148,6 @@ public class EventController {
 //        return eventService.filterByDateRange(from, to,page,size);
 //    }
 //
-//    // 💰 By max fee
 //    @GetMapping("/filterByFee")
 //    public Page<EventDTO> filterByFee(@RequestParam int maxFee,
 //                                   @RequestParam(defaultValue = "0") int page,
