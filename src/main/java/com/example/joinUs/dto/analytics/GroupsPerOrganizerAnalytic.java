@@ -1,13 +1,18 @@
 package com.example.joinUs.dto.analytics;
 
 import lombok.Data;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 
 @Data
 public class GroupsPerOrganizerAnalytic {
 
-    //            "{ $project: { memberId: '$_id', organizerName: 1, groupsOrganized: 1, _id: 0 } }"
+    @Field("userId")
     public String userId;
+
+    @Field("organizerName")
     public String organizerName;
+
+    @Field("groupsOrganized")
     public Integer groupsOrganized;
 }

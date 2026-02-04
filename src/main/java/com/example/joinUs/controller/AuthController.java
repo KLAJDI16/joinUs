@@ -4,6 +4,7 @@ import com.example.joinUs.dto.LoginForm;
 import com.example.joinUs.dto.ResponseMessage;
 import com.example.joinUs.dto.UserDTO;
 import com.example.joinUs.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -14,16 +15,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 
-
+@Tag(name = "Auth")
 @RestController
-public class FirstController {
+public class AuthController {
 
     @Autowired
     UserDetailsService userDetailsService;
@@ -34,8 +32,7 @@ public class FirstController {
     @Autowired
     AuthenticationManager authManager;
 
-    //    @ApiIgnore
-    @RequestMapping("/")
+    @GetMapping("/")
     public void redirect(HttpServletResponse response) {
 
         try {

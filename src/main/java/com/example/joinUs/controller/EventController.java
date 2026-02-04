@@ -5,6 +5,7 @@ import com.example.joinUs.dto.summary.EventSummaryDTO;
 import com.example.joinUs.service.EventService;
 import com.example.joinUs.service.UserService;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 
-
+@Tag(name = "Events")
 @RestController()
 @RequestMapping("/events")
 public class EventController {

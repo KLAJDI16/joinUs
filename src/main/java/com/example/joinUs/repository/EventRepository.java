@@ -156,7 +156,7 @@ public interface EventRepository extends MongoRepository<Event, String> {
             "{ $project: { type: '$_id', eventsCount: 1, totalAttendance: 1, avgAttendance: 1, _id: 0 } }",
             "{ $sort: { totalAttendance: -1 } }"
     })
-    PaidVsFreeEventAnalytic paidVsFreePopularity();
+    List<PaidVsFreeEventAnalytic> paidVsFreePopularity();
 
     //Top cities by upcoming events count (overall activity)
     @Aggregation(pipeline = {

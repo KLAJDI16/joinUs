@@ -65,7 +65,7 @@ public class AdminService {
         return userRepository.topTrendingTopicsPerCity(topicCount);
     }
 
-    public PaidVsFreeEventAnalytic paidVsFreePopularity() {
+    public List<PaidVsFreeEventAnalytic> paidVsFreePopularity() {
         return eventRepository.paidVsFreePopularity();
     }
 

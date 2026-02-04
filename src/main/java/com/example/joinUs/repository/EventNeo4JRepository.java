@@ -12,8 +12,6 @@ import java.util.List;
 @Repository
 public interface EventNeo4JRepository extends Neo4jRepository<EventNeo4J, String> {
 
-    String ATTENDS = "ATTENDS";
-
     @Query("""
             MATCH (u:Event { event_Id: $eventId })
             DETACH DELETE u
@@ -75,7 +73,7 @@ public interface EventNeo4JRepository extends Neo4jRepository<EventNeo4J, String
      * Recommend events attended by peers (members sharing a group with me)
      */
     @Query("""
-                 MATCH (me:Member {member_id: $memberId})-[:MEMBER_OF]->(g:Group)-[:MEMBER_OF]->(other:Member)-[:ATTENDS]->(e:Event)
+                 MATCH (me:Member {member_id: $memberId})-[:MEMBER_OF]->(g:Group)<-[:MEMBER_OF]-(other:Member)-[:ATTENDS]->(e:Event)
                   WHERE e.event_time>datetime() AND NOT (me)-[:ATTENDS]->(e)
                   RETURN DISTINCT e
                   ORDER BY e.event_time
@@ -87,7 +85,7 @@ public interface EventNeo4JRepository extends Neo4jRepository<EventNeo4J, String
     );//Recommend events that members of the same groups will attend
 
     @Query("""
-                MATCH (me:Member {member_id: $memberId})-[:ATTENDS]->(e1:Event)-[:ATTENDS]->(other:Member)-[:ATTENDS]->(e2:Event)
+                MATCH (me:Member {member_id: $memberId})-[:ATTENDS]->(e1:Event)<-[:ATTENDS]-(other:Member)-[:ATTENDS]->(e2:Event)
                 WHERE e2.event_time>datetime() AND NOT (me)-[:ATTENDS]->(e2)
                 WITH e2 AS event, COUNT(DISTINCT other) AS score
                 ORDER BY score DESC
@@ -97,7 +95,7 @@ public interface EventNeo4JRepository extends Neo4jRepository<EventNeo4J, String
     List<EventNeo4J> recommendEventsByMembers(String memberId, @Param("limit") long limit);
 
     @Query("""
-                MATCH (m:Member {member_id: $memberId})-[:INTERESTED_IN]->(t:Topic)-[:HAS_TOPIC]->(g:Group)-[:ORGANIZES]->(e:Event)
+                MATCH (m:Member {member_id: $memberId})-[:INTERESTED_IN]->(t:Topic)<-[:HAS_TOPIC]-(g:Group)-[:ORGANIZES]->(e:Event)
                 WHERE e.event_time>datetime() AND NOT (m)-[:ATTENDS]->(e)
                 WITH e AS event, COUNT(DISTINCT t) AS score
                 ORDER BY score DESC

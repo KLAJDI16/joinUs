@@ -6,6 +6,7 @@ import com.example.joinUs.dto.summary.GroupSummaryDTO;
 import com.example.joinUs.service.GroupService;
 import com.example.joinUs.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-
+@Tag(name = "Groups")
 @RestController
 @RequestMapping("/groups")
 public class GroupController {

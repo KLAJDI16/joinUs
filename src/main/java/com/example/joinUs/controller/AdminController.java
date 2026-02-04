@@ -52,16 +52,16 @@ public class AdminController {
         return ResponseEntity.ok(adminService.mostActiveCities(limit));
     }
 
-    @GetMapping("/analytics/cities/groups-last-10-years")
-    @Operation(
-            summary = "Top cities by groups created in last 10 years",
-            description = "Counts how many groups were created per city during the last 10 years and returns the highest-ranking cities. Helps identify geographic growth."
-    )
-    public ResponseEntity<List<GroupsPerCityAnalytic>> topCitiesByGroupsLast10Years(
-            @RequestParam(defaultValue = "20") int limit
-    ) {
-        return ResponseEntity.ok(adminService.topCitiesByGroupsLast10Years(limit));
-    }
+//    @GetMapping("/analytics/cities/groups-last-10-years")
+//    @Operation(
+//            summary = "Top cities by groups created in last 10 years",
+//            description = "Counts how many groups were created per city during the last 10 years and returns the highest-ranking cities. Helps identify geographic growth."
+//    )
+//    public ResponseEntity<List<GroupsPerCityAnalytic>> topCitiesByGroupsLast10Years(
+//            @RequestParam(defaultValue = "20") int limit
+//    ) {
+//        return ResponseEntity.ok(adminService.topCitiesByGroupsLast10Years(limit));
+//    }
 
     @GetMapping("/analytics/topics/trending-per-city")
     @Operation(
@@ -79,7 +79,7 @@ public class AdminController {
             summary = "Paid vs Free event popularity",
             description = "Compares FREE vs PAID events using totalAttendance, eventsCount, and avgAttendance. An event is FREE if fee is missing/null or fee.amount is 0."
     )
-    public ResponseEntity<PaidVsFreeEventAnalytic> paidVsFreePopularity() {
+    public ResponseEntity paidVsFreePopularity() {
         return ResponseEntity.ok(adminService.paidVsFreePopularity());
     }
 
