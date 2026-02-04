@@ -25,6 +25,8 @@ public class AdminService {
     private UserNeo4JRepository userNeo4JRepository;
     @Autowired
     private TopicNeo4JRepository topicNeo4JRepository;
+    @Autowired
+    private GroupCommunityRepository groupCommunityRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -72,9 +74,6 @@ public class AdminService {
     }
 
     public List<GroupCommunityDTO> findGroupCommunities(int sharedMembers, int limit) {
-
-        User user = Utils.getUserFromContext();
-
-        return groupNeo4JRepository.findGroupCommunities(sharedMembers, limit);
+        return groupCommunityRepository.findGroupCommunities(sharedMembers, limit);
     }
 }

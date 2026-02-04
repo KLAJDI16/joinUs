@@ -1,6 +1,5 @@
 package com.example.joinUs.repository;
 
-import com.example.joinUs.dto.GroupCommunityDTO;
 import com.example.joinUs.model.neo4j.GroupNeo4J;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
@@ -20,37 +19,20 @@ public interface GroupNeo4JRepository extends Neo4jRepository<GroupNeo4J, String
     void deleteGroup(String groupId);
 
     @Query("""
-                MATCH (m:Member {member_id: $memberId})-[:MEMBER_OF]-(g:Group)
+                MATCH (m:Member {member_id: $memberId})-[:MEMBER_OF]->(g:Group)
                 RETURN DISTINCT g
             """)
     List<GroupNeo4J> findAllGroupsOfUser(String memberId);
 
     @Query("""
-            MATCH (g:Group {group_id: $groupId})-[:MEMBER_OF]->(m:Member),
+            MATCH (g:Group {group_id: $groupId})<-[:MEMBER_OF]-(m:Member),
                   (g)-[:ORGANIZES]->(e:Event)<-[:ATTENDS]-(m)
             RETURN COUNT(DISTINCT m)
             """)
     long countActiveMembersInGroup(String groupId);
 
     @Query("""
-                MATCH (g1:Group)-[:MEMBER_OF]->(m:Member)-[:MEMBER_OF]->(g2:Group)
-                WHERE g1 <> g2 AND g1.group_id < g2.group_id
-                WITH g1, g2, count(DISTINCT m) AS sharedMembers
-                WHERE sharedMembers >= $minShared
-                RETURN
-               g1,
-               g2,
-                  sharedMembers AS sharedMembers
-                ORDER BY sharedMembers DESC
-                LIMIT $limit
-            """)
-    List<GroupCommunityDTO> findGroupCommunities(
-            @Param("minShared") long minShared,
-            @Param("limit") long limit
-    );
-
-    @Query("""
-                MATCH (m:Member {member_id: $memberId})-[:INTERESTED_IN]->(t:Topic)-[:HAS_TOPIC]->(g:Group)
+                MATCH (m:Member {member_id: $memberId})-[:INTERESTED_IN]->(t:Topic)<-[:HAS_TOPIC]-(g:Group)
                 WHERE NOT (m)-[:MEMBER_OF]->(g)
                 WITH g AS group, COUNT(DISTINCT t) AS score
                 ORDER BY score DESC
